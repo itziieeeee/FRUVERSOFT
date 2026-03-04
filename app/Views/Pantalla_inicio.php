@@ -33,7 +33,7 @@
             <img src="<?= base_url('img/LOGO1.png') ?>"  width="120">
         </div>
         <ul>
-            <li><a href="<?= base_url('registrouser') ?>"><i class="fas fa-leaf" style="margin-right: 6px;"></i>Registrarse</a></li>
+            <li><a href="<?= base_url('registro') ?>"><i class="fas fa-leaf" style="margin-right: 6px;"></i>Registrarse</a></li>
         </ul>
     </nav>
 

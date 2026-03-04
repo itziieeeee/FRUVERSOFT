@@ -330,7 +330,7 @@
             </div>
         </div>
 
-                <form id="clientForm">
+                <form id="clientForm" action="<?= base_url('guardar_cliente') ?>" method="POST">
                     <!-- Tipos de cliente -->
                     <div class="form-group">
                         <label>Tipo de Cliente *</label>

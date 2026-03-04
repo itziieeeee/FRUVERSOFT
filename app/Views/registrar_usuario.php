@@ -19,7 +19,7 @@
             <h1>FRUVER</h1>
             
             
-            <form action="<?=base_url('guardaregistro') ?>" method="post">
+            <form action="<?= base_url('guardar_usuario') ?>" method="post">
                 <div class="labels">
                     <label>
                         <i class="fas fa-user-circle"></i> Ingresa tu nombre
@@ -37,7 +37,7 @@
 
                     <div class="inputs">
                         <i class="fas fa-user"></i>
-                        <input type="text" id="nusuario" name="usuario" placeholder="Crea tu usuario" required>
+                        <input type="text" id="nusuario" name="nusuario" placeholder="Crea tu usuario" required>
                     </div>
                 </div>
                 
