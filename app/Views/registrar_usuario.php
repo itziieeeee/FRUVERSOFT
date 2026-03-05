@@ -22,7 +22,7 @@
             <form action="<?= base_url('guardar_usuario') ?>" method="post">
                 <div class="labels">
                     <label>
-                        <i class="fas fa-user-circle"></i> Ingresa tu nombre
+                        <i class="fas fa-user-circle"></i> Ingresa tu nombre *
                     </label>
 
                     <div class="inputs">
@@ -32,7 +32,27 @@
                 </div>
                 <div class="labels">
                     <label>
-                        <i class="fas fa-user-circle"></i> Usuario
+                        <i class="fas fa-user-circle"></i> Ingresa tu Apellido Paterno *
+                    </label>
+
+                    <div class="inputs">
+                        <i class="fas fa-user"></i>
+                        <input type="text" name="apellido1" placeholder="Ingresa tu apellido paterno" required>
+                    </div>
+                </div>
+                <div class="labels">
+                    <label>
+                        <i class="fas fa-user-circle"></i> Ingresa tu apellido  Materno
+                    </label>
+
+                    <div class="inputs">
+                        <i class="fas fa-user"></i>
+                        <input type="text" name="apellido2" placeholder="Ingresa tu apellido materno " required>
+                    </div>
+                </div>
+                <div class="labels">
+                    <label>
+                        <i class="fas fa-user-circle"></i> Usuario *
                     </label>
 
                     <div class="inputs">
@@ -43,7 +63,7 @@
                 
                 <div class="labels">
                     <label>
-                        <i class="fas fa-lock"></i> Contraseña
+                        <i class="fas fa-lock"></i> Contraseña *
                     </label>
                     <div class="inputs">
                         <i class="fas fa-lock"></i>
