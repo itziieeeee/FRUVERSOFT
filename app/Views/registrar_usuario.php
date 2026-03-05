@@ -81,7 +81,7 @@
                 
                 <button type="submit" class="botoniniciar">
                   
-                    <i class="fas fa-sign-in-alt"></i> Registrar</a>
+                    <i class="fas fa-sign-in-alt"></i> Registrar
                 </button>
             </form>
             

@@ -26,11 +26,14 @@ class FRUVER extends BaseController
         $data = [
             'nombre_completo' => $this->request->getPost('nombre_completo'),
             'nusuario'        => $this->request->getPost('nusuario'),
+            'apellido1'        => $this->request->getPost('apellido1'),
+            'apellido2'        => $this->request->getPost('apellido2'),
             'contrasena'      => password_hash($this->request->getPost('contrasena'), PASSWORD_DEFAULT),
+
         ];
 
         if ($model->insert($data)) {
-            return redirect()->to(base_url('pantalla_administrador'));
+            return redirect()->to(base_url('menusolo'));
         }
     }
 
