@@ -385,7 +385,7 @@
                 <i class="fas fa-users"></i>
                 <h2>Clientes</h2>
                 <span class="fondo">n registros</span>
-              <a href="#"  class="botonclienten"><i class="fas fa-plus-circle"></i> Nuevo</a>
+              <a href="<?= base_url('pantalla_rcliente') ?>" method="POST"  class="botonclienten"><i class="fas fa-plus-circle"></i> Nuevo</a>
             </div>
             <div class="scroll-area">
                 <!-- Mayoreo  -->

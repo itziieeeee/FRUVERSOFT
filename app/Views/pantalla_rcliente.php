@@ -348,8 +348,11 @@
 
                     <!-- Información detallada -->
                     <div class="form-group">
-                        <label>Nombre completo *</label>
-                        <input type="text" placeholder="Ej: Juan Pérez González" required>
+                        <label>Nombre*</label>
+                        <input type="text" placeholder="Ej: Juan Jose" required>
+                        <label>Apellido Paterno*</label>
+                        <input type="text" placeholder="Ej: Pérez" required>
+                        
                     </div>
 
                     <div class="form-group">
