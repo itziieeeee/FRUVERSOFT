@@ -15,7 +15,7 @@ $routes->get('salir', 'FRUVER::salir');
 $routes->get('registro', 'FRUVER::reuser');
 $routes->post('guardar_usuario', 'FRUVER::guardar');
 $routes->post('validar', 'FRUVER::validar');
-$routes->get('pantalla_administrador', 'FRUVER::validar');
+$routes->get('menusolo', 'FRUVER::menusolo');
 
 // 3. Clientes (Rutas Unificadas)
 // --- SECCIÓN CLIENTES ---

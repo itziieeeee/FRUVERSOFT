@@ -43,7 +43,13 @@ class FRUVER extends BaseController
     public function validar()
     {
         // Nota: Aquí después agregaremos la lógica real de checar usuario/password
-        return view('pantalla_administrador');
+        return view('menusolo');
+    }
+
+    public function menusolo()
+    {
+       
+        return view('menusolo');
     }
 
     // 4. Sección Clientes (Unificada)
