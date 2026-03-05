@@ -337,7 +337,7 @@
             align-items: center;
             gap: 6px;
             margin-left: auto;
-            text-decoration:none; /*el text decoration es para quitar el subrayado del texto o boton */
+            text-decoration:none; 
         }
 
         /* scroll personalizado */
@@ -357,6 +357,38 @@
             }
             body { overflow: auto; height: auto; }
         }
+        /* opciones del menu */
+       .menu-opciones-extra{
+        padding: 0;
+        }
+
+        .opciones-extra{
+        display:flex;
+        align-items:center;
+        gap:12px;
+        flex-wrap:nowrap;
+        }
+
+        .boton-extra{
+        background:white;
+        border-radius:25px;
+        padding:25px 10px;
+        text-align:center;
+        text-decoration:none;
+        font-weight:700;
+        color:#1e3a2f;
+        font-size:16px;
+        border:2px solid transparent;
+        transition:0.3s;
+        box-shadow:0 6px 18px rgba(0,0,0,0.08);
+       }
+
+       .boton-extra:hover{
+       transform:translateY(-6px);
+       border-color:#f16b1a;
+       box-shadow:0 10px 25px rgba(0,0,0,0.15);
+       color:#f16b1a;
+       }
     </style>
 </head>
 <body>
@@ -365,6 +397,26 @@
             <img src="<?= base_url('img/LOGO1.png') ?>" alt="Logo" width="140">
             <h1>Clientes</h1>
         </div>
+    
+<div class="menu-opciones-extra">
+    <div class="opciones-extra">
+
+        <a href="#" class="boton-extra">Precios</a>
+
+        <a href="#" class="boton-extra">Pagos</a>
+
+        <a href="#" class="boton-extra">Pedidos</a>
+
+        <a href="<?= base_url('pantalla_clientes') ?>" class="boton-extra">Clientes</a>
+
+        <a href="#" class="boton-extra">Inventario</a>
+
+        <a href="#" class="boton-extra">Facturación</a>
+
+        <a href="#" class="boton-extra">Reportes</a>
+
+    </div>
+</div>
         <div class="action-buttons">
             <a href="#" class="btnmenu"><i class="fas fa-user-shield"></i> Admin</a>
             <a href="#" class="btnmenu"><i class="fas fa-bell"></i> Notificaciones</a>
