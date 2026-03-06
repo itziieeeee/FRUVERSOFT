@@ -19,7 +19,6 @@ $routes->get('menusolo', 'FRUVER::menusolo');
 
 // 3. Clientes (Rutas Unificadas)
 // --- SECCIÓN CLIENTES ---
-// Esta ruta es la que fallaba (404). Ahora apunta a la función correcta.
 $routes->get('pantalla_clientes', 'FRUVER::pantalla_clientes'); 
-$routes->get('alta_clientes', 'FRUVER::nuevo_cliente');
+$routes->get('pantalla_rcliente', 'FRUVER::nuevo_cliente');
 $routes->post('alta_clientes/guardar', 'FRUVER::guardar_cliente');

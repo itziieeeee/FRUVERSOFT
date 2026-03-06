@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!--ESTA ES LA PANTALLA DE CLIENTES -->
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
@@ -483,7 +485,9 @@
                 <i class="fas fa-users"></i>
                 <h2>Clientes</h2>
                 <span class="fondo">n registros</span>
-                <a href="<?= base_url('pantalla_rcliente') ?>" method="POST" class="botonclienten"><i class="fas fa-plus-circle"></i> Nuevo</a>
+                <a href="<?= base_url('pantalla_rcliente') ?>" class="botonclienten">
+    <i class="fas fa-plus-circle"></i> Nuevo
+</a>
             </div>
             <div class="scroll-area">
                 <!-- Mayoreo -->

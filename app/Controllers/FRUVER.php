@@ -26,10 +26,9 @@ class FRUVER extends BaseController
         $data = [
             'nombre_completo' => $this->request->getPost('nombre_completo'),
             'nusuario'        => $this->request->getPost('nusuario'),
-            'apellido1'        => $this->request->getPost('apellido1'),
-            'apellido2'        => $this->request->getPost('apellido2'),
+            'apellido1'       => $this->request->getPost('apellido1'),
+            'apellido2'       => $this->request->getPost('apellido2'),
             'contrasena'      => password_hash($this->request->getPost('contrasena'), PASSWORD_DEFAULT),
-
         ];
 
         if ($model->insert($data)) {
@@ -45,26 +44,24 @@ class FRUVER extends BaseController
 
     public function validar()
     {
-        // Nota: Aquí después agregaremos la lógica real de checar usuario/password
+        // Nota: Aquí después agregaremos la lógica real
         return view('menusolo');
     }
 
     public function menusolo()
     {
-       
         return view('menusolo');
     }
 
     // 4. Sección Clientes (Unificada)
     public function pantalla_clientes()
     {
-        // Esta es la vista general de la tabla de clientes
         return view('pantalla_clientes');
     }
 
     public function nuevo_cliente()
     {
-        // Esta es la vista del formulario (alta_cliente)
+        // Esta función ahora está una sola vez y cargará la vista correctamente
         return view('alta_cliente'); 
     }
 
