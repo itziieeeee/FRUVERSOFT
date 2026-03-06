@@ -25,9 +25,10 @@ $routes->post('alta_clientes/guardar', 'FRUVER::guardar_cliente');
 // 4. Sección Inventario
 $routes->get('pantalla_inventario', 'FRUVER::inventario');
 
-// Ruta para ver el inventario
-$routes->get('pantalla_inventario', 'Controlador::inventario');
 
-// Rutas para los formularios (POST)
-$routes->post('inventario/guardarEntrada', 'Controlador::guardarEntrada');
-$routes->post('inventario/guardarMerma', 'Controlador::guardarMerma');
+//entrada 
+$routes->get('inventario/producto', 'Producto::index');
+$routes->post('inventario/guardar', 'Producto::guardar'); // Para cuando envíes el formulario
+
+$routes->get('producto', 'Producto::index');
+$routes->post('producto/guardar', 'Producto::guardar');

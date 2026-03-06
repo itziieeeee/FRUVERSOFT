@@ -314,7 +314,7 @@ table td{
 
     <a href="<?= base_url('inventario/producto') ?>" class="botonesopciones">
          <img src="<?= base_url('img/Producto.jpeg') ?>">
-        <span>Producto</span>
+        <span>Productos</span>
     </a>
 
 </div>

@@ -6,14 +6,7 @@ use CodeIgniter\Model;
 
 class ProductoModel extends Model
 {
-    protected $table = 'producto';
+    protected $table      = 'producto'; 
     protected $primaryKey = 'id';
-
-    protected $allowedFields = [
-        'nombre',
-        'precio',
-        'descripcion',
-        'uni_medida',
-        'stock'
-    ];
+    protected $allowedFields = ['nombre', 'descripcion', 'unidad_compra', 'unidad_venta', 'categoria', 'stock',  'precio_compra', 'precio_venta']; 
 }
