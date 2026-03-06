@@ -28,7 +28,7 @@ $routes->get('pantalla_inventario', 'FRUVER::inventario');
 
 //entrada 
 $routes->get('inventario/producto', 'Producto::index');
-$routes->post('inventario/guardar', 'Producto::guardar'); // Para cuando envíes el formulario
+$routes->post('inventario/guardar', 'Producto::guardar');
 
 $routes->get('producto', 'Producto::index');
 $routes->post('producto/guardar', 'Producto::guardar');
