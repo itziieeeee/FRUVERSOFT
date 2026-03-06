@@ -464,7 +464,7 @@
             <a href="#" class="nav-link"><i class="fas fa-tag"></i> Precios</a>
             <a href="#" class="nav-link"><i class="fas fa-credit-card"></i> Pagos</a>
             <a href="#" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
-            <a href="#" class="nav-link"><i class="fas fa-boxes"></i> Inventario</a>
+            <a href="<?=base_url('pantalla_inventario')?>" class="nav-link"><i class="fas fa-boxes"></i> Inventario</a>
             <a href="#" class="nav-link"><i class="fas fa-file-invoice"></i> Facturación</a>
             <a href="#" class="nav-link"><i class="fas fa-chart-bar"></i> Reportes</a>
             <!-- El enlace a "Clientes" se omite porque ya estamos en esa sección -->

@@ -87,4 +87,12 @@ class FRUVER extends BaseController
     {
         return redirect()->to(base_url('/'));
     }
+
+    // Sección Inventario
+public function inventario()
+{
+    // Carga la vista inventario.php que ya tienes en tu carpeta Views
+    return view('inventario');
+}
+
 }

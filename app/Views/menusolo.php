@@ -300,10 +300,10 @@
             <span>Clientes</span>
         </a>
 
-        <a href="#" class="botonesopciones">
-            <img src="<?= base_url('img/INVENTARIO1.png') ?>">
-            <span>Inventario</span>
-        </a>
+        <a href="<?= base_url('pantalla_inventario') ?>" class="botonesopciones">
+    <img src="<?= base_url('img/INVENTARIO1.png') ?>">
+    <span>Inventario</span>
+</a>
 
         <a href="#" class="botonesopciones">
             <img src="<?= base_url('img/FAC.png') ?>">
