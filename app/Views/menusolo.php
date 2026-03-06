@@ -13,107 +13,213 @@
             box-sizing:border-box;
         }
 
-        body{
-            background:#f0f4f8;
-            font-family:'Segoe UI', Roboto, system-ui, sans-serif;
+         body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9edf5 100%);
+            font-family: 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
+            min-height: 100vh;
         }
-
         .fondo{
             width:95%;
-            margin:20px auto;
+            margin:10px auto;
         }
 
-        /* ===== BARRA SUPERIOR ===== */
-        .menuarriba{
-            background:#2d5a27;
-            border-radius:30px;
-            padding:15px 30px;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            margin-bottom:50px;
-            flex-wrap:wrap;
-            gap:20px;
+        /* ===== BARRA SUPERIOR MEJORADA ===== */
+        .menuarriba {
+            background: white;
+            border-radius: 16px;
+            padding: 8px 20px 8px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+            backdrop-filter: blur(10px);
         }
 
-        .opcionesdelabarra{
-            display:flex;
-            gap:15px;
-            flex-wrap:wrap;
+        /* Logo con fondo más elegante */
+        .logo {
+            background: linear-gradient(135deg, #2d5a27 0%, #1e8a3e 100%);
+            padding: 10px 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(45, 90, 39, 0.3);
+            
+    
         }
 
-        .boton{
-            background:rgba(255,255,255,0.15);
-            border:1px solid rgba(255,255,255,0.3);
-            color:white;
-            padding:12px 22px;
-            border-radius:40px;
-            font-weight:600;
-            display:flex;
-            align-items:center;
-            gap:10px;
-            transition:0.3s;
-            text-decoration:none;
-            font-size:15px;
+        
+
+        /* Título Administrador más elegante */
+        .admin-titulo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 8px 20px;
+            border-radius: 40px;
+            border: 1px solid rgba(45, 90, 39, 0.1);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        .boton:hover{
-            background:white;
-            color:#2d5a27;
-            transform:translateY(-3px);
+        .admin-titulo i {
+            color: #2d5a27;
+            font-size: 20px;
+            background: white;
+            padding: 8px;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(45, 90, 39, 0.2);
         }
 
-        .buscador{
-            background:white;
-            border-radius:50px;
-            padding:5px 5px 5px 20px;
-            display:flex;
-            align-items:center;
-            min-width:250px;
-            box-shadow:0 5px 15px rgba(0,0,0,0.1);
+        .admin-titulo span {
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 18px;
+            letter-spacing: 0.3px;
         }
 
-        .buscador input{
-            border:none;
-            outline:none;
-            flex:1;
-            padding:10px 0;
+        .admin-titulo .badge {
+            background: #2d5a27;
+            color: white;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            margin-left: 5px;
+            font-weight: 500;
         }
 
-        .buscador button{
-            background:#2d5a27;
-            border:none;
-            border-radius:50px;
-            width:40px;
-            height:40px;
-            color:white;
-            cursor:pointer;
+        /* Opciones de la barra mejoradas */
+        .opcionesdelabarra {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-left: auto;
+        }
+
+        .boton {
+            background: transparent;
+            color: #4a5568;
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+            text-decoration: none;
+            font-size: 14px;
+            border: 1px solid transparent;
+        }
+
+        .boton i {
+            color: #2d5a27;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        .boton:hover {
+            background: #f0f9f0;
+            border-color: #2d5a27;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(45, 90, 39, 0.15);
+        }
+
+        .boton:hover i {
+            transform: scale(1.1);
+        }
+
+        .boton.cerrar-sesion {
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+
+        .boton.cerrar-sesion i {
+            color: #dc2626;
+        }
+
+        .boton.cerrar-sesion:hover {
+            background: #fecaca;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+        }
+
+        /* Buscador mejorado */
+        .buscador {
+            background: #f8fafc;
+            border-radius: 40px;
+            padding: 4px 4px 4px 20px;
+            display: flex;
+            align-items: center;
+            min-width: 250px;
+            border: 1px solid #e2e8f0;
+            transition: 0.3s;
+        }
+
+        .buscador:focus-within {
+            border-color: #2d5a27;
+            box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.1);
+            background: white;
+        }
+
+        .buscador input {
+            border: none;
+            outline: none;
+            flex: 1;
+            padding: 12px 0;
+            background: transparent;
+            font-size: 14px;
+            color: #1e293b;
+        }
+
+        .buscador input::placeholder {
+            color: #94a3b8;
+        }
+
+        .buscador button {
+            background: linear-gradient(135deg, #2d5a27 0%, #1e8a3e 100%);
+            border: none;
+            border-radius: 40px;
+            width: 42px;
+            height: 42px;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .buscador button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(45, 90, 39, 0.3);
         }
 
         /* ===== BOTONES PRINCIPALES GRANDES ===== */
         .opciones{
-            display:grid;
-            grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
-            gap:30px;
-        }
-
-        .botonesopciones{
-            background:white;
-            border-radius:30px;
-            padding:50px 20px;
-            text-align:center;
-            text-decoration:none;
-            transition:0.4s;
-            border:2px solid transparent;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            justify-content:center;
-            gap:20px;
-            min-height:240px;
-            box-shadow:0 10px 25px rgba(0,0,0,0.08);
-        }
-
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    justify-content:center;
+    gap:20px;
+    margin-top:7px;
+}
+       .botonesopciones{
+    background:white;
+    border-radius:20px;
+    padding:4px 4px;
+    text-align:center;
+    text-decoration:none;
+    transition:0.3s;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    min-height:100px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.08);
+}
         .botonesopciones:hover{
             transform:translateY(-12px);
             border-color:#f16b1a;
@@ -159,9 +265,9 @@
         <div class="logo">
             <img src="<?= base_url('img/LOGO1.png') ?>" width="140">
         </div>
-
+<h1> Administrador
+</h1>
         <div class="opcionesdelabarra">
-            <a href="#" class="boton"><i class="fas fa-user-shield"></i> Administrador</a>
             <a href="#" class="boton"><i class="fas fa-bell"></i> Notificaciones</a>
             <a href="#" class="boton"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
         </div>
