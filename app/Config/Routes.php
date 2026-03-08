@@ -32,3 +32,5 @@ $routes->post('inventario/guardar', 'Producto::guardar');
 
 $routes->get('producto', 'Producto::index');
 $routes->post('producto/guardar', 'Producto::guardar');
+$routes->get('menusolo', 'FRUVER::menusolo');
+$routes->get('pantalla_inicio', 'FRUVER::pantalla_inicio');

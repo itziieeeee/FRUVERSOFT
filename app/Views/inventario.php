@@ -273,8 +273,8 @@ table td{
             <i class="fas fa-bell"></i> Notificaciones
         </a>
 
-        <a href="<?= base_url('salir') ?>" class="btnmenu">
-            <i class="fas fa-sign-out-alt"></i> Salir
+        <a href="<?= base_url('menusolo') ?>" class="btnmenu">
+            <i class="fas fa-sign-out-alt"></i> Regresar
         </a>
     </div>
 

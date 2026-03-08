@@ -83,9 +83,9 @@ class FRUVER extends BaseController
     }
 
     // 5. Cerrar Sesión
-    public function salir()
+    public function pantalla_inicio()
     {
-        return redirect()->to(base_url('/'));
+        return view('pantalla_inicio');
     }
 
     // Sección Inventario
