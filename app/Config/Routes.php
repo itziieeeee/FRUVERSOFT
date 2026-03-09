@@ -34,3 +34,7 @@ $routes->get('producto', 'Producto::index');
 $routes->post('producto/guardar', 'Producto::guardar');
 $routes->get('menusolo', 'FRUVER::menusolo');
 $routes->get('pantalla_inicio', 'FRUVER::pantalla_inicio');
+
+//
+// Ruta para procesar el guardado de la merma
+$routes->post('merma/guardar', 'Merma::guardar');
