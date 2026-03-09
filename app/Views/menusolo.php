@@ -23,7 +23,6 @@
             margin:10px auto;
         }
 
-        /* ===== BARRA SUPERIOR MEJORADA ===== */
         .menuarriba {
             background: white;
             border-radius: 16px;
@@ -197,7 +196,7 @@
             box-shadow: 0 4px 12px rgba(45, 90, 39, 0.3);
         }
 
-        /* ===== BOTONES PRINCIPALES GRANDES ===== */
+        /*botones principales */
         .opciones{
     display:grid;
     grid-template-columns: repeat(4, 1fr);
@@ -219,6 +218,7 @@
     gap:4px;
     min-height:100px;
     box-shadow:0 8px 20px rgba(0,0,0,0.08);
+    height:200px ;
 }
         .botonesopciones:hover{
             transform:translateY(-12px);
@@ -246,7 +246,6 @@
             border-radius:40px;
         }
 
-        /* ===== RESPONSIVE ===== */
         @media(max-width:768px){
             .menuarriba{
                 flex-direction:column;
@@ -269,7 +268,7 @@
 </h1>
         <div class="opcionesdelabarra">
             <a href="#" class="boton"><i class="fas fa-bell"></i> Notificaciones</a>
-            <a href="#" class="boton"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
+            <a href="<?= base_url('pantalla_inicio') ?>" class="boton"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
         </div>
 
         <div class="buscador">
