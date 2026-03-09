@@ -307,10 +307,17 @@ table td{
         <span>Entrada</span>
     </a>
 
-    <a href="<?= base_url('inventario/merma') ?>" class="botonesopciones">
+    <a href="<?= base_url('inventario/merma') ?>" class="botonesopciones" id="openModal">
          <img src="<?= base_url('img/Merma.jpeg') ?>">
         <span>Merma</span>
     </a>
+<div id="myModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <h2>Título del Modal</h2>
+    <p>Este es un mensaje dentro del modal creado con JS.</p>
+  </div>
+</div>
 
     <a href="<?= base_url('inventario/producto') ?>" class="botonesopciones">
          <img src="<?= base_url('img/Producto.jpeg') ?>">
@@ -416,4 +423,5 @@ table td{
 
 </table>
 </div>
+<script src="js/inventario.js"></script>
 </html>
