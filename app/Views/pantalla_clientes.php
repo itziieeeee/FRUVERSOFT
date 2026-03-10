@@ -196,7 +196,6 @@
             margin-top: 20px;
         }
 
-        /* El resto de tus estilos para las cards (NO SE MODIFICAN) */
         .card {
             background: white;
             border-radius: 28px;
@@ -206,6 +205,20 @@
             flex-direction: column;
             overflow: hidden;
             border: 1px solid rgba(120, 160, 120, 0.2);
+        }
+        
+        /* Ocultar tarjetas de detalle al inicio */
+        #tarjetaDatos, #tarjetaHistorial {
+            display: none;
+        }
+
+        /* Hover sobre filas iterables de clientes */
+        .fila-cliente {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .fila-cliente:hover {
+            background: #eef5ec;
         }
 
         .cabezacard {
@@ -447,7 +460,7 @@
         </div>
 
         <div class="buscador">
-            <input type="text" placeholder="Buscar cliente, pedido...">
+            <input type="text" id="inputBuscador" placeholder="Buscar cliente, pedido...">
             <button><i class="fas fa-search"></i></button>
         </div>
 
@@ -484,7 +497,9 @@
             <div class="cabezacard">
                 <i class="fas fa-users"></i>
                 <h2>Clientes</h2>
-                <span class="fondo">n registros</span>
+                <span class="fondo">
+                    <?= isset($clientes) ? count($clientes) : 0 ?> registros
+                </span>
                 <a href="<?= base_url('pantalla_rcliente') ?>" class="botonclienten">
     <i class="fas fa-plus-circle"></i> Nuevo
 </a>
@@ -494,12 +509,22 @@
                 <div style="margin-bottom: 12px;">
                     <h3 style="font-size:0.9rem; color:#22662c; margin-bottom:4px;">Mayoreo</h3>
                     <table class="minit">
-                        <thead><tr><th>Negocio</th><th>Cliente</th><th>Total</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Cliente</th><th>Etiqueta</th></tr></thead>
                         <tbody>
-                            <tr><td>Distribuidora "Por Salud"</td><td>Juan Pérez</td><td><span class="fondototal">$7,890</span></td></tr>
-                            <tr><td>Verduleña "Mi casita"</td><td>Karla Juárez</td><td><span class="fondototal">$5,488</span></td></tr>
-                            <tr><td>Huerto Dorado</td><td>Kenia Flores</td><td><span class="fondototal">$5,400</span></td></tr>
-                            <tr><td>Frutas "El Edén"</td><td>Luis Martínez</td><td><span class="fondototal">$4,920</span></td></tr>
+                            <!--Se quitaron los datos por defecto-->
+                            <?php if (isset($clientes)): ?>
+                                <?php foreach ($clientes as $c): ?>
+                                    <?php if (strtolower($c['tipo_cliente']) == 'mayoreo' || $c['tipo_cliente'] == ''): ?>
+                                    <tr class="fila-cliente" data-id="<?= $c['id_cliente'] ?>">
+                                        <td>#<?= $c['id_cliente'] ?></td>
+                                        <td><?= $c['nombre'] ?> <?= $c['apellido_paterno'] ?> <?= $c['apellido_materno'] ?></td>
+                                        <td><span class="fondototal">Mayoreo</span></td>
+                                    </tr>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr><td colspan="3">No hay clientes de mayoreo registrados.</td></tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -507,30 +532,40 @@
                 <div>
                     <h3 style="font-size:0.9rem; color:#22662c; margin:8px 0 4px;">Menudeo</h3>
                     <table class="minit">
-                        <thead><tr><th>Negocio</th><th>Cliente</th><th>Total</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Cliente</th><th>Etiqueta</th></tr></thead>
                         <tbody>
-                            <tr><td>Frutas "Max"</td><td>Luis Martínez</td><td><span class="fondototal">$2,920</span></td></tr>
-                            <tr><td>Verduleria "El periquito"</td><td>Karla Juárez</td><td><span class="fondototal">$3,488</span></td></tr>
-                            <tr><td>Raices deliciosas</td><td>Kenia Flores</td><td><span class="fondototal">$3,400</span></td></tr>
-                            <tr><td>Distribuidora "Sabor a campo"</td><td>Juan Pérez</td><td><span class="fondototal">$4,890</span></td></tr>
+                            <?php if (isset($clientes)): ?>
+                                <?php foreach ($clientes as $c): ?>
+                                    <?php if (strtolower($c['tipo_cliente']) == 'menudeo'): ?>
+                                    <tr class="fila-cliente" data-id="<?= $c['id_cliente'] ?>">
+                                        <td>#<?= $c['id_cliente'] ?></td>
+                                        <td><?= $c['nombre'] ?> <?= $c['apellido_paterno'] ?> <?= $c['apellido_materno'] ?></td>
+                                        <td><span class="fondototal">Menudeo</span></td>
+                                    </tr>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr><td colspan="3">No hay clientes de menudeo registrados.</td></tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- DATOS DEL CLIENTE -->
-        <div class="card">
+        <!-- DATOS DEL CLIENTE (Oculto inicialmente, se muestra con AJAX) -->
+        <div class="card" id="tarjetaDatos">
             <div class="cabezacard">
                 <i class="fas fa-id-card"></i>
                 <h2>Datos del cliente</h2>
             </div>
             <div class="scroll-area">
                 <div class="info-cliente-grid">
-                    <div class="info-item"><span class="info-label">Nombre</span><span class="info-value">Juan Pérez</span></div>
-                    <div class="info-item"><span class="info-label">RFC</span><span class="info-value">JPR9ZUAN8ERZ1</span></div>
-                    <div class="info-item"><span class="info-label">Dirección</span><span class="info-value">C Principal 123, Veracruz</span></div>
-                    <div class="info-item"><span class="info-label">Contacto</span><span class="info-value">untaljuan@gmail.com</span></div>
+                    <div class="info-item"><span class="info-label">Nombre</span><span class="info-value" id="dtNombre">---</span></div>
+                    <div class="info-item"><span class="info-label">RFC</span><span class="info-value" id="dtRFC">---</span></div>
+                    <div class="info-item"><span class="info-label">Tipo</span><span class="info-value" id="dtTipo">---</span></div>
+                    <!-- Nota: El modelo actual no trae dirección ni correo, rellenamos con placeholder mientras se agregan esas columnas -->
+                    <div class="info-item"><span class="info-label">Contacto</span><span class="info-value">Sin asignar</span></div>
                 </div>
 
                 <div style="margin:8px 0 12px; display:flex; align-items:center; gap:10px;">
@@ -561,28 +596,22 @@
         </div>
 
         <!-- historial -->
-        <div class="card">
+        <div class="card" id="tarjetaHistorial">
             <div class="cabezacard">
                 <i class="fas fa-history"></i>
                 <h2>Historial de compras</h2>
-                <span class="fondo">4 movimientos</span>
+                <span class="fondo" id="historialConteo">0 movimientos</span>
             </div>
             <div class="scroll-area">
                 <div class="historiallist historial-header">
-                    <div>Fecha</div><div>Pedido</div><div>Cant</div><div>Desc</div><div>Monto</div><div>Estatus</div>
+                    <div>Ref</div><div>Fecha</div><div style="grid-column: span 2;">Estatus</div><div>Monto</div><div>Ver</div>
                 </div>
 
-                <div class="historiallist">
-                    <div>23/01/26</div><div>1 Caja</div><div>Fresa</div><div>Fresa</div><div>$8,500</div><div><span class="status entregado">Entregado</span></div>
-                </div>
-                <div class="historiallist">
-                    <div>23/01/26</div><div>1 Ton</div><div>Jitomate</div><div>Saladet</div><div>$11,500</div><div><span class="status entregado">Entregado</span></div>
-                </div>
-                <div class="historiallist">
-                    <div>23/01/26</div><div>1 Caja</div><div>Sandía</div><div>Sin semilla</div><div>$9,780</div><div><span class="status enviado">Enviado</span></div>
-                </div>
-                <div class="historiallist">
-                    <div>23/01/26</div><div>3 Cajas</div><div>Tomate</div><div>Bola</div><div>$8,500</div><div><span class="status pendiente">Pendiente</span></div>
+                <div id="contenedorHistorial">
+                    <!-- Los resultados de AJAX irán aquí -->
+                    <div style="text-align:center; padding: 20px; font-size: 0.8rem; color: #666;">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando...
+                    </div>
                 </div>
 
                 <div style="margin-top:16px; background:#fcf9f0; border-radius:16px; padding:10px; font-size:0.8rem;">
@@ -592,5 +621,101 @@
         </div>
     </div>
 
-</body>
-</html>
+    <!-- SCRIPT DEL BUSCADOR y AJAX -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('inputBuscador');
+            // Seleccionar todas las filas de clientes excepto los encabezados ('th')
+            const filasClientes = document.querySelectorAll('.minit tbody tr.fila-cliente');
+
+            // 1. FUNCION DEL BUSCADOR RÁPIDO
+            if(input) {
+                input.addEventListener('input', function() {
+                    const filtro = this.value.toLowerCase().trim();
+                    let filasVisibles = 0;
+                    let ultimaFilaVisible = null;
+
+                    filasClientes.forEach(fila => {
+                        const textoFila = fila.textContent.toLowerCase();
+                        if (textoFila.includes(filtro)) {
+                            fila.style.display = '';
+                            filasVisibles++;
+                            ultimaFilaVisible = fila;
+                        } else {
+                            fila.style.display = 'none';
+                        }
+                    });
+
+                    // Si hay filtro escrito y quedó exactamente 1 cliente visible, lo auto-seleccionamos
+                    if (filtro.length > 0 && filasVisibles === 1 && ultimaFilaVisible) {
+                         $(ultimaFilaVisible).trigger('click');
+                    }
+                });
+            }
+
+            // 2. FUNCIÓN AJAX MAESTRO-DETALLE (Al hacer clic en un cliente)
+            $('.fila-cliente').on('click', function() {
+                const idCliente = $(this).data('id');
+                
+                // Efecto visual de selección en la lista
+                $('.fila-cliente').css('border-left', 'none').css('background', '');
+                $(this).css('border-left', '4px solid #f16b1a').css('background', '#eef5ec');
+
+                // Mostrar tarjetas de detalle que estaban ocultas
+                $('#tarjetaDatos').show();
+                $('#tarjetaHistorial').show();
+
+                // Petición AJAX al servidor CodeIgniter
+                $.ajax({
+                    url: '<?= base_url('clientes/get_detalle') ?>',
+                    type: 'POST',
+                    data: { id_cliente: idCliente },
+                    dataType: 'json',
+                    success: function(response) {
+                        if(response.status === 'success') {
+                            const c = response.cliente;
+                            const pedidos = response.pedidos;
+
+                            // Actualizar Tarjeta 2: Datos
+                            $('#dtNombre').text(c.nombre + ' ' + (c.apellido_paterno || '') + ' ' + (c.apellido_materno || ''));
+                            $('#dtRFC').text(c.rfc ? c.rfc : 'N/A');
+                            $('#dtTipo').text(c.tipo_cliente ? c.tipo_cliente : 'N/A');
+
+                            // Actualizar Tarjeta 3: Historial
+                            let htmlHistorial = '';
+                            if(pedidos.length > 0) {
+                                $('#historialConteo').text(pedidos.length + ' movimientos');
+                                
+                                pedidos.forEach(p => {
+                                    // Determinar badge según estado
+                                    let badge = 'pendiente';
+                                    if(p.estatus == 'Entregado') badge = 'entregado';
+                                    else if(p.estatus == 'Enviado') badge = 'enviado';
+
+                                    htmlHistorial += `
+                                    <div class="historiallist">
+                                        <div>#${p.id_pedido}</div>
+                                        <div>${p.fecha.split(' ')[0]}</div>
+                                        <div style="grid-column: span 2;"><span class="status ${badge}">${p.estatus || 'Pendiente'}</span></div>
+                                        <div style="font-weight:bold; color:#1d632d;">$${p.total}</div>
+                                        <div><a href="#" style="color:#f16b1a;"><i class="fas fa-eye"></i></a></div>
+                                    </div>`;
+                                });
+                            } else {
+                                $('#historialConteo').text('0 movimientos');
+                                htmlHistorial = '<div style="padding:15px; text-align:center; font-size:0.85rem;">Este cliente aún no tiene pedidos registrados en el sistema.</div>';
+                            }
+                            
+                            $('#contenedorHistorial').html(htmlHistorial);
+                        } else {
+                            alert('Error: ' + response.msg);
+                        }
+                    },
+                    error: function() {
+                        alert('Error al conectar con el servidor.');
+                    }
+                });
+            });
+        });
+    </script>

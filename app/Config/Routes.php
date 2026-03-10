@@ -22,6 +22,9 @@ $routes->get('menusolo', 'FRUVER::menusolo');
 $routes->get('pantalla_clientes', 'FRUVER::pantalla_clientes'); 
 $routes->get('pantalla_rcliente', 'FRUVER::nuevo_cliente');
 $routes->post('alta_clientes/guardar', 'FRUVER::guardar_cliente');
+// AJAX para traer detalle de cliente
+$routes->post('clientes/get_detalle', 'FRUVER::get_cliente_detalle');
+
 // 4. Sección Inventario
 $routes->get('pantalla_inventario', 'FRUVER::inventario');
 

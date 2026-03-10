@@ -1,0 +1,41 @@
+# Resumen de Cambios: FRUVERSOFT
+
+A continuación, se documentan todas las modificaciones y mejoras implementadas en la aplicación.
+
+## 1. Configuración de Base de Datos
+* **Archivo importado:** [fruver.sql](file:///c:/xampp/htdocs/FRUVERSOFT/fruver.sql)
+* Se configuró y levantó la base de datos `fruver` a través de phpMyAdmin utilizando el archivo original provisto. Este archivo incluyó la estructura completa de tablas ([clientes](file:///c:/xampp/htdocs/FRUVERSOFT/app/Controllers/FRUVER.php#49-59), `producto`, `pedido`, `userregistrado`, etc.) y datos muestra para realizar pruebas consistentes en el sistema.
+
+## 2. Implementación de Buscador Rápido (JavaScript)
+Se activó el campo de búsqueda visual en la parte superior de las pantallas principales usando JavaScript nativo y jQuery, logrando un filtrado "en vivo" (sin recargar la página).
+
+### Archivos Modificados:
+* **[app/Views/pantalla_clientes.php](file:///c:/xampp/htdocs/FRUVERSOFT/app/Views/pantalla_clientes.php)**
+  - Se agregó el ID `inputBuscador` al campo de texto.
+  - Se añadió un script que escucha el evento `input`, recorre los `<tr>` de la lista de clientes y aplica `display: none` a las filas cuyo texto no coincida con el valor ingresado.
+* **[app/Views/inventario.php](file:///c:/xampp/htdocs/FRUVERSOFT/app/Views/inventario.php)**
+  - Se conectó un evento similar mediante jQuery (`$('#buscarProducto').on('input')`) para filtrar en tiempo real el contenido de las 3 tablas de la pantalla de inventario (Entradas, Mermas y Lotes/Caducidades).
+
+## 3. Conexión de Datos Reales de Clientes
+El panel izquierdo de la pantalla de Clientes tenía información escrita en el código de la vista de forma fija ("quemada"). Se modificó para llenarse directamente con los datos de phpMyAdmin.
+
+### Archivos Modificados:
+* **[app/Controllers/FRUVER.php](file:///c:/xampp/htdocs/FRUVERSOFT/app/Controllers/FRUVER.php)** ([pantalla_clientes()](file:///c:/xampp/htdocs/FRUVERSOFT/app/Controllers/FRUVER.php#49-59))
+  - Se importó [ClienteModel](file:///c:/xampp/htdocs/FRUVERSOFT/app/Models/ClienteModel.php#7-20).
+  - Se ejecutó el método `$modelo->findAll()` para rescatar todos los clientes de la base de datos y se inyectaron en el arreglo `$data['clientes']`.
+* **[app/Views/pantalla_clientes.php](file:///c:/xampp/htdocs/FRUVERSOFT/app/Views/pantalla_clientes.php)**
+  - Se construyó un bloque `foreach` para recorrer los `$clientes`.
+  - Mediante sentencias `if`, se separó a los clientes según su columna `tipo_cliente`, enviándolos a la mini-tabla "Mayoreo" o a la de "Menudeo".
+
+## 4. Implementación del Patrón Maestro-Detalle (AJAX)
+Para evitar saturar la página consultando el historial completo de todos los clientes a la vez, se diseñó un panel interactivo que **solicita ocultamente** los datos del cliente únicamente al darle clic.
+
+### Archivos Modificados:
+* **[app/Config/Routes.php](file:///c:/xampp/htdocs/FRUVERSOFT/app/Config/Routes.php)**
+  - Se creó la ruta de tipo POST `clientes/get_detalle`.
+* **[app/Controllers/FRUVER.php](file:///c:/xampp/htdocs/FRUVERSOFT/app/Controllers/FRUVER.php)**
+  - Se creó la función [get_cliente_detalle()](file:///c:/xampp/htdocs/FRUVERSOFT/app/Controllers/FRUVER.php#83-114), un **Endpoint JSON**, que recibe un `id_cliente`, recupera la información básica desde [ClienteModel](file:///c:/xampp/htdocs/FRUVERSOFT/app/Models/ClienteModel.php#7-20), realiza una consulta en la tabla `pedido` (obteniendo los últimos 10 pedidos) y devuelve toda esta información al front-end en formato JSON.
+* **[app/Views/pantalla_clientes.php](file:///c:/xampp/htdocs/FRUVERSOFT/app/Views/pantalla_clientes.php)**
+  - Se aplicó CSS (`display: none;`) para esconder las tarjetas de "Datos" e "Historial" al abrir la pantalla.
+  - Se añadió la clase `fila-cliente` junto con el atributo HTML `data-id` a cada fila de cliente (`<tr>`) de la lista.
+  - En JavaScript, se programó un evento `.on('click', ...)` que, al hacer clic en una fila, llama por AJAX a `/clientes/get_detalle`, obtiene el JSON, hace visibles las tarjetas y rellena en tiempo real el Nombre, RFC, Tipo de Cliente y la tabla de "Historial de compras".

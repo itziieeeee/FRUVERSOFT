@@ -210,7 +210,7 @@
         </div>
 
         <div class="buscador">
-            <input type="text" placeholder="Buscar producto, código o descripción...">
+            <input type="text" id="buscarProducto" placeholder="Buscar producto, código o descripción...">
             <button type="button" aria-label="Buscar"><i class="fas fa-search"></i></button>
         </div>
 
@@ -402,6 +402,22 @@ $(document).ready(function() {
             error: function() {
                 alert('Ocurrió un error crítico en el servidor.');
                 $('button[type="submit"]').prop('disabled', false).text('Guardar Registro');
+            }
+        });
+    });
+
+    // BUSCADOR EN TABLAS DE INVENTARIO
+    $('#buscarProducto').on('input', function() {
+        const filtro = $(this).val().toLowerCase().trim();
+        
+        // Iteramos todas las filas de todas las tablas en la página (Entrada, Merma, Lotes)
+        $('.cardtabla tbody tr').each(function() {
+            const textoFila = $(this).text().toLowerCase();
+            
+            if (textoFila.includes(filtro)) {
+                $(this).show();
+            } else {
+                $(this).hide();
             }
         });
     });

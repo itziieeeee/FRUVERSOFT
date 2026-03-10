@@ -31,5 +31,8 @@ class Producto extends BaseController
         if ($model->insert($data)) {
             return redirect()->to(base_url('inventario/merma'))->with('mensaje', 'Guardado con éxito');
         }
+
     }
+
+    
 }

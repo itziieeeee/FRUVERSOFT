@@ -1,3 +1,71 @@
+# Ejecutar FRUVERSOFT
+
+Sigue estos pasos para ejecutar la aplicación en tu computadora.
+
+## 1. Clonar el repositorio
+
+Abrir la terminal y ejecutar:
+
+cd C:\xampp\htdocs
+git clone URL_DEL_REPOSITORIO
+
+Entrar a la carpeta del proyecto:
+
+cd FRUVERSOFT
+
+
+## 2. Instalar dependencias
+
+Instalar las dependencias del proyecto con Composer:
+
+composer install
+
+
+## 3. Activar extensión INTL en PHP
+
+Abrir el archivo:
+
+C:\xampp\php\php.ini
+
+Buscar la línea:
+
+;extension=intl
+
+Quitar el `;` para activarla:
+
+extension=intl
+
+Guardar el archivo y reiniciar Apache desde XAMPP.
+
+
+## 4. Ejecutar la aplicación
+
+En la terminal dentro de la carpeta del proyecto ejecutar:
+
+php spark serve
+
+
+## 5. Abrir la aplicación
+
+Abrir el navegador y entrar a:
+
+http://localhost:8080
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # CodeIgniter 4 Application Starter
 
 ## What is CodeIgniter?
