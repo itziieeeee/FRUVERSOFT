@@ -53,7 +53,7 @@
 
         /* Tablas */
         .tablas{ display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:30px; margin-top:40px; }
-        .cardtabla{ background:white; border-radius:20px; padding:25px; box-shadow:0 10px 25px rgba(0,0,0,.08); }
+        .cardtabla{ background:white; border-radius:20px; padding:25px; box-shadow:0 10px 25px rgba(0,0,0,.08); margin-top: 40px;}
         .cardtabla h3{ margin-bottom:15px; color:#1e3a2f; border-bottom:3px solid #2d5a27; padding-bottom:8px; }
         table{ width:100%; border-collapse:collapse; }
         table th{ background:#e8f5e9; padding:10px; text-align:left; }
@@ -137,7 +137,47 @@
         </div>
     </div>
 
+<div class="cardtabla">
+    <h3>Control de Lotes y Caducidad</h3>
 
+    <table>
+        <thead>
+            <tr>
+                <th>Lote</th>
+                <th>Producto</th>
+                <th>Ubicación</th>
+                <th>Stock</th>
+                <th>Fecha Entrada</th>
+                <th>Caducidad</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            <tr>
+                <td>L001</td>
+                <td>Banano</td>
+                <td>Bodega 1</td>
+                <td>50</td>
+                <td>2026-03-10</td>
+                <td>2026-03-20</td>
+                <td>Disponible</td>
+            </tr>
+
+            <tr>
+                <td>L002</td>
+                <td>Tomate</td>
+                <td>Bodega 2</td>
+                <td>30</td>
+                <td>2026-03-08</td>
+                <td>2026-03-15</td>
+                <td>Por vencer</td>
+            </tr>
+
+        </tbody>
+    </table>
+</div>
 
     
 </div> <div class="modal fade" id="modalMerma" tabindex="-1" role="dialog" aria-labelledby="mermaTitle" aria-hidden="true">
