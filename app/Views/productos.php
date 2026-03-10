@@ -1,13 +1,10 @@
 <!DOCTYPE html>
-
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-<title>FRUVER · Inventario</title>
 
 <style>
 
@@ -22,75 +19,70 @@ font-family:Arial, Helvetica, sans-serif;
 background:#f4f6f4;
 }
 
-/* ===== BARRA SUPERIOR ===== */
+/*menu*/
 
-.marriba{
-background:#1d4a27;
-padding:10px 24px;
+.menu-navegacion {
+background-color:#f5faf4;
+padding:12px 24px;
+border-bottom:1px solid #cde0ca;
+box-shadow:0 2px 5px rgba(0,0,0,0.05);
+}
+
+.nav-links{
 display:flex;
 align-items:center;
-justify-content:space-between;
+justify-content:space-around;
+gap:12px;
 flex-wrap:wrap;
-gap:15px;
+max-width:1200px;
+margin:0 auto;
 }
 
-.logo-area h1{
-color:white;
-font-size:22px;
-}
-
-/* ===== MENU ===== */
-
-.menu-dashboard{
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-}
-
-.menu-dashboard a{
-background:rgba(255,255,255,0.12);
-border:1px solid rgba(255,255,255,0.25);
-color:white;
-padding:8px 18px;
+.nav-link{
+background:white;
 border-radius:40px;
+padding:10px 20px;
 text-decoration:none;
 font-weight:600;
-font-size:14px;
+color:#1e3a2f;
+font-size:0.95rem;
+border:1.5px solid transparent;
+transition:all 0.2s ease;
+box-shadow:0 2px 6px rgba(0,40,0,0.05);
+display:inline-flex;
+align-items:center;
+gap:6px;
 }
 
-.menu-dashboard a:hover{
-background:white;
+.nav-link i{
+color:#f16b1a;
+font-size:1rem;
+}
+
+.nav-link:hover{
+transform:translateY(-2px);
+border-color:#f16b1a;
+box-shadow:0 6px 12px rgba(0,0,0,0.08);
 color:#1d4a27;
 }
 
-.activo{
-background:white !important;
-color:#1d4a27 !important;
-}
-
-/* ===== BOTONES DERECHA ===== */
-
-.action-buttons{
-display:flex;
-gap:8px;
-}
-
-.btnmenu{
-background:rgba(255,255,255,0.1);
-border:1px solid rgba(255,255,255,0.2);
+.nav-link.activo{
+background:#1d4a27;
 color:white;
-padding:8px 14px;
-border-radius:40px;
-text-decoration:none;
+border-color:#1d4a27;
 }
 
-/* ===== CONTENEDOR ===== */
+.nav-link.activo i{
+color:white;
+}
+
+/*contenedor*/
 
 .layout{
 padding:30px;
 }
 
-/* ===== BUSCADOR ===== */
+/*barra buscador*/
 
 .barra-resultados{
 display:flex;
@@ -114,7 +106,7 @@ border-radius:8px;
 text-decoration:none;
 }
 
-/* ===== GRID PRODUCTOS ===== */
+/*grid productos*/
 
 .productos-grid{
 display:grid;
@@ -122,7 +114,7 @@ grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
 gap:20px;
 }
 
-/* ===== TARJETA PRODUCTO ===== */
+/*tarjeta*/
 
 .producto-card{
 background:white;
@@ -169,98 +161,43 @@ cursor:pointer;
 .btn-editar{
 background:#e8f5e9;
 }
-.menu-navegacion {
-    background-color: #f5faf4;
-    padding: 12px 24px;
-    border-bottom: 1px solid #cde0ca;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    flex-shrink: 0;
-}
 
-.nav-links {
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    gap: 12px;
-    flex-wrap: wrap;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.nav-link {
-    background: white;
-    border-radius: 40px;
-    padding: 10px 20px;
-    text-decoration: none;
-    font-weight: 600;
-    color: #1e3a2f;
-    font-size: 0.95rem;
-    border: 1.5px solid transparent;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(0,40,0,0.05);
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.nav-link i {
-    color: #f16b1a;
-    font-size: 1rem;
-}
-
-.nav-link:hover {
-    transform: translateY(-2px);
-    border-color: #f16b1a;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-    color: #1d4a27;
-}
-
-.nav-link.activo {
-    background: #1d4a27;
-    color: white;
-    border-color: #1d4a27;
-}
-
-.nav-link.activo i {
-    color: white;
-}
 .btn-comprar{
 background:#2e7d32;
 color:white;
 }
 
 </style>
-
 </head>
 
 <body>
 
-<!-- BARRA SUPERIOR -->
+<!-- menu -->
+<nav class="menu-navegacion">
+<div class="nav-links">
 
- <nav class="menu-navegacion">
-        <div class="nav-links">
-            <a href="#" class="nav-link"><i class="fas fa-tag"></i> Precios</a>
-            <a href="#" class="nav-link"><i class="fas fa-credit-card"></i> Pagos</a>
-            <a href="#" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
-            <a href="<?=base_url('pantalla_inventario')?>" class="nav-link"><i class="fas fa-boxes"></i> Inventario</a>
-            <a href="#" class="nav-link"><i class="fas fa-file-invoice"></i> Facturación</a>
-            <a href="#" class="nav-link"><i class="fas fa-chart-bar"></i> Reportes</a>
-            <!-- El enlace a "Clientes" se omite porque ya estamos en esa sección -->
-        </div>
-    </nav>
+<a href="#" class="nav-link"><i class="fas fa-tag"></i> Precios</a>
+<a href="#" class="nav-link"><i class="fas fa-credit-card"></i> Pagos</a>
+<a href="#" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
+<a href="#" class="nav-link"><i class="fas fa-boxes"></i> Inventario</a>
+<a href="#" class="nav-link"><i class="fas fa-file-invoice"></i> Facturación</a>
+<a href="#" class="nav-link"><i class="fas fa-chart-bar"></i> Reportes</a>
 
-<!-- CONTENIDO -->
+</div>
+</nav>
+
+<!-- contenido -->
 
 <div class="layout">
 
 <div class="barra-resultados">
 
-<input type="text" id="buscarInput" class="select-orden" placeholder="Buscar producto..." oninput="buscarProductos()">
+<input type="text" class="select-orden" placeholder="Buscar producto...">
 
-<select class="select-orden" onchange="ordenarProductos(this.value)">
-<option value="nombre">Nombre A-Z</option>
-<option value="precio-asc">Precio menor</option>
-<option value="precio-desc">Precio mayor</option>
+<select class="select-orden">
+<option>Nombre A-Z</option>
+<option>Precio menor</option>
+<option>Precio mayor</option>
 </select>
 
 <a href="#" class="btn-nuevo-producto">
@@ -308,30 +245,6 @@ grid.innerHTML=lista.map(p=>`
 </div>
 
 `).join("");
-
-}
-
-function buscarProductos(){
-
-const texto=document.getElementById("buscarInput").value.toLowerCase();
-
-const filtrados=productos.filter(p=>p.nombre.toLowerCase().includes(texto));
-
-renderProductos(filtrados);
-
-}
-
-function ordenarProductos(tipo){
-
-let lista=[...productos];
-
-if(tipo==="precio-asc") lista.sort((a,b)=>a.precio-b.precio);
-
-if(tipo==="precio-desc") lista.sort((a,b)=>b.precio-a.precio);
-
-if(tipo==="nombre") lista.sort((a,b)=>a.nombre.localeCompare(b.nombre));
-
-renderProductos(lista);
 
 }
 
