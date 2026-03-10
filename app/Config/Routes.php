@@ -38,3 +38,11 @@ $routes->get('pantalla_inicio', 'FRUVER::pantalla_inicio');
 //
 // Ruta para procesar el guardado de la merma
 $routes->post('merma/guardar', 'Merma::guardar');
+//Ruta para dar de alta un clietexs
+$routes->get('alta_cliente', 'Alta_clientes::index');
+// Ruta para buscar producto
+$routes->post('guardar_cliente', 'FRUVER::guardar_cliente');
+$routes->get('buscar_producto', 'FRUVER::buscar_producto');
+$routes->get('vendedor', 'FRUVER::pantalla_vendedor');
+//seleccionar rol
+$routes->get('seleccionar_rol', 'FRUVER::seleccionar_rol');
