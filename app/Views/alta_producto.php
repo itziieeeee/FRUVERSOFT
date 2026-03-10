@@ -42,7 +42,7 @@
     <main class="contenedor-principal">
        
 
-        <!-- Formulario mejorado -->
+        <!-- Formulario  -->
         <div class="card-form">
             <div class="cabezacard">
                 <i class="fas fa-clipboard-list"></i>

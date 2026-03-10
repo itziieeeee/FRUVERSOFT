@@ -21,7 +21,139 @@
         *{ margin:0; padding:0; box-sizing:border-box; }
         body{ background:#f0f4f8; font-family:'Segoe UI',Roboto,system-ui,sans-serif; }
         .fondo{ max-width:1700px; margin:20px auto; padding:0 25px; }
+         /* === CABECERO SUPERIOR === */
+        .barra-superior {
+            background: #1d4a27;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 4px 12px rgba(0,30,0,0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-area img {
+            height: 45px;
+            width: auto;
+            filter: brightness(1.1);
+        }
+
+        /* Buscador mejorado */
+        .buscador {
+            background: white;
+            border-radius: 40px;
+            padding: 3px 3px 3px 20px;
+            display: flex;
+            align-items: center;
+            flex: 0 1 400px;
+            transition: box-shadow 0.3s;
+        }
         
+        .buscador:focus-within {
+            box-shadow: 0 0 0 3px rgba(241, 107, 26, 0.3);
+        }
+
+        .buscador input {
+            border: none;
+            padding: 10px 0;
+            width: 100%;
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        .buscador button {
+            background: #f16b1a;
+            border: none;
+            border-radius: 40px;
+            width: 42px;
+            height: 42px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .buscador button:hover {
+            background: #d55a0a;
+        }
+
+        /* Acciones de usuario */
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-user {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-user:hover {
+            background: white;
+            color: #1d4a27;
+            border-color: white;
+        }
+
+        /* === MENÚ DE NAVEGACIÓN HORIZONTAL (CORREGIDO) === */
+        .menu-navegacion {
+            background: white;
+            padding: 12px 24px;
+            border-bottom: 2px solid #cde0ca;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .nav-link {
+            background: #eef3e9;
+            border-radius: 40px;
+            padding: 12px 24px;
+            text-decoration: none;
+            font-weight: 600;
+            color: #1d4a27;
+            font-size: 0.95rem;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-link i {
+            color: #f16b1a;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            background: #e0e8db;
+            transform: translateY(-2px);
+            border-color: #f16b1a;
+        }
+
+        .nav-link.activo {
+            background: #1d4a27;
+            color: white;
+        }
+
+        .nav-link.activo i {
+            color: white;
+        }
+
         .marriba{
             background:#1d4a27; padding:10px 30px; display:flex; align-items:center; 
             justify-content:space-between; gap:20px; border-radius:12px;
@@ -71,23 +203,34 @@
 <div class="fondo">
 
     <header>
-        <div class="marriba">
-            <div class="logo-area">
-                <img src="<?= base_url('img/LOGO1.png') ?>" alt="Logo">
-                <h1>Inventario</h1>
-            </div>
-
-            <div class="action-buttons">
-                <a href="<?= base_url('salir') ?>" class="btn btn-outline-light rounded-pill px-4">
-                    <i class="fas fa-sign-out-alt"></i> Salir
-                </a>
-            </div>
-
-            <div class="buscador">
-                <input type="text" placeholder="Buscar producto...">
-                <button><i class="fas fa-search"></i></button>
-            </div>
+        <!-- Barra superior -->
+    <div class="barra-superior">
+        <div class="logo-area">
+            <img src="<?= base_url('img/LOGO1.png') ?>" alt="FRUVER Logo">
         </div>
+
+        <div class="buscador">
+            <input type="text" placeholder="Buscar producto, código o descripción...">
+            <button type="button" aria-label="Buscar"><i class="fas fa-search"></i></button>
+        </div>
+
+        <div class="user-actions">
+            <a href="#" class="btn-user"><i class="fas fa-user-shield"></i> <span class="hide-mobile">Admin</span></a>
+            <a href="#" class="btn-user"><i class="fas fa-bell"></i> <span class="hide-mobile">Notificaciones</span></a>
+            <a href="#" class="btn-user"><i class="fas fa-sign-out-alt"></i> <span class="hide-mobile">Salir</span></a>
+        </div>
+    </div>
+
+    <!-- Menú de navegación horizontal (corregido) -->
+    <nav class="menu-navegacion" aria-label="Navegación principal">
+        <a href="#" class="nav-link"><i class="fas fa-tag"></i> Precios</a>
+        <a href="#" class="nav-link"><i class="fas fa-credit-card"></i> Pagos</a>
+        <a href="#" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
+        <a href="#" class="nav-link activo"><i class="fas fa-boxes"></i> Inventario</a>
+        <a href="#" class="nav-link"><i class="fas fa-file-invoice"></i> Facturación</a>
+        <a href="#" class="nav-link"><i class="fas fa-chart-bar"></i> Reportes</a>
+    </nav>
+
     </header>
 
     <div class="opciones">
