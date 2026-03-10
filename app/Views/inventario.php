@@ -91,7 +91,7 @@
     </header>
 
     <div class="opciones">
-        <a href="<?= base_url('inventario/entrada') ?>" class="botonesopciones">
+        <a href="<?= base_url('inventario/producto') ?>" class="botonesopciones">
              <img src="<?= base_url('img/Entrada.jpeg') ?>">
             <span>Entrada</span>
         </a>
