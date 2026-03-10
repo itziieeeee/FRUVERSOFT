@@ -95,4 +95,9 @@ public function inventario()
     return view('inventario');
 }
 
+public function productos()
+{
+    return view('productos');
+}
+
 }
