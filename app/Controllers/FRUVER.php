@@ -44,8 +44,9 @@ class FRUVER extends BaseController
 
     public function validar()
     {
-        // Nota: Aquí después agregaremos la lógica real
-        return view('menusolo');
+        // En lugar de cargar la vista directo, redireccionamos a la selección de rol
+        return redirect()->to(base_url('seleccionar_rol'));
+    
     }
 
     public function menusolo()
@@ -93,11 +94,38 @@ public function inventario()
 {
     // Carga la vista inventario.php que ya tienes en tu carpeta Views
     return view('inventario');
-}
 
-public function productos()
+}
+// --- SECCIÓN VENDEDOR ---
+
+//  función abre la pantalla limpia del buscador
+public function pantalla_vendedor()
 {
-    return view('productos');
+   
+    $data['productos'] = []; 
+    $data['termino'] = "";
+    return view('vendedor/panel_principal', $data);
 }
 
+//  función es la que activa la lupa
+public function buscar_producto()
+{
+    
+    $model = new \App\Models\ProductoModel(); 
+
+  
+    $termino = $this->request->getGet('query'); 
+
+   
+    $data['productos'] = $model->like('nombre', $termino)->findAll();
+    $data['termino']   = $termino;
+
+   
+    return view('vendedor/panel_p', $data);
+}
+//seleccionamos rol
+public function seleccionar_rol()
+ {
+    return view('seleccionar_rol');
+}
 }
