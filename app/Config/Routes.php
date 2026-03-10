@@ -39,3 +39,4 @@ $routes->get('pantalla_inicio', 'FRUVER::pantalla_inicio');
 // Ruta para procesar el guardado de la merma
 $routes->post('merma/guardar', 'Merma::guardar');
 $routes->get('productos', 'FRUVER::productos');
+$routes->get('pantalla_administrador', 'FRUVER::pantalla_administrador');

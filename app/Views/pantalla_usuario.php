@@ -47,9 +47,8 @@
                     </label>
                     <a href="forgot-password.php" class="forgot-password">¿Olvidaste tu contraseña?</a>
                 </div>-->
-                
                 <button type="submit" class="botoniniciar">
-                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    <a href="<?= base_url('pantalla_inicio') ?>" class="botoniniciar"><i class="fas fa-sign-out-alt"></i> Iniciar sesion</a>
                 </button>
             </form>
             

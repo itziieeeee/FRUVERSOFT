@@ -44,7 +44,7 @@
         <p class="subtitulo">Del huerto a tu mesa</p>
             
         <!-- Boton que nos lleva la seccion de acceder-->
-        <a href="<?= base_url('usuario') ?>" class="btn-ingresar">
+        <a href="<?= base_url('menusolo') ?>" class="btn-ingresar">
         <i class="fas fa-sign-in-alt"></i> INGRESAR</a>
             
         <p style="margin-top: 30px; font-size: 0.9rem; opacity: 0.7;">
