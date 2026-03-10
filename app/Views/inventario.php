@@ -101,7 +101,7 @@
             <span>Merma</span>
         </a>
 
-        <a href="<?= base_url('inventario/producto') ?>" class="botonesopciones">
+        <a href="<?= base_url('productos') ?>" class="botonesopciones">
              <img src="<?= base_url('img/Producto.jpeg') ?>">
             <span>Productos</span>
         </a>
