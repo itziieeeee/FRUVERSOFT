@@ -5,198 +5,12 @@
     <title>Inventario - FruverSoft</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <link rel="stylesheet" href="<?= base_url('CSS/inventarioestilo.css') ?>">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-    <style>
-        /* Tus estilos originales */
-        *{ margin:0; padding:0; box-sizing:border-box; }
-        body{ background:#f0f4f8; font-family:'Segoe UI',Roboto,system-ui,sans-serif; }
-        .fondo{ max-width:1700px; margin:20px auto; padding:0 25px; }
-         /* === CABECERO SUPERIOR === */
-        .barra-superior {
-            background: #1d4a27;
-            padding: 10px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            box-shadow: 0 4px 12px rgba(0,30,0,0.2);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo-area img {
-            height: 45px;
-            width: auto;
-            filter: brightness(1.1);
-        }
-
-        /* Buscador mejorado */
-        .buscador {
-            background: white;
-            border-radius: 40px;
-            padding: 3px 3px 3px 20px;
-            display: flex;
-            align-items: center;
-            flex: 0 1 400px;
-            transition: box-shadow 0.3s;
-        }
-        
-        .buscador:focus-within {
-            box-shadow: 0 0 0 3px rgba(241, 107, 26, 0.3);
-        }
-
-        .buscador input {
-            border: none;
-            padding: 10px 0;
-            width: 100%;
-            outline: none;
-            font-size: 0.95rem;
-        }
-
-        .buscador button {
-            background: #f16b1a;
-            border: none;
-            border-radius: 40px;
-            width: 42px;
-            height: 42px;
-            color: white;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .buscador button:hover {
-            background: #d55a0a;
-        }
-
-        /* Acciones de usuario */
-        .user-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-user {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 40px;
-            font-weight: 500;
-            font-size: 0.9rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-
-        .btn-user:hover {
-            background: white;
-            color: #1d4a27;
-            border-color: white;
-        }
-
-        /* === MENÚ DE NAVEGACIÓN HORIZONTAL (CORREGIDO) === */
-        .menu-navegacion {
-            background: white;
-            padding: 12px 24px;
-            border-bottom: 2px solid #cde0ca;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .nav-link {
-            background: #eef3e9;
-            border-radius: 40px;
-            padding: 12px 24px;
-            text-decoration: none;
-            font-weight: 600;
-            color: #1d4a27;
-            font-size: 0.95rem;
-            border: 2px solid transparent;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .nav-link i {
-            color: #f16b1a;
-            font-size: 1rem;
-            transition: color 0.2s;
-        }
-
-        .nav-link:hover {
-            background: #e0e8db;
-            transform: translateY(-2px);
-            border-color: #f16b1a;
-        }
-
-        .nav-link.activo {
-            background: #1d4a27;
-            color: white;
-        }
-
-        .nav-link.activo i {
-            color: white;
-        }
-
-        .marriba{
-            background:#1d4a27; padding:10px 30px; display:flex; align-items:center; 
-            justify-content:space-between; gap:20px; border-radius:12px;
-            box-shadow:0 6px 18px rgba(0,0,0,0.15); margin-bottom:40px;
-        }
-
-        .logo-area{ display:flex; align-items:center; gap:15px; }
-        .logo-area img{ width:110px; }
-        .logo-area h1{ color:white; font-size:1.5rem; border-left:2px solid rgba(255,255,255,.3); padding-left:16px; }
-
-        .buscador{
-            background:#fff; border-radius:50px; padding:5px 5px 5px 20px;
-            display:flex; align-items:center; min-width:280px; box-shadow:0 5px 15px rgba(0,0,0,.1);
-        }
-        .buscador input{ border:none; outline:none; flex:1; padding:12px 0; font-size:15px; }
-        .buscador button{ background:#2d5a27; border:none; border-radius:50%; width:45px; height:45px; color:#fff; cursor:pointer; }
-
-        /* Botones de Opciones */
-        .opciones{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:30px; margin-top:40px; }
-        .botonesopciones{
-            background: linear-gradient(145deg, #ffffff, #f3f3f3); border-radius: 30px;
-            padding: 40px 10px; text-decoration: none; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; text-align:center; gap: 30px;
-            min-height: 280px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,.08); transition: .3s ease;
-        }
-        .botonesopciones:hover{ transform:translateY(-12px) scale(1.03); color: inherit; text-decoration: none; }
-        .botonesopciones img{ width:240px; height:240px; object-fit:contain; }
-        .botonesopciones span{ font-weight:700; color:#1e3a2f; font-size:26px; background:#e8f5e9; padding:15px 40px; border-radius:50px; }
-
-        /* Tablas */
-        .tablas{ display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:30px; margin-top:40px; }
-        .cardtabla{ background:white; border-radius:20px; padding:25px; box-shadow:0 10px 25px rgba(0,0,0,.08); margin-top: 40px;}
-        .cardtabla h3{ margin-bottom:15px; color:#1e3a2f; border-bottom:3px solid #2d5a27; padding-bottom:8px; }
-        table{ width:100%; border-collapse:collapse; }
-        table th{ background:#e8f5e9; padding:10px; text-align:left; }
-        table td{ padding:10px; border-bottom:1px solid #eee; }
-
-        /* Estilo para que Select2 se vea bien en el modal */
-        .select2-container--default .select2-selection--single {
-            height: 38px !important;
-            border: 1px solid #ced4da !important;
-        }
-    </style>
 </head>
 
 <body>
@@ -322,43 +136,128 @@
     </table>
 </div>
 
-    
-</div> <div class="modal fade" id="modalMerma" tabindex="-1" role="dialog" aria-labelledby="mermaTitle" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
+    <!-- Modal Mejorado para Registrar Merma -->
+<div class="modal fade" id="modalMerma" tabindex="-1" role="dialog" aria-labelledby="mermaTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="mermaTitle">Registrar Nueva Merma</h5>
-        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+        <h5 class="modal-title" id="mermaTitle">
+          <i class="fas fa-trash-alt mr-2"></i>Registrar Nueva Merma
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="formMerma">
+
+      <form id="formMerma" class="needs-validation" novalidate>
         <div class="modal-body">
-            <div class="form-group">
-                <label><b>Seleccionar Producto:</b></label>
-                <select name="id_producto" id="selectProducto" class="form-control" style="width: 100%" required>
-                    <option value="">Buscar producto...</option>
-                    <?php if(!empty($lista_productos)): ?>
-                        <?php foreach($lista_productos as $lp): ?>
-                            <option value="<?= $lp['id_producto'] ?>"><?= $lp['nombre'] ?> (ID: <?= $lp['id_producto'] ?>)</option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+          <!-- Alerta de errores -->
+          <div id="mermaAlert" class="alert alert-danger d-none" role="alert">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span id="alertMessage"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="selectProducto" class="font-weight-bold">
+              <i class="fas fa-box mr-1"></i>Producto <span class="text-danger">*</span>
+            </label>
+            <select name="id_producto" id="selectProducto" class="form-control" style="width: 100%" required>
+              <option value="">Buscar producto por nombre o ID...</option>
+              <?php if(!empty($lista_productos)): ?>
+                <?php foreach($lista_productos as $lp): ?>
+                  <option value="<?= $lp['id_producto'] ?>" 
+                          data-stock="<?= $lp['stock_actual'] ?? 0 ?>"
+                          data-nombre="<?= esc($lp['nombre']) ?>">
+                    <?= esc($lp['nombre']) ?> (ID: <?= $lp['id_producto'] ?>) - Stock: <?= $lp['stock_actual'] ?? 0 ?>
+                  </option>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </select>
+            <small class="form-text text-muted stock-info" id="stockInfo"></small>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="cantidad" class="font-weight-bold">
+                  <i class="fas fa-sort-amount-up mr-1"></i>Cantidad <span class="text-danger">*</span>
+                </label>
+                <input type="number" 
+                       step="0.01" 
+                       min="0.01" 
+                       name="cantidad" 
+                       id="cantidad"
+                       class="form-control" 
+                       placeholder="0.00" 
+                       required>
+                <div class="invalid-feedback">
+                  Ingrese una cantidad válida mayor a 0
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="tipo_merma" class="font-weight-bold">
+                  <i class="fas fa-tag mr-1"></i>Tipo de Merma
+                </label>
+                <select name="tipo_merma" id="tipo_merma" class="form-control">
+                  <option value="caducidad">Caducidad</option>
+                  <option value="dañado">Producto Dañado</option>
+                  <option value="robo">Robo/Hurto</option>
+                  <option value="error_inventario">Error de Inventario</option>
+                  <option value="calidad">Problemas de Calidad</option>
+                  <option value="otro">Otro</option>
                 </select>
+              </div>
             </div>
+          </div>
 
-            <div class="form-group">
-                <label><b>Cantidad:</b></label>
-                <input type="number" step="0.01" name="cantidad" class="form-control" placeholder="0.00" required>
+          <div class="form-group">
+            <label for="descripcion" class="font-weight-bold">
+              <i class="fas fa-align-left mr-1"></i>Motivo / Descripción <span class="text-danger">*</span>
+            </label>
+            <textarea name="descripcion" 
+                      id="descripcion"
+                      class="form-control" 
+                      rows="4" 
+                      placeholder="Describa detalladamente el motivo de la merma..."
+                      required></textarea>
+            <div class="invalid-feedback">
+              Por favor, describa el motivo de la merma
             </div>
+            <small class="text-muted">
+              <span id="charCount">0</span>/500 caracteres
+            </small>
+          </div>
 
-            <div class="form-group">
-                <label><b>Motivo / Descripción:</b></label>
-                <textarea name="descripcion" class="form-control" rows="3" placeholder="¿Por qué es merma?" required></textarea>
-            </div>
+          <!-- Información adicional opcional -->
+          <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" name="ajustar_stock" id="ajustarStock" checked>
+            <label class="form-check-label" for="ajustarStock">
+              Ajustar stock automáticamente
+            </label>
+          </div>
+
+          <div class="form-group" id="responsableGroup">
+            <label for="responsable" class="font-weight-bold">
+              <i class="fas fa-user mr-1"></i>Responsable
+            </label>
+            <input type="text" 
+                   name="responsable" 
+                   id="responsable"
+                   class="form-control" 
+                   value="<?= session()->get('usuario_nombre') ?? '' ?>" 
+                   placeholder="Nombre del responsable">
+          </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-danger">Guardar Registro</button>
+
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            <i class="fas fa-times mr-1"></i>Cancelar
+          </button>
+          <button type="submit" class="btn btn-danger" id="btnGuardar">
+            <i class="fas fa-save mr-1"></i>Guardar Registro
+          </button>
         </div>
       </form>
     </div>
@@ -367,46 +266,210 @@
 
 <script>
 $(document).ready(function() {
+  let selectedProductStock = 0;
+  
+  // Inicializar Select2 con mejoras
+  $('#modalMerma').on('shown.bs.modal', function () {
+    $('#selectProducto').select2({
+      dropdownParent: $('#modalMerma'),
+      placeholder: "Buscar producto por nombre o ID...",
+      allowClear: true,
+      width: '100%',
+      language: {
+        noResults: function() {
+          return "No se encontraron productos";
+        },
+        searching: function() {
+          return "Buscando...";
+        }
+      }
+    });
     
-    // Inicializar Select2 cuando se abre el modal
-    $('#modalMerma').on('shown.bs.modal', function () {
-        $('#selectProducto').select2({
-            dropdownParent: $('#modalMerma'),
-            placeholder: "Escribe el nombre del producto...",
-            allowClear: true
-        });
-    });
+    // Resetear formulario al abrir
+    $('#formMerma')[0].reset();
+    $('#formMerma').removeClass('was-validated');
+    $('#mermaAlert').addClass('d-none');
+    $('#btnGuardar').prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Guardar Registro');
+    $('#charCount').text('0');
+  });
 
-    // Enviar formulario por AJAX
-    $('#formMerma').on('submit', function(e) {
-        e.preventDefault();
-        
-        $.ajax({
-            url: '<?= base_url('merma/guardar') ?>',
-            type: 'POST',
-            data: $(this).serialize(),
-            dataType: 'JSON',
-            beforeSend: function() {
-                $('button[type="submit"]').prop('disabled', true).text('Guardando...');
-            },
-            success: function(res) {
-                if(res.status == 'success') {
-                    alert('¡Merma registrada correctamente!');
-                    $('#modalMerma').modal('hide');
-                    location.reload(); // Recarga para ver los cambios en la tabla
-                } else {
-                    alert('Error: ' + (res.msg || 'No se pudo guardar'));
-                    $('button[type="submit"]').prop('disabled', false).text('Guardar Registro');
-                }
-            },
-            error: function() {
-                alert('Ocurrió un error crítico en el servidor.');
-                $('button[type="submit"]').prop('disabled', false).text('Guardar Registro');
-            }
-        });
+  // Mostrar stock disponible al seleccionar producto
+  $('#selectProducto').on('change', function() {
+    const selected = $(this).find(':selected');
+    const stock = selected.data('stock') || 0;
+    const nombre = selected.data('nombre') || '';
+    
+    selectedProductStock = stock;
+    
+    if (stock !== undefined) {
+      $('#stockInfo').html(`
+        <i class="fas fa-info-circle text-info mr-1"></i>
+        Stock actual de <strong>${nombre}</strong>: ${stock} unidades
+      `);
+      
+      // Validar cantidad máxima
+      $('#cantidad').attr('max', stock);
+    } else {
+      $('#stockInfo').html('');
+      $('#cantidad').removeAttr('max');
+    }
+  });
+
+  // Validar cantidad contra stock disponible
+  $('#cantidad').on('input', function() {
+    const cantidad = parseFloat($(this).val()) || 0;
+    
+    if (selectedProductStock > 0 && cantidad > selectedProductStock) {
+      $(this).addClass('is-invalid');
+      $(this).siblings('.invalid-feedback').text('La cantidad no puede ser mayor al stock disponible (' + selectedProductStock + ')');
+    } else {
+      $(this).removeClass('is-invalid');
+    }
+  });
+
+  // Contador de caracteres para descripción
+  $('#descripcion').on('input', function() {
+    const count = $(this).val().length;
+    $('#charCount').text(count);
+    
+    if (count > 500) {
+      $(this).val($(this).val().substring(0, 500));
+      $('#charCount').text(500);
+    }
+  });
+
+  // Validación y envío del formulario
+  $('#formMerma').on('submit', function(e) {
+    e.preventDefault();
+    
+    // Validación del lado del cliente
+    if (!this.checkValidity()) {
+      e.stopPropagation();
+      $(this).addClass('was-validated');
+      return;
+    }
+    
+    // Validar cantidad contra stock
+    const cantidad = parseFloat($('#cantidad').val());
+    if (selectedProductStock > 0 && cantidad > selectedProductStock) {
+      showAlert('La cantidad no puede ser mayor al stock disponible (' + selectedProductStock + ')', 'danger');
+      return;
+    }
+    
+    // Preparar datos del formulario
+    const formData = $(this).serializeArray();
+    formData.push({
+      name: 'fecha_registro',
+      value: new Date().toISOString().slice(0, 19).replace('T', ' ')
     });
+    
+    // Enviar por AJAX
+    $.ajax({
+      url: '<?= base_url('merma/guardar') ?>',
+      type: 'POST',
+      data: $.param(formData),
+      dataType: 'JSON',
+      beforeSend: function() {
+        $('#btnGuardar').prop('disabled', true)
+                       .html('<i class="fas fa-spinner fa-spin mr-1"></i>Guardando...');
+        $('#mermaAlert').addClass('d-none');
+      },
+      success: function(res) {
+        if(res.status == 'success') {
+          // Mostrar mensaje de éxito con SweetAlert si está disponible
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              icon: 'success',
+              title: '¡Éxito!',
+              text: 'Merma registrada correctamente',
+              timer: 2000,
+              showConfirmButton: false
+            }).then(() => {
+              $('#modalMerma').modal('hide');
+              location.reload();
+            });
+          } else {
+            alert('¡Merma registrada correctamente!');
+            $('#modalMerma').modal('hide');
+            location.reload();
+          }
+        } else {
+          showAlert(res.msg || 'Error al guardar la merma', 'danger');
+          $('#btnGuardar').prop('disabled', false)
+                         .html('<i class="fas fa-save mr-1"></i>Guardar Registro');
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error('Error:', error);
+        console.error('Response:', xhr.responseText);
+        
+        let errorMsg = 'Ocurrió un error en el servidor';
+        try {
+          const response = JSON.parse(xhr.responseText);
+          errorMsg = response.message || errorMsg;
+        } catch(e) {
+          // Si no es JSON, mostrar error genérico
+        }
+        
+        showAlert(errorMsg, 'danger');
+        $('#btnGuardar').prop('disabled', false)
+                       .html('<i class="fas fa-save mr-1"></i>Guardar Registro');
+      }
+    });
+  });
+
+  // Función para mostrar alertas
+  function showAlert(message, type = 'danger') {
+    $('#alertMessage').text(message);
+    $('#mermaAlert').removeClass('d-none alert-success alert-danger alert-warning')
+                   .addClass('alert-' + type);
+    
+    // Auto-ocultar después de 5 segundos
+    setTimeout(function() {
+      $('#mermaAlert').addClass('d-none');
+    }, 5000);
+  }
+
+  // Limpiar al cerrar el modal
+  $('#modalMerma').on('hidden.bs.modal', function() {
+    $('#selectProducto').val('').trigger('change');
+    $('#stockInfo').html('');
+    $('#charCount').text('0');
+    $('#mermaAlert').addClass('d-none');
+  });
 });
 </script>
+
+<style>
+/* Estilos adicionales para mejorar la apariencia */
+.modal-header.bg-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.select2-container--default .select2-selection--single {
+  height: calc(1.5em + 0.75rem + 2px);
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #ced4da;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: calc(1.5em + 0.75rem + 2px);
+}
+
+.stock-info {
+  margin-top: 0.25rem;
+  font-size: 0.875em;
+}
+
+#charCount {
+  font-weight: bold;
+}
+
+/* Validación personalizada */
+.was-validated .form-control:invalid ~ .stock-info {
+  color: #dc3545;
+}
+</style>
 
 </body>
 </html>
