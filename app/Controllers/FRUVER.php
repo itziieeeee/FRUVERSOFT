@@ -128,4 +128,13 @@ public function seleccionar_rol()
  {
     return view('seleccionar_rol');
 }
+
+public function pantalla_administrador()
+{
+    return view('pantalla_administrador');
+}
+public function productos()
+{
+    return view('productos');
+}
 }

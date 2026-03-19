@@ -6,38 +6,49 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
-// 1. Inicio y Login
+// ==========================
+// 1. Inicio y sesión
+// ==========================
 $routes->get('/', 'FRUVER::index');
 $routes->get('usuario', 'FRUVER::usuario');
 $routes->get('salir', 'FRUVER::salir');
+$routes->post('validar', 'FRUVER::validar');
 
-// 2. Usuarios Admin
+// ==========================
+// 2. Usuarios (Admin)
+// ==========================
 $routes->get('registro', 'FRUVER::reuser');
 $routes->post('guardar_usuario', 'FRUVER::guardar');
-$routes->post('validar', 'FRUVER::validar');
 $routes->get('menusolo', 'FRUVER::menusolo');
 
-// 3. Clientes (Rutas Unificadas)
-// --- SECCIÓN CLIENTES ---
+// ==========================
+// 3. Clientes
+// ==========================
 $routes->get('pantalla_clientes', 'FRUVER::pantalla_clientes'); 
 $routes->get('pantalla_rcliente', 'FRUVER::nuevo_cliente');
 $routes->post('alta_clientes/guardar', 'FRUVER::guardar_cliente');
-// 4. Sección Inventario
+
+// ==========================
+// 4. Inventario
+// ==========================
 $routes->get('pantalla_inventario', 'FRUVER::inventario');
+$routes->get('inventario', 'FRUVER::inventario');
 
-
-//entrada 
-$routes->get('inventario/producto', 'Producto::index');
-$routes->post('inventario/guardar', 'Producto::guardar');
-
+// ==========================
+// 5. Productos
+// ==========================
 $routes->get('producto', 'Producto::index');
 $routes->post('producto/guardar', 'Producto::guardar');
-$routes->get('menusolo', 'FRUVER::menusolo');
-$routes->get('pantalla_inicio', 'FRUVER::pantalla_inicio');
 
-//
-// Ruta para procesar el guardado de la merma
+// ==========================
+// 6. Merma
+// ==========================
+$routes->get('merma', 'Merma::index');
 $routes->post('merma/guardar', 'Merma::guardar');
-$routes->get('productos', 'FRUVER::productos');
 
-$routes->get('inventario', 'Merma::index');
+// ==========================
+// 7. General
+// ==========================
+$routes->get('productos', 'FRUVER::productos');
+$routes->get('pantalla_inicio', 'FRUVER::pantalla_inicio');
+$routes->get('pantalla_administrador', 'FRUVER::pantalla_administrador');
