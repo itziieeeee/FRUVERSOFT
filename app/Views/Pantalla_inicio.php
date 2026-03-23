@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FRUVER</title>
+    <title>FRUVER </title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="inicio_estilo.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 
 </head>
-
+<h1>HOLAAAAAA AMISTADDD</h1>
 <body>
 <style>
      .cont{
@@ -44,7 +44,7 @@
         <p class="subtitulo">Del huerto a tu mesa</p>
             
         <!-- Boton que nos lleva la seccion de acceder-->
-        <a href="<?= base_url('usuario') ?>" class="btn-ingresar">
+        <a href="<?= base_url('menusolo') ?>" class="btn-ingresar">
         <i class="fas fa-sign-in-alt"></i> INGRESAR</a>
             
         <p style="margin-top: 30px; font-size: 0.9rem; opacity: 0.7;">

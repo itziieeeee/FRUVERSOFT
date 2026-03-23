@@ -7,7 +7,7 @@ use App\Models\UsuarioModel;
 
 class FRUVER extends BaseController
 {
-    // 1. Pantalla principal (Bienvenida)
+    // 1. Pantalla principal (Bienvenido)
     public function index(): string
     {
         return view('Pantalla_inicio');
@@ -26,13 +26,11 @@ class FRUVER extends BaseController
         $data = [
             'nombre_completo' => $this->request->getPost('nombre_completo'),
             'nusuario'        => $this->request->getPost('nusuario'),
-            'apellido1'       => $this->request->getPost('apellido1'),
-            'apellido2'       => $this->request->getPost('apellido2'),
             'contrasena'      => password_hash($this->request->getPost('contrasena'), PASSWORD_DEFAULT),
         ];
 
         if ($model->insert($data)) {
-            return redirect()->to(base_url('menusolo'));
+            return redirect()->to(base_url('pantalla_administrador'));
         }
     }
 
@@ -44,25 +42,20 @@ class FRUVER extends BaseController
 
     public function validar()
     {
-        // En lugar de cargar la vista directo, redireccionamos a la selección de rol
-        return redirect()->to(base_url('seleccionar_rol'));
-    
-    }
-
-    public function menusolo()
-    {
-        return view('menusolo');
+        // Nota: Aquí después agregaremos la lógica real de checar usuario/password
+        return view('pantalla_administrador');
     }
 
     // 4. Sección Clientes (Unificada)
     public function pantalla_clientes()
     {
+        // Esta es la vista general de la tabla de clientes
         return view('pantalla_clientes');
     }
 
     public function nuevo_cliente()
     {
-        // Esta función ahora está una sola vez y cargará la vista correctamente
+        // Esta es la vista del formulario (alta_cliente)
         return view('alta_cliente'); 
     }
 
@@ -83,59 +76,9 @@ class FRUVER extends BaseController
         return redirect()->to(base_url('pantalla_clientes'));
     }
 
-
     // 5. Cerrar Sesión
-    public function pantalla_inicio()
+    public function salir()
     {
-        return view('pantalla_inicio');
+        return redirect()->to(base_url('/'));
     }
-
-    // Sección Inventario
-public function inventario()
-{
-    // Carga la vista inventario.php que ya tienes en tu carpeta Views
-    return view('inventario');
-
-}
-// --- SECCIÓN VENDEDOR ---
-
-//  función abre la pantalla limpia del buscador
-public function pantalla_vendedor()
-{
-   
-    $data['productos'] = []; 
-    $data['termino'] = "";
-    return view('vendedor/panel_principal', $data);
-}
-
-//  función es la que activa la lupa
-public function buscar_producto()
-{
-    
-    $model = new \App\Models\ProductoModel(); 
-
-  
-    $termino = $this->request->getGet('query'); 
-
-   
-    $data['productos'] = $model->like('nombre', $termino)->findAll();
-    $data['termino']   = $termino;
-
-   
-    return view('vendedor/panel_p', $data);
-}
-//seleccionamos rol
-public function seleccionar_rol()
- {
-    return view('seleccionar_rol');
-}
-
-public function pantalla_administrador()
-{
-    return view('pantalla_administrador');
-}
-public function productos()
-{
-    return view('productos');
-}
 }

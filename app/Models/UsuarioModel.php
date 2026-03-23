@@ -9,7 +9,7 @@ class UsuarioModel extends Model {
     protected $primaryKey = 'id';
     
     // Estos campos DEBEN coincidir con los nombres de las columnas en tu base de datos
-    protected $allowedFields = ['nombre_completo', 'nusuario', 'contrasena']; 
+    protected $allowedFields = ['nombre_completo', 'nusuario', 'contrasena','apellido1','apellido2']; 
 
     // Opcional: Esto ayuda a que CodeIgniter maneje las fechas automáticamente
     protected $useTimestamps = false; 
