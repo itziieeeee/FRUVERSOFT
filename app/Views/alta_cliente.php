@@ -15,7 +15,7 @@
             <h2 style="margin: 0; font-size: 1.4rem;">Registro de Nuevo Cliente</h2>
         </div>
 
-      <form action="<?= base_url('alta_clientes/guardar') ?>" method="post">
+     <form action="<?= base_url('guardar_cliente') ?>" method="post">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 
                 <div style="grid-column: span 2;">
