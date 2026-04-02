@@ -31,5 +31,19 @@ class Producto extends BaseController
         if ($model->insert($data)) {
             return redirect()->to(base_url('inventario/merma'))->with('mensaje', 'Guardado con éxito');
         }
-    }
+        }
+   public function listar(){
+    $modelP = new ProductoModel();
+
+    // configurar paginacion
+    $datos = [
+    'productos' => $modelP->orderBy('nombre', 'ASC')->paginate(6, 'default'),
+    'pager' => $modelP->pager
+];
+
+return view('productos', $datos);
+
+    return view('productos', $datos);
+}
+
 }

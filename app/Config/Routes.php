@@ -49,6 +49,8 @@ $routes->post('merma/guardar', 'Merma::guardar');
 // ==========================
 // 7. General
 // ==========================
-$routes->get('productos', 'FRUVER::productos');
+
 $routes->get('pantalla_inicio', 'FRUVER::pantalla_inicio');
 $routes->get('pantalla_administrador', 'FRUVER::pantalla_administrador');
+
+$routes->get('productos', 'Producto::listar');
