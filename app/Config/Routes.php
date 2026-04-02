@@ -24,9 +24,10 @@ $routes->get('menusolo', 'FRUVER::menusolo');
 // ==========================
 // 3. Clientes
 // ==========================
+$routes->get('alta_cliente', 'FRUVER::nuevo_cliente');
+$routes->post('guardar_cliente', 'FRUVER::guardar_cliente');
 $routes->get('pantalla_clientes', 'FRUVER::pantalla_clientes'); 
 $routes->get('pantalla_rcliente', 'FRUVER::nuevo_cliente');
-$routes->post('alta_clientes/guardar', 'FRUVER::guardar_cliente');
 
 // ==========================
 // 4. Inventario
@@ -39,6 +40,7 @@ $routes->get('inventario', 'FRUVER::inventario');
 // ==========================
 $routes->get('producto', 'Producto::index');
 $routes->post('producto/guardar', 'Producto::guardar');
+$routes->get('productos', 'Producto::listar');
 
 // ==========================
 // 6. Merma
@@ -49,8 +51,5 @@ $routes->post('merma/guardar', 'Merma::guardar');
 // ==========================
 // 7. General
 // ==========================
-
 $routes->get('pantalla_inicio', 'FRUVER::pantalla_inicio');
 $routes->get('pantalla_administrador', 'FRUVER::pantalla_administrador');
-
-$routes->get('productos', 'Producto::listar');
