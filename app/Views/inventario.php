@@ -41,7 +41,7 @@
             </div>
             <div class="user-actions">
                 <a href="#" class="btn-user"><i class="fas fa-user-shield"></i> Admin</a>
-                <a href="#" class="btn-user"><i class="fas fa-sign-out-alt"></i> Salir</a>
+                <a href="menusolo" class="btn-user"><i class="fas fa-sign-out-alt"></i> Regresar</a>
             </div>
         </div>
 
@@ -55,7 +55,7 @@
 
         <a href="#" class="nav-link activo"><i class="fas fa-boxes"></i> Inventario</a>
 
-        <a href="#" class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
+        <a href="pantalla_clientes" class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
 
         <a href="#" class="nav-link"><i class="fa-solid fa-dolly"></i> Repartidores</a>
 

@@ -21,22 +21,6 @@
         </div>
     </nav>
 
-<<<<<<< HEAD
-    <!-- Contenedor o seccion donde esta la imagen -->
-    <section class="cont">
-        <div class="titulo">
-        <h1>Bienvenid(a)</h1>
-        <p class="subtitulo">Del huerto a tu mesa</p>
-            
-        <!-- Boton que nos lleva la seccion de acceder-->
-        <a href="<?= base_url('usuario') ?>" class="btn-ingresar">
-        <i class="fas fa-sign-in-alt"></i> INGRESAR</a>
-            
-        <p style="margin-top: 30px; font-size: 0.9rem; opacity: 0.7;">
-        <i class="fas fa-seedling"></i> Productos frescos y naturales</p>
-        </div>
-    </section>
-=======
     <!-- Carrusel fullscreen -->
     <div class="carrusel">
         <div class="carruselcontenedor">
@@ -88,7 +72,6 @@
             </svg>
         </div>
     </div>
->>>>>>> c54e47ee85c4a0c73656fe7cd0457eaffca2f620
 
     <script>
         // === Carrusel Automático ===

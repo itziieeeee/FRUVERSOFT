@@ -300,10 +300,6 @@ function actualizarEstadisticasGlobales() {
     if (totalDispElem) totalDispElem.textContent = totalDisponibles;
 }
 
-<<<<<<< HEAD
-
-</script>
-=======
 // Aplicar ordenamiento
 function aplicarOrden() {
     const orden = document.getElementById('ordenSelect').value;
@@ -530,7 +526,6 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarEstadisticasGlobales();
 });
 </script> -->
->>>>>>> c54e47ee85c4a0c73656fe7cd0457eaffca2f620
 
 </body>
 </html>
