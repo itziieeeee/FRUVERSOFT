@@ -83,6 +83,7 @@ class FRUVER extends BaseController
         return redirect()->to(base_url('pantalla_clientes'));
     }
 
+
     // 5. Cerrar Sesión
     public function pantalla_inicio()
     {
