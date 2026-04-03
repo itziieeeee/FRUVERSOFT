@@ -215,7 +215,14 @@ color:white;
 const productos=[
 {nombre:"Tomate",descripcion:"Tomate rojo",emoji:"🍅",precio:22},
 {nombre:"Fresa",descripcion:"Fresa fresca",emoji:"🍓",precio:65},
-{nombre:"Sandía",descripcion:"Sandía dulce",emoji:"🍉",precio:15}
+{nombre:"Sandía",descripcion:"Sandía dulce",emoji:"🍉",precio:15},
+{nombre:"Sandía",descripcion:"Sandía dulce",emoji:"🍉",precio:15},
+{nombre:"Sandía",descripcion:"Sandía dulce",emoji:"🍉",precio:15},
+{nombre:"Sandía",descripcion:"Sandía dulce",emoji:"🍉",precio:15},
+{nombre:"Sandía",descripcion:"Sandía dulce",emoji:"🍉",precio:15},
+{nombre:"Sandía",descripcion:"Sandía dulce",emoji:"🍉",precio:15},
+{nombre:"Sandía",descripcion:"Sandía dulce",emoji:"🍉",precio:15},
+{nombre:"Sandía",descripcion:"Sandía dulce",emoji:"🍉",precio:15},
 ];
 
 function renderProductos(lista){
@@ -249,6 +256,7 @@ grid.innerHTML=lista.map(p=>`
 }
 
 renderProductos(productos);
+
 
 </script>
 

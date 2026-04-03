@@ -32,4 +32,5 @@ class Producto extends BaseController
             return redirect()->to(base_url('inventario/merma'))->with('mensaje', 'Guardado con éxito');
         }
     }
+
 }
