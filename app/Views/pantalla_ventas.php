@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <!--ESTA ES LA PANTALLA DE CLIENTES -->
     
@@ -413,7 +413,7 @@
             <img src="<?= base_url('img/LOGO1.png') ?>" alt="Logo" width="140">
         </div>
         <div class="buscador">
-            <input type="text" placeholder="Buscar cliente, pedido...">
+            <input type="text" placeholder="Buscar...">
             <button><i class="fas fa-search"></i></button>
         </div>
         <div class="user-actions">
@@ -425,123 +425,14 @@
 
     <nav class="menu-navegacion">
         <div class="nav-links">
-            <a href="pantalla_ventas" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
+            <a href="pantalla_ventas" class="nav-link activo"><i class="fas fa-tag"></i> Ventas</a>
             <a href="pantalla_pedidos" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
             <a href="<?=base_url('pantalla_inventario')?>" class="nav-link"><i class="fas fa-boxes"></i> Inventario</a>
-            <a href="pantalla_clientes" class="nav-link activo"><i class="fa-solid fa-users"></i> Clientes</a>
+            <a href="pantalla_clientes" class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
             <a href="pantalla_repartidores" class="nav-link"><i class="fa-solid fa-dolly"></i> Repartidores</a>
             <a href="pantalla_productos" class="nav-link"><i class="fa-solid fa-apple-whole"></i> Productos</a>
         </div>
     </nav>
-
-    <div class="tarjeta">
-
-        <div class="card">
-            <div class="cabezacard">
-                <i class="fas fa-users"></i>
-                <h2>Clientes</h2>
-                <span class="fondo">n registros</span>
-                <a href="<?= base_url('pantalla_rcliente') ?>" class="botonclienten">
-                    <i class="fas fa-plus-circle"></i> Nuevo
-                </a>
-            </div>
-            <div class="scroll-area">
-                <div style="margin-bottom: 12px;">
-                    <h3 style="font-size:0.9rem; color:#22662c; margin-bottom:4px;">Mayoreo</h3>
-                    <table class="minit">
-                        <thead><tr><th>Negocio</th><th>Cliente</th><th>Total</th></tr></thead>
-                        <tbody>
-                            <tr><td>Distribuidora "Por Salud"</td><td>Juan Pérez</td><td><span class="fondototal">$7,890</span></td></tr>
-                            <tr><td>Verduleña "Mi casita"</td><td>Karla Juárez</td><td><span class="fondototal">$5,488</span></td></tr>
-                            <tr><td>Huerto Dorado</td><td>Kenia Flores</td><td><span class="fondototal">$5,400</span></td></tr>
-                            <tr><td>Frutas "El Edén"</td><td>Luis Martínez</td><td><span class="fondototal">$4,920</span></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div>
-                    <h3 style="font-size:0.9rem; color:#22662c; margin:8px 0 4px;">Menudeo</h3>
-                    <table class="minit">
-                        <thead><tr><th>Negocio</th><th>Cliente</th><th>Total</th></tr></thead>
-                        <tbody>
-                            <tr><td>Frutas "Max"</td><td>Luis Martínez</td><td><span class="fondototal">$2,920</span></td></tr>
-                            <tr><td>Verduleria "El periquito"</td><td>Karla Juárez</td><td><span class="fondototal">$3,488</span></td></tr>
-                            <tr><td>Raices deliciosas</td><td>Kenia Flores</td><td><span class="fondototal">$3,400</span></td></tr>
-                            <tr><td>Distribuidora "Sabor a campo"</td><td>Juan Pérez</td><td><span class="fondototal">$4,890</span></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="cabezacard">
-                <i class="fas fa-id-card"></i>
-                <h2>Datos del cliente</h2>
-            </div>
-            <div class="scroll-area">
-                <div class="info-cliente-grid">
-                    <div class="info-item"><span class="info-label">Nombre</span><span class="info-value">Juan Pérez</span></div>
-                    <div class="info-item"><span class="info-label">RFC</span><span class="info-value">JPR9ZUAN8ERZ1</span></div>
-                    <div class="info-item"><span class="info-label">Dirección</span><span class="info-value">C Principal 123, Veracruz</span></div>
-                    <div class="info-item"><span class="info-label">Contacto</span><span class="info-value">untaljuan@gmail.com</span></div>
-                </div>
-
-                <div style="margin:8px 0 12px; display:flex; align-items:center; gap:10px;">
-                    <span class="tag-cliente"><i class="fas fa-store"></i> Crédito / Mayoreo</span>
-                    <span style="font-size:0.7rem; background:#f3f9f0; padding:4px 10px; border-radius:30px;">límite $50k</span>
-                </div>
-
-                <div class="tipoc">
-                    <button class="activo"><i class="fas fa-check-circle"></i> Contado/Menudeo</button>
-                    <button><i class="fas fa-credit-card"></i> Crédito/Mayoreo</button>
-                </div>
-
-                <div class="credito-mini">
-                    <div class="li">
-                        <span>Límite autorizado</span>
-                        <span class="nlimite">$50,000</span>
-                    </div>
-                    <div class="barra-credito">
-                        <div class="barrautilizada" style="width:25%;">$12.5k</div>
-                        <div class="barradisponible" style="width:75%;">$37.5k</div>
-                    </div>
-                    <div class="li">
-                        <span><i class="fas fa-circle" style="color:#1f8b4c;"></i> Usado: $12,500</span>
-                        <span><i class="fas fa-circle" style="color:#f5a35c;"></i> Disponible: $37,500</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="cabezacard">
-                <i class="fas fa-history"></i>
-                <h2>Historial de compras</h2>
-                <span class="fondo">4 movimientos</span>
-            </div>
-            <div class="scroll-area">
-                <div class="historiallist historial-header">
-                    <div>Fecha</div><div>Pedido</div><div>Cant</div><div>Desc</div><div>Monto</div><div>Estatus</div>
-                </div>
-                <div class="historiallist">
-                    <div>23/01/26</div><div>1 Caja</div><div>Fresa</div><div>Fresa</div><div>$8,500</div><div><span class="status entregado">Entregado</span></div>
-                </div>
-                <div class="historiallist">
-                    <div>23/01/26</div><div>1 Ton</div><div>Jitomate</div><div>Saladet</div><div>$11,500</div><div><span class="status entregado">Entregado</span></div>
-                </div>
-                <div class="historiallist">
-                    <div>23/01/26</div><div>1 Caja</div><div>Sandía</div><div>Sin semilla</div><div>$9,780</div><div><span class="status enviado">Enviado</span></div>
-                </div>
-                <div class="historiallist">
-                    <div>23/01/26</div><div>3 Cajas</div><div>Tomate</div><div>Bola</div><div>$8,500</div><div><span class="status pendiente">Pendiente</span></div>
-                </div>
-                <div style="margin-top:16px; background:#fcf9f0; border-radius:16px; padding:10px; font-size:0.8rem;">
-                    <i class="fas fa-info-circle" style="color:#f16b1a;"></i> Última compra: 23/01/26 · $11,500
-                </div>
-            </div>
-        </div>
-
-    </div>
 
 </body>
 </html>

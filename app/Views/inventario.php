@@ -49,17 +49,17 @@
 
     <nav class="menu-navegacion" aria-label="Navegación principal">
 
-        <a href="#" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
+        <a href="pantalla_ventas" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
 
-        <a href="#" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
+        <a href="pantalla_pedidos" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
 
-        <a href="#" class="nav-link activo"><i class="fas fa-boxes"></i> Inventario</a>
+        <a href="inventario" class="nav-link activo"><i class="fas fa-boxes"></i> Inventario</a>
 
         <a href="pantalla_clientes" class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
 
-        <a href="#" class="nav-link"><i class="fa-solid fa-dolly"></i> Repartidores</a>
+        <a href="pantalla_repartidores" class="nav-link"><i class="fa-solid fa-dolly"></i> Repartidores</a>
 
-          <a href="#" class="nav-link"><i class="fa-solid fa-apple-whole"></i> Productos</a>
+          <a href="pantalla_productos" class="nav-link"><i class="fa-solid fa-apple-whole"></i> Productos</a>
 
     </nav>
     </header>

@@ -37,7 +37,7 @@
         
         <div class="user-actions">
             <a href="<?= base_url('admin') ?>" class="btn-user"><i class="fas fa-user-shield"></i> Admin</a>
-            <a href="#" class="btn-user"><i class="fas fa-sign-out-alt"></i> Salir</a>
+            <a href="menusolo" class="btn-user"><i class="fas fa-sign-out-alt"></i> Regresar</a>
         </div>
     </div>
 </header>
@@ -47,7 +47,7 @@
         <a href="#" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
         <a href="#" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
         <a href="#" class="nav-link activo"><i class="fas fa-boxes"></i> Inventario</a>
-        <a href="#" class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
+        <a href="pantalla_clientes" class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
         <a href="#" class="nav-link"><i class="fa-solid fa-dolly"></i> Repartidores</a>
         <a href="#" class="nav-link"><i class="fa-solid fa-apple-whole"></i> Productos</a>
     </div>

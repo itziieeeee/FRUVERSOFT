@@ -138,4 +138,20 @@ public function productos()
 {
     return view('productos');
 }
+public function pantalla_ventas()
+{
+    return view('pantalla_ventas');
+}
+public function pantalla_repartidores()
+{
+    return view('pantalla_repartidores');
+}
+public function pantalla_pedidos()
+{
+    return view('pantalla_pedidos');
+}
+public function pantalla_productos()
+{
+    return view('pantalla_productos');
+}
 }

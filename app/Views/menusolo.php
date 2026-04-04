@@ -43,12 +43,12 @@
             <span class="module-title">Inventario</span>
         </a>
 
-        <a href="#" class="module-card">
+        <a href="pantalla_ventas" class="module-card">
             <img src="<?= base_url('img/VENTA.png') ?>" alt="Ventas" class="module-img">
             <span class="module-title">Ventas</span>
         </a>
 
-        <a href="#" class="module-card">
+        <a href="pantalla_pedidos" class="module-card">
             <img src="<?= base_url('img/PEDIDOS.png') ?>" alt="Pedidos" class="module-img">
             <span class="module-title">Pedidos</span>
         </a>
@@ -58,12 +58,12 @@
             <span class="module-title">Clientes</span>
         </a>
 
-        <a href="#" class="module-card">
+        <a href="pantalla_repartidores" class="module-card">
             <img src="<?= base_url('img/REPARTIDORES.png') ?>" alt="Repartidores" class="module-img">
             <span class="module-title">Repartidores</span>
         </a>
 
-        <a href="#" class="module-card">
+        <a href="pantalla_productos" class="module-card">
             <img src="<?= base_url('img/PRODUCTOS.png') ?>" alt="Productos" class="module-img">
             <span class="module-title">Productos</span>
         </a>

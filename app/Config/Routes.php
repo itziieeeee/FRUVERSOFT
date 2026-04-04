@@ -53,3 +53,7 @@ $routes->post('merma/guardar', 'Merma::guardar');
 // ==========================
 $routes->get('pantalla_inicio', 'FRUVER::pantalla_inicio');
 $routes->get('pantalla_administrador', 'FRUVER::pantalla_administrador');
+$routes->get('pantalla_ventas', 'FRUVER::pantalla_ventas');
+$routes->get('pantalla_repartidores', 'FRUVER::pantalla_repartidores');
+$routes->get('pantalla_pedidos', 'FRUVER::pantalla_pedidos');
+$routes->get('pantalla_productos', 'FRUVER::pantalla_productos');
