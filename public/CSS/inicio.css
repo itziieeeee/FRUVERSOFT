@@ -21,7 +21,7 @@ body {
     justify-content: space-between;
     align-items: center;
     z-index: 1000;
-    background: white;
+    
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
 }

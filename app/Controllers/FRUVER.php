@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Models\ClienteModel;
 use App\Models\UsuarioModel;
+use App\Models\StatusModel;
 
 class FRUVER extends BaseController
 {
@@ -148,7 +149,11 @@ public function pantalla_repartidores()
 }
 public function pantalla_pedidos()
 {
-    return view('pantalla_pedidos');
+    $model = new StatusModel();
+
+    $data['sp'] = $model->obtenerPedidos();
+
+    return view('pantalla_pedidos', $data);
 }
 public function pantalla_productos()
 {
