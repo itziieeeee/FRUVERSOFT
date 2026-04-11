@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\ClienteModel;
 use App\Models\UsuarioModel;
 use App\Models\StatusModel;
+use App\Models\RepartidorModel;
 
 class FRUVER extends BaseController
 {
@@ -158,5 +159,34 @@ public function pantalla_pedidos()
 public function pantalla_productos()
 {
     return view('pantalla_productos');
+}
+//para guardar en la bd al repartidor
+public function guardarrepartidor() {
+    $model = new \App\Models\RepartidorModel();
+    $data = [
+        'nombre'    => $this->request->getPost('nombre'),
+        'ap_p'      => $this->request->getPost('ap_p'),
+        'ap_m'      => $this->request->getPost('ap_m'),
+        'tel'       => $this->request->getPost('tel'),
+        'direccion' => $this->request->getPost('direccion'),
+        'notas'     => $this->request->getPost('notas'),
+    ];
+
+    if ($model->insert($data)) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false]);
+    }
+}
+//para mostrar al repartidor 
+public function mostrar_repartidores() 
+{
+    $model = new \App\Models\RepartidorModel();
+    
+    //extraemos los datos de la tabla
+    $data['repartidores'] = $model->findAll(); 
+
+    // pasamos los datos a la pagina
+    return view('pantalla_repartidores', $data);
 }
 }

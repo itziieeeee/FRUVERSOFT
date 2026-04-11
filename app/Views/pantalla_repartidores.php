@@ -1,15 +1,94 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!--ESTA ES LA PANTALLA DE CLIENTES -->
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+    <title>FRUVER · Gestión de Repartidores</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <title>FRUVER · Clientes</title>
+    
     <style>
-        * {
+        
+        :root {
+            --primary-green: #1d4a27;
+            --primary-orange: #f16b1a;
+            --light-green: #e8f3e6;
+            --gray-border: #e0e0e0;
+            --text-dark: #333;
+            --white: #ffffff;
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --radius-md: 12px;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: #f5f7fa; margin: 0; }
+
+        
+        .barra-superior { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 2rem; background: linear-gradient(90deg, var(--primary-green) 0%, #2a5e35 100%); color: white; }
+        .logo-area img { height: 60px; }
+        .btn-user { color: white; text-decoration: none; padding: 0.5rem 1rem; background: rgba(255,255,255,0.15); border-radius: 50px; font-size: 0.8rem; }
+
+        .menu-navegacion { background: white; padding: 0.5rem; display: flex; justify-content: center; border-bottom: 1px solid var(--gray-border); gap: 10px; }
+        .nav-link { padding: 0.7rem 1rem; color: var(--text-dark); text-decoration: none; font-weight: 600; font-size: 0.85rem; border-radius: 40px; }
+        .nav-link.activo { color: var(--primary-orange); background: rgba(241, 107, 26, 0.08); }
+
+        /* esto es para el contenido */
+        .main-container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        
+        .header-acciones {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+        }
+
+        .titulo-seccion { display: flex; align-items: center; gap: 12px; font-size: 1.4rem; color: var(--primary-green); font-weight: 700; }
+        
+        /* boton de registrar */
+        .btn-registrar {
+            background: var(--primary-orange);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+        .btn-registrar:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        /* esta es la tabla*/
+        .tabla-card { background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-md); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        thead { background: var(--primary-green); color: white; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--gray-border); }
+        tr:hover { background-color: var(--light-green); }
+
+        /* la ventana modal del registro*/
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: white; padding: 2rem; border-radius: var(--radius-md);
+            width: 90%; max-width: 500px; position: relative;
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .form-group { margin-bottom: 1rem; display: flex; flex-direction: column; }
+        .form-group.full { grid-column: span 2; }
+        label { font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
+        input { padding: 0.6rem; border: 1px solid var(--gray-border); border-radius: 6px; }
+        {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -97,7 +176,7 @@
             color: #1d4a27;
         }
 
-        /* --- MENÚ DE NAVEGACIÓN --- */
+        /* --- este es el menu de navegacion --- */
         .menu-navegacion {
             background-color: #ffffff;
             padding: 0 24px;
@@ -235,159 +314,6 @@
             border-bottom: none;
         }
 
-        .fondototal {
-            background: #f16b1a10;
-            color: #b84500;
-            font-weight: 600;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            border: 1px solid #f16b1a60;
-            white-space: nowrap;
-        }
-
-        .tag-cliente {
-            background: #1d4a27;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .info-cliente-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px 12px;
-            background: #f5faf4;
-            padding: 12px;
-            border-radius: 20px;
-            margin-bottom: 16px;
-            font-size: 0.85rem;
-        }
-        .info-item {
-            display: flex;
-            flex-direction: column;
-        }
-        .info-label {
-            font-size: 0.7rem;
-            color: #4d6b53;
-            text-transform: uppercase;
-        }
-        .info-value {
-            font-weight: 600;
-            color: #1d3a24;
-            word-break: break-word;
-        }
-
-        .tipoc {
-            display: flex;
-            gap: 8px;
-            margin: 12px 0;
-        }
-        .tipoc button {
-            flex: 1;
-            background: #eef5ec;
-            border: 1.5px solid #bad2b4;
-            border-radius: 30px;
-            padding: 8px 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #1a4a27;
-            cursor: pointer;
-        }
-        .tipoc button.activo {
-            background: #1d4a27;
-            border-color: #1d4a27;
-            color: white;
-        }
-
-        .historiallist {
-            display: grid;
-            grid-template-columns: 70px 60px 50px 1fr 70px 80px;
-            gap: 4px;
-            padding: 8px 0;
-            border-bottom: 1px dashed #c5ddc0;
-            font-size: 0.75rem;
-            align-items: center;
-        }
-        .historial-header {
-            font-weight: 700;
-            color: #20612e;
-            border-bottom: 2px solid #b1d2aa;
-            padding-bottom: 6px;
-            margin-bottom: 4px;
-        }
-
-        .status {
-            padding: 3px 8px;
-            border-radius: 40px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 0.7rem;
-        }
-        .status.entregado { background: #daf1da; color: #156b2c; }
-        .status.enviado { background: #ffe5cc; color: #b65000; }
-        .status.pendiente { background: #fff0c0; color: #866e1c; }
-
-        .credito-mini {
-            background: #eef6ec;
-            border-radius: 20px;
-            padding: 14px;
-            margin-top: 12px;
-        }
-        .nlimite {
-            font-weight: 800;
-            font-size: 1.4rem;
-            color: #1d632d;
-        }
-        .barra-credito {
-            background: #cfdecb;
-            border-radius: 30px;
-            height: 24px;
-            margin: 10px 0;
-            display: flex;
-            overflow: hidden;
-            font-size: 0.7rem;
-            font-weight: 700;
-        }
-        .barrautilizada {
-            background: #1f8b4c;
-            color: white;
-            display: flex;
-            align-items: center;
-            padding-left: 12px;
-        }
-        .barradisponible {
-            background: #fed7b0;
-            color: #633f00;
-            display: flex;
-            align-items: center;
-            padding-left: 12px;
-        }
-        .li {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .botonclienten {
-            background: #f16b1a;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            padding: 8px 14px;
-            font-weight: 600;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-left: auto;
-            text-decoration: none;
-        }
-
         .scroll-area::-webkit-scrollbar {
             width: 6px;
         }
@@ -408,14 +334,11 @@
 </head>
 <body>
 
-    <div class="barra-superior">
+<div class="barra-superior">
         <div class="logo-area">
             <img src="<?= base_url('img/LOGO1.png') ?>" alt="Logo" width="140">
         </div>
-        <div class="buscador">
-            <input type="text" placeholder="Buscar...">
-            <button><i class="fas fa-search"></i></button>
-        </div>
+
         <div class="user-actions">
             <a href="#" class="btn-user"><i class="fas fa-user-shield"></i> <span>Admin</span></a>
             <a href="#" class="btn-user"><i class="fas fa-bell"></i> <span>Notificaciones</span></a>
@@ -433,6 +356,117 @@
             <a href="pantalla_productos" class="nav-link"><i class="fa-solid fa-apple-whole"></i> Productos</a>
         </div>
     </nav>
+
+
+<div class="main-container">
+    <div class="header-acciones">
+        <div class="titulo-seccion">
+            <i class="fa-solid fa-dolly"></i>
+            <span>Gestión de Repartidores</span>
+        </div>
+        <button class="btn-registrar" onclick="abrirModal()">
+            <i class="fas fa-plus"></i> Nuevo Repartidor
+        </button>
+    </div>
+
+    <div class="tabla-card">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre Completo</th>
+                    <th>Teléfono</th>
+                    <th>Dirección</th>
+                    <th>Notas</th>
+                    <th>Editar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if(!empty($repartidores)): ?>
+                    <?php foreach($repartidores as $r): ?>
+                    <tr>
+                        <td><strong>#<?= $r['id'] ?></strong></td>
+                        <td><?= $r['nombre'] . ' ' . $r['ap_p'] . ' ' . $r['ap_m'] ?></td>
+                        <td><?= $r['tel'] ?></td>
+                        <td><?= $r['direccion'] ?? 'N/A' ?></td>
+                        <td><small><?= $r['notas'] ?? '-' ?></small></td>
+                        <td>
+                            <button style="color:var(--primary-green); border:none; background:none; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr><td colspan="6" style="text-align:center; padding:2rem;">No hay repartidores registrados.</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modalRepartidor" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:var(--primary-green)">Registrar Repartidor</h3>
+        <form id="formRepartidor">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" name="nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" name="tel" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido Paterno</label>
+                    <input type="text" name="ap_p" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido Materno</label>
+                    <input type="text" name="ap_m">
+                </div>
+                <div class="form-group full">
+                    <label>Dirección</label>
+                    <input type="text" name="direccion">
+                </div>
+                <div class="form-group full">
+                    <label>Notas</label>
+                    <input type="text" name="notas">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:1rem;">
+                <button type="submit" class="btn-registrar" style="flex:1; justify-content:center;">Guardar</button>
+                <button type="button" onclick="cerrarModal()" style="flex:1; background:#ccc; border:none; border-radius:50px; cursor:pointer;">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('modalRepartidor');
+
+    function abrirModal() { modal.style.display = 'flex'; }
+    function cerrarModal() { modal.style.display = 'none'; }
+
+    // aqui enviamos los datos
+    document.getElementById('formRepartidor').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        fetch("<?= base_url('FRUVER/guardarrepartidor') ?>", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                alert("¡Repartidor guardado con éxito!");
+                window.location.href = "<?= base_url('pantalla_repartidores') ?>";
+            } else {
+                alert("Error al guardar");
+            }
+        });
+    });
+</script>
 
 </body>
 </html>
