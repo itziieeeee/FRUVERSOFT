@@ -68,7 +68,7 @@
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         thead { background: var(--primary-green); color: white; }
         th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--gray-border); }
-        tr:hover { background-color: var(--light-green); }
+        tbody tr:hover { background-color: var(--light-green); }
 
         /* la ventana modal del registro*/
         .modal {
@@ -379,6 +379,7 @@
                     <th>Dirección</th>
                     <th>Notas</th>
                     <th>Editar</th>
+                    <th>Eliminar</th>
                 </tr>
             </thead>
             <tbody>
@@ -403,6 +404,14 @@
             '<?= $r['notas'] ?? '' ?>'
         )">
         <i class="fas fa-edit"></i>
+    </button>
+</td>
+
+<td>
+    <button 
+        style="color:#c0392b; border:none; background:none; cursor:pointer;"
+        onclick="eliminarRepartidor(<?= $r['id'] ?>, '<?= $r['nombre'] ?>')">
+        <i class="fas fa-trash"></i>
     </button>
 </td>
                     </tr>
@@ -572,6 +581,26 @@ document.getElementById('formEditar').addEventListener('submit', function(e) {
     });
 });
 
+function eliminarRepartidor(id, nombre) {
+    if (!confirm(`¿Seguro que deseas eliminar a ${nombre}?`)) return;
+
+    const formData = new FormData();
+    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+    fetch(`<?= base_url('FRUVER/eliminarrepartidor') ?>/${id}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('Repartidor eliminado.');
+            window.location.reload();
+        } else {
+            alert('Error al eliminar.');
+        }
+    });
+}
 </script>
 
 </body>

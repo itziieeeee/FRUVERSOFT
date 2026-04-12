@@ -70,3 +70,4 @@ $routes->get('pantalla_pedidos', 'Status::pantalla_pedidos');
 $routes->post('FRUVER/guardarrepartidor', 'FRUVER::guardarrepartidor');
 $routes->get('pantalla_repartidores', 'FRUVER::mostrar_repartidores');
 $routes->post('FRUVER/editarrepartidor/(:num)', 'FRUVER::editarrepartidor/$1');
+$routes->post('FRUVER/eliminarrepartidor/(:num)', 'FRUVER::eliminarrepartidor/$1');

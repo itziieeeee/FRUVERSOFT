@@ -207,4 +207,15 @@ public function editarrepartidor($id){
       return $this->response->setJSON(['success' => false]);
     }
 }
+
+public function eliminarrepartidor($id){
+    $model= new RepartidorModel();
+   
+   if($model->delete($id)){
+     return $this->response->setJSON(['success' => true]); 
+    } else  {
+      return $this->response->setJSON(['success' => false]);
+    }
+}
+
 }
