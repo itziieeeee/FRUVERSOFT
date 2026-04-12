@@ -391,8 +391,20 @@
                         <td><?= $r['direccion'] ?? 'N/A' ?></td>
                         <td><small><?= $r['notas'] ?? '-' ?></small></td>
                         <td>
-                            <button style="color:var(--primary-green); border:none; background:none; cursor:pointer;"><i class="fas fa-edit"></i></button>
-                        </td>
+                       <button 
+        style="color:var(--primary-green); border:none; background:none; cursor:pointer;"
+        onclick="abrirEditar(
+            <?= $r['id'] ?>,
+            '<?= $r['nombre'] ?>',
+            '<?= $r['ap_p'] ?>',
+            '<?= $r['ap_m'] ?>',
+            '<?= $r['tel'] ?>',
+            '<?= $r['direccion'] ?? '' ?>',
+            '<?= $r['notas'] ?? '' ?>'
+        )">
+        <i class="fas fa-edit"></i>
+    </button>
+</td>
                     </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
@@ -441,6 +453,52 @@
     </div>
 </div>
 
+<div id="modalEditar" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:var(--primary-green)">Editar Repartidor</h3>
+        <form id="formEditar">
+            <input type="hidden" id="edit-id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="edit-nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" id="edit-tel" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido Paterno</label>
+                    <input type="text" id="edit-ap_p" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido Materno</label>
+                    <input type="text" id="edit-ap_m">
+                </div>
+                <div class="form-group full">
+                    <label>Dirección</label>
+                    <input type="text" id="edit-direccion">
+                </div>
+                <div class="form-group full">
+                    <label>Notas</label>
+                    <input type="text" id="edit-notas">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:1rem;">
+                <button type="submit" class="btn-registrar" style="flex:1; justify-content:center;">
+                    Guardar cambios
+                </button>
+                <button type="button" onclick="cerrarEditar()" 
+                    style="flex:1; background:#ccc; border:none; border-radius:50px; cursor:pointer;">
+                    Cancelar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
 <script>
     const modal = document.getElementById('modalRepartidor');
 
@@ -466,6 +524,54 @@
             }
         });
     });
+
+const modalEditar = document.getElementById('modalEditar');
+
+function abrirEditar(id, nombre, ap_p, ap_m, tel, direccion, notas) {
+    document.getElementById('edit-id').value        = id;
+    document.getElementById('edit-nombre').value    = nombre;
+    document.getElementById('edit-ap_p').value      = ap_p;
+    document.getElementById('edit-ap_m').value      = ap_m;
+    document.getElementById('edit-tel').value       = tel;
+    document.getElementById('edit-direccion').value = direccion;
+    document.getElementById('edit-notas').value     = notas;
+    modalEditar.style.display = 'flex';
+}
+
+function cerrarEditar() {
+    modalEditar.style.display = 'none';
+}
+
+document.getElementById('formEditar').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-id').value;
+
+    const formData = new FormData();
+    formData.append('nombre',    document.getElementById('edit-nombre').value);
+    formData.append('ap_p',      document.getElementById('edit-ap_p').value);
+    formData.append('ap_m',      document.getElementById('edit-ap_m').value);
+    formData.append('tel',       document.getElementById('edit-tel').value);
+    formData.append('direccion', document.getElementById('edit-direccion').value);
+    formData.append('notas',     document.getElementById('edit-notas').value);
+
+
+    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+    fetch(`<?= base_url('FRUVER/editarrepartidor') ?>/${id}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('¡Repartidor actualizado con éxito!');
+            window.location.reload();
+        } else {
+            alert('Error al actualizar.');
+        }
+    });
+});
+
 </script>
 
 </body>

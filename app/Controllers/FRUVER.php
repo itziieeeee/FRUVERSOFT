@@ -189,4 +189,22 @@ public function mostrar_repartidores()
     // pasamos los datos a la pagina
     return view('pantalla_repartidores', $data);
 }
+
+public function editarrepartidor($id){
+    $model= new RepartidorModel();
+    $data=[
+        'nombre'=>$this->request->getPost('nombre'),
+        'ap_p'=> $this->request->getPost('ap_p'),
+        'ap_m'=> $this->request->getPost('ap_m'),
+        'tel'=> $this->request->getPost('tel'),
+        'direccion'=> $this->request->getPost('direccion'),
+        'notas'=> $this->request->getPost('notas'),
+    ];
+  
+   if($model->update($id, $data)){
+     return $this->response->setJSON(['success' => true]); 
+    } else  {
+      return $this->response->setJSON(['success' => false]);
+    }
+}
 }

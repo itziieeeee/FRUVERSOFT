@@ -69,3 +69,4 @@ $routes->get('pantalla_pedidos', 'Status::pantalla_pedidos');
 //conexion para la bd de los repartidores
 $routes->post('FRUVER/guardarrepartidor', 'FRUVER::guardarrepartidor');
 $routes->get('pantalla_repartidores', 'FRUVER::mostrar_repartidores');
+$routes->post('FRUVER/editarrepartidor/(:num)', 'FRUVER::editarrepartidor/$1');
