@@ -16,7 +16,7 @@ class App extends BaseConfig
      *
      * E.g., http://example.com/
      */
- public string $baseURL = 'http://localhost/FRUVERSOFT/public/';
+ public string $baseURL = 'http://localhost/FRUVERSOFT2.0/public/';
   
 
     /**
@@ -58,7 +58,7 @@ class App extends BaseConfig
      *
      * WARNING: If you set this to 'PATH_INFO', URIs will always be URL-decoded!
      */
-    public string $uriProtocol = 'REQUEST_URI';
+    public string $uriProtocol = 'REQUEST_STRING';
 
     /*
     |--------------------------------------------------------------------------
