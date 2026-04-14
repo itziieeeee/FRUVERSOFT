@@ -47,7 +47,8 @@ $routes->get('productos', 'Producto::listar');
 // ==========================
 $routes->get('merma', 'Merma::index');
 $routes->post('merma/guardar', 'Merma::guardar');
-
+$routes->post('confirmar-entrada', 'GestionEntradas::guardar');
+$routes->post('merma/guardar', 'Merma::guardar');
 // ==========================
 // 7. General
 // ==========================
@@ -65,4 +66,8 @@ $routes->post('pedido/guardar_productos_pedido', 'PedidoController::guardar_prod
 
 
 
+
+$routes->get('existencias', 'Existencias::index');        // lista productos
+$routes->get('existencias/editar/(:num)', 'Existencias::editar/$1'); // editar producto por id
+$routes->post('existencias/entrada', 'Existencias::registrarEntrada'); // registrar entrada
 

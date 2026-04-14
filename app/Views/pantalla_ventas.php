@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="<?= base_url('css/ventasestilo.css') ?>">
     
 </head>
+
 <body>
 
 <div class="barra-superior">
