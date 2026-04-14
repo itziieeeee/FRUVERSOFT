@@ -1,7 +1,7 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     # Indica explícitamente la carpeta donde estás trabajando
-    RewriteBase /FRUVERSOFT2.0/public/
+    RewriteBase /FRUVERSOFT/public/
 
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

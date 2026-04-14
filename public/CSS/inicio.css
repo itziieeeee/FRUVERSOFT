@@ -16,14 +16,23 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    padding: 0.8rem 5%;
+    padding: 1.2rem 5%;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 1000;
-    
-    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.navbar.scrolled {
+    padding: 0.8rem 5%;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 /* Logo */
@@ -52,16 +61,16 @@ body {
 }
 
 .btn-registro {
-    background: transparent;
+    background: rgba(247, 176, 94, 0.05);
     border: 1.5px solid #f7b05e;
     color: #f7b05e;
 }
 
 .btn-registro:hover {
     background: #f7b05e;
-    color: #1e3a2f;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(247, 176, 94, 0.2);
+    color: white;
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 20px rgba(247, 176, 94, 0.3);
 }
 
 .btn-admin {
@@ -161,19 +170,27 @@ body {
 
 .slide-content h1 {
     font-family: 'Playfair Display', serif;
-    font-size: 4.5rem;
-    font-weight: 800;
-    margin-bottom: 1rem;
-    text-shadow: 2px 2px 25px rgba(0, 0, 0, 0.4);
-    letter-spacing: -1px;
+    font-size: clamp(2.5rem, 8vw, 5.5rem);
+    font-weight: 900;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    letter-spacing: -2px;
+    line-height: 1.1;
 }
 
 .slide-content p {
-    font-size: 1.3rem;
-    margin-bottom: 2rem;
-    opacity: 0.95;
+    font-size: clamp(1rem, 2vw, 1.5rem);
+    margin-bottom: 3rem;
+    opacity: 0;
     font-weight: 400;
-    text-shadow: 1px 1px 15px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(20px);
+    transition: all 0.8s ease 0.3s;
+}
+
+.carousel-slide.active .slide-content p {
+    opacity: 0.9;
+    transform: translateY(0);
 }
 
 .btn-ingresar {
