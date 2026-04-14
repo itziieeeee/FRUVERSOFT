@@ -65,7 +65,7 @@ $routes->get('pantalla_ventas', 'PedidoController::pantalla_ventas');
 $routes->post('pedido/guardar_productos_pedido', 'PedidoController::guardar_productos_pedido');
 
 
-$routes->get('pantalla_pedidos', 'Status::pantalla_pedidos');
+
 
 $routes->get('existencias', 'Existencias::index');        // lista productos
 $routes->get('existencias/editar/(:num)', 'Existencias::editar/$1'); // editar producto por id
