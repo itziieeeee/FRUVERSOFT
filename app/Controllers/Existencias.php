@@ -5,20 +5,22 @@ use App\Models\ExistenciasModel;
 class Existencias extends BaseController
 {
     public function index()
-    {
-        try {
-            $model = new ExistenciasModel();
+{
+    try {
+        $model = new ExistenciasModel();
 
-            $data = [
-                'productos' => $model->getInventario(10), // 10 productos por página
-                'pager' => $model->pager,                 // <-- el pager real
-            ];
+        $productos = $model->getInventario(6);
 
-            return view('existencias', $data);
+        $data = [
+            'productos' => $productos,
+            'pager'     => $model->pager,  // viene del model
+        ];
 
-        } catch (\Exception $e) {
-            echo "Error BD: " . $e->getMessage();
-            die();
-        }
+        return view('existencias', $data);
+
+    } catch (\Exception $e) {
+        echo "Error BD: " . $e->getMessage();
+        die();
     }
+}
 }

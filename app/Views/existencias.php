@@ -12,7 +12,7 @@
     <header>
     <div class="barra-superior">
         <div class="logo-area">
-            <img src="<?= base_url('img/LOGO2.png') ?>" alt="FRUVER">
+            <img src="<?= base_url('img/LOGO1.png') ?>" alt="FRUVER">
         </div>
         
         <div class="buscador">
@@ -111,5 +111,5 @@
         </div>
         <?php endforeach; ?>
     </div>
- <!-- ?= $pager->links('default', 'mi_paginacion') ?>
+ <?= $pager->links('default', 'mi_paginacion')?>
 </div>
