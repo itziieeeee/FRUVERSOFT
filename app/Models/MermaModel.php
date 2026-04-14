@@ -13,3 +13,4 @@ class MermaModel extends Model
                     ->getResultArray();
 }
 }
+   

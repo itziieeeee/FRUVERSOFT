@@ -64,5 +64,5 @@ $routes->get('pantalla_ventas', 'PedidoController::pantalla_ventas');
 $routes->post('pedido/guardar_productos_pedido', 'PedidoController::guardar_productos_pedido');
 
 
-$routes->get('pantalla_pedidos', 'Status::pantalla_pedidos');
+
 

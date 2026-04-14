@@ -338,6 +338,45 @@
         /* Utilidades */
         .text-center { text-align: center; }
         .mt-4 { margin-top: 1rem; }
+        .buscador-pedido {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.buscador-pedido input {
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--gray-border);
+    border-radius: 50px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    width: 260px;
+    transition: all 0.2s;
+}
+
+.buscador-pedido button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid var(--gray-border);
+    background: white;
+    color: var(--text-dark);
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.buscador-pedido button:hover {
+    background: var(--light-green);
+    border-color: var(--primary-green);
+    color: var(--primary-green);
+}
+
+.buscador-pedido button:hover{
+    background:var(--primary-orange);
+}
+
     </style>
 </head>
 <body>
@@ -371,9 +410,17 @@
             <span>Visualizacion de status de pedidos totales</span>
         </div>
 
-        <div class="buscador-pedido">
-            <input type="text" id="inputBuscarPedido" placeholder=" Buscar pedido por ID, cliente o estado...">
-        </div>
+<div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <input type="text" id="inputBuscarPedido" placeholder="Buscar cliente..." style="padding: 10px; border-radius: 20px; border: 1px solid #ccc; width: 250px;">
+    
+    <button onclick="ordenarAZ()" style="cursor:pointer; padding: 8px 15px; border-radius: 20px; border: 1px solid #1d4a27; background: #e8f3e6; color: #1d4a27; font-weight: bold;">
+        <i class="fas fa-sort-alpha-down"></i> A-Z
+    </button>
+    
+    <button onclick="ordenarZA()" style="cursor:pointer; padding: 8px 15px; border-radius: 20px; border: 1px solid #f16b1a; background: #fff; color: #f16b1a; font-weight: bold;">
+        <i class="fas fa-sort-alpha-up"></i> Z-A
+    </button>
+</div>
     </div>
 
     <div class="tabla-container">
@@ -388,40 +435,35 @@
                     <th>Acción</th>
                 </tr>
             </thead>
-            <tbody id="tablaPedidosBody">
-                <?php if(isset($sp) && !empty($sp)): ?>
-                    <?php foreach($sp as $status): ?>
-                    <tr>
-                        <td><strong>#<?= $status['id']; ?></strong></td>
-                        <td><?= $status['fecha']; ?></td>
-                        <td><?= $status['nombre_cliente'] ?? 'Sin cliente'; ?></td>
-                        <td><strong style="color: var(--primary-orange);">$<?= number_format($status['total'], 2); ?></strong></td>
-                        <td>
-                            <select onchange="cambiarEstado(<?= $status['id']; ?>, this.value)" class="estado-select">
-                                <option value="Pedido" <?= $status['estado_actual']=='Pedido'?'selected':'' ?>> Pedido</option>
-                                <option value="Pedido confirmado" <?= $status['estado_actual']=='Pedido confirmado'?'selected':'' ?>> Confirmado</option>
-                                <option value="Pedido en transito" <?= $status['estado_actual']=='Pedido en transito'?'selected':'' ?>>En tránsito</option>
-                                <option value="Venta confirmada" <?= $status['estado_actual']=='Venta confirmada'?'selected':'' ?>>Entregado</option>
-                                <option value="Pedido pagado" <?= $status['estado_actual']=='Pedido pagado'?'selected':'' ?>> Pagado</option>
-                                <option value="Pedido cancelado" <?= $status['estado_actual']=='Pedido cancelado'?'selected':'' ?>> Cancelado</option>
-                            </select>
-                        </td>
-                        <td>
-                            <button class="btn-ver-mas" onclick="verDetallePedido(<?= $status['id']; ?>)">
-                                <i class="fas fa-eye"></i> Ver más
-                            </button>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="6" class="text-center" style="padding: 3rem;">
-                            <i class="fas fa-inbox" style="font-size: 2rem; color: var(--gray-border);"></i>
-                            <p style="margin-top: 0.5rem; color: var(--text-light);">No hay pedidos registrados</p>
-                        </td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
+<tbody id="tablaPedidosBody">
+<?php if(isset($sp) && !empty($sp)): ?>
+    <?php foreach($sp as $status): ?>
+
+<tr>
+<td><strong>#<?= $status['id']; ?></strong></td>
+
+<td><?= $status['fecha']; ?></td>
+
+<td class="clase-nombre"><?= $status['nombre_cliente'] ?? 'Sin nombre'; ?></td>
+
+<td><strong style="color: #f16b1a;">$<?= number_format($status['total'], 2); ?></strong></td>
+
+<td>
+<select class="estado-select" onchange="cambiarEstado(<?= $status['id']; ?>, this.value)">
+<option value="Pedido" <?= $status['estado_actual']=='Pedido'?'selected':'' ?>>Pedido</option>
+<option value="Venta confirmada" <?= $status['estado_actual']=='Venta confirmada'?'selected':'' ?>>Entregado</option>
+</select>
+</td>
+
+</tr>
+
+    <?php endforeach; ?>
+<?php else: ?>
+<tr class="fila-vacia">
+<td colspan="6" style="text-align: center; padding: 20px;">No hay pedidos registrados</td>
+</tr>
+<?php endif; ?>
+</tbody>
         </table>
     </div>
 </div>
@@ -537,7 +579,31 @@ styleAnim.textContent = `
     }
 `;
 document.head.appendChild(styleAnim);
+function ordenarAZ() {
+    const tabla = document.getElementById("tablaPedidosBody");
+    const filas = Array.from(tabla.querySelectorAll("tr"));
+    
+    filas.sort((a, b) => {
+        const nomA = a.querySelector(".clase-nombre").innerText.trim().toLowerCase();
+        const nomB = b.querySelector(".clase-nombre").innerText.trim().toLowerCase();
+        return nomA.localeCompare(nomB, 'es');
+    });
+    filas.forEach(f => tabla.appendChild(f));
+}
+
+function ordenarZA() {
+    const tabla = document.getElementById("tablaPedidosBody");
+    const filas = Array.from(tabla.querySelectorAll("tr"));
+    
+    filas.sort((a, b) => {
+        const nomA = a.querySelector(".clase-nombre").innerText.trim().toLowerCase();
+        const nomB = b.querySelector(".clase-nombre").innerText.trim().toLowerCase();
+        return nomB.localeCompare(nomA, 'es');
+    });
+    filas.forEach(f => tabla.appendChild(f));
+}
 </script>
 
+Hola gabo
 </body>
 </html>
