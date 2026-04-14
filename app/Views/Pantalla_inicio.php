@@ -13,7 +13,7 @@
     <!-- Navbar blanca con logo a la izquierda y botones a la derecha -->
     <nav class="navbar" id="navbar">
         <div class="logo">
-            <img src="<?= base_url('img/LOGO2.png') ?>" alt="FRUVER">
+            <img src="<?= base_url('img/LOGO1.png') ?>" alt="FRUVER">
         </div>
         <div class="nav-buttons">
             <a href="<?= base_url('registro') ?>" class="btn-registro"><i class="fas fa-leaf"></i> Registrarse</a>

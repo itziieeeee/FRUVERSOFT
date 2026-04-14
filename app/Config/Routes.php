@@ -66,3 +66,7 @@ $routes->post('pedido/guardar_productos_pedido', 'PedidoController::guardar_prod
 
 $routes->get('pantalla_pedidos', 'Status::pantalla_pedidos');
 
+$routes->get('existencias', 'Existencias::index');        // lista productos
+$routes->get('existencias/editar/(:num)', 'Existencias::editar/$1'); // editar producto por id
+$routes->post('existencias/entrada', 'Existencias::registrarEntrada'); // registrar entrada
+

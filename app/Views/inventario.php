@@ -75,8 +75,8 @@
             <span>Merma</span>
         </a>
 
-        <a href="<?= base_url('productos') ?>" class="botonesopciones">
-            <img src="<?= base_url('img/Producto.jpeg') ?>">
+        <a href="<?= base_url('existencias') ?>" class="botonesopciones">
+            <img src="<?= base_url('img/existencias.png') ?>">
             <span>Existencias</span>
         </a>
     </div>
