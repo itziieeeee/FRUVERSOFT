@@ -6,14 +6,14 @@
     <title>FRUVER INICIO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= base_url('css/inicio.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('CSS/inicio.css') ?>">
 </head>
 <body>
 
     <!-- Navbar blanca con logo a la izquierda y botones a la derecha -->
     <nav class="navbar" id="navbar">
         <div class="logo">
-            <img src="<?= base_url('img/LOGO2.png') ?>" alt="FRUVER">
+            <img src="<?= base_url('IMG/LOGO1.png') ?>" alt="FRUVER">
         </div>
         <div class="nav-buttons">
             <a href="<?= base_url('registro') ?>" class="btn-registro"><i class="fas fa-leaf"></i> Registrarse</a>
@@ -157,6 +157,16 @@
 
         // Exponer funciones globalmente
         window.changeSlide = changeSlide;
+
+        // === Navbar Scroll Effect ===
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
 
         // Inicializar todo cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', () => {

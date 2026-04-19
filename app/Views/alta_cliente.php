@@ -385,7 +385,6 @@
                 <!-- <input type="hidden" name="<?= csrf_token() ?>" value="<?= csrf_hash() ?>"> -->
             </form>
         </div>
-<<<<<<< HEAD
 
      <form action="<?= base_url('guardar_cliente') ?>" method="post">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -425,8 +424,6 @@
                 </button>
             </div>
         </form>
-=======
->>>>>>> 0894065e0e7a7bd0bd929496ed017342f5a2e221
     </div>
 
     <!-- pequeño script para mantener la sincronización de los chips de tipo cliente y actualizar el mensaje -->

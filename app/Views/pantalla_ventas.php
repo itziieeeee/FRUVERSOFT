@@ -10,6 +10,61 @@
     <link rel="stylesheet" href="<?= base_url('css/ventasestilo.css') ?>">
     
 </head>
+<style>
+    
+        :root {
+            --primary-green: #1d4a27;
+            --primary-orange: #f16b1a;
+            --light-green: #e8f3e6;
+            --dark-green: #0f3317;
+            --gray-light: #f8f9fa;
+            --gray-border: #e0e0e0;
+            --text-dark: #333;
+            --text-light: #666;
+            --white: #ffffff;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+/* ===== NAVEGACIÓN CENTRADA ===== */
+        .menu-navegacion {
+            background: white;
+            padding: 0.5rem 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid var(--gray-border);
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-link {
+            padding: 0.9rem 1.2rem;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-orange);
+            background: var(--light-green);
+        }
+
+        .nav-link.activo {
+            color: var(--primary-orange);
+            background: rgba(241, 107, 26, 0.08);
+            border-bottom: 3px solid var(--primary-orange);
+        }
+
+</style>
 <body>
 
 <div class="barra-superior">
