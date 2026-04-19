@@ -231,4 +231,61 @@ class FRUVER extends BaseController
     {
         return view('pantalla_productos');
     }
+
+    public function guardarrepartidor() {
+    $model = new \App\Models\RepartidorModel();
+    $data = [
+        'nombre'    => $this->request->getPost('nombre'),
+        'ap_p'      => $this->request->getPost('ap_p'),
+        'ap_m'      => $this->request->getPost('ap_m'),
+        'tel'       => $this->request->getPost('tel'),
+        'direccion' => $this->request->getPost('direccion'),
+        'notas'     => $this->request->getPost('notas'),
+    ];
+
+    if ($model->insert($data)) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false]);
+    }
+}
+//para mostrar al repartidor 
+public function mostrar_repartidores() 
+{
+    $model = new \App\Models\RepartidorModel();
+    
+    //extraemos los datos de la tabla
+    $data['repartidores'] = $model->findAll(); 
+
+    // pasamos los datos a la pagina
+    return view('pantalla_repartidores', $data);
+}
+
+public function editarrepartidor($id){
+    $model= new RepartidorModel();
+    $data=[
+        'nombre'=>$this->request->getPost('nombre'),
+        'ap_p'=> $this->request->getPost('ap_p'),
+        'ap_m'=> $this->request->getPost('ap_m'),
+        'tel'=> $this->request->getPost('tel'),
+        'direccion'=> $this->request->getPost('direccion'),
+        'notas'=> $this->request->getPost('notas'),
+    ];
+  
+   if($model->update($id, $data)){
+     return $this->response->setJSON(['success' => true]); 
+    } else  {
+      return $this->response->setJSON(['success' => false]);
+    }
+}
+
+public function eliminarrepartidor($id){
+    $model= new RepartidorModel();
+   
+   if($model->delete($id)){
+     return $this->response->setJSON(['success' => true]); 
+    } else  {
+      return $this->response->setJSON(['success' => false]);
+    }
+}
 }
