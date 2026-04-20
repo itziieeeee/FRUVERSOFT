@@ -374,6 +374,7 @@
             <thead>
                 <tr>
                     <th>ID</th>
+                    <th>Foto</th>
                     <th>Nombre Completo</th>
                     <th>Teléfono</th>
                     <th>Dirección</th>
@@ -387,6 +388,17 @@
                     <?php foreach($repartidores as $r): ?>
                     <tr>
                         <td><strong>#<?= $r['id'] ?></strong></td>
+                        <td>
+    <?php if(!empty($r['foto'])): ?>
+        <img src="<?= base_url('uploads/repartidores/' . $r['foto']) ?>" 
+             alt="foto"
+             style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid #e0e0e0;">
+    <?php else: ?>
+        <div style="width:42px; height:42px; border-radius:50%; background:#d1e6cf; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; color:#1d4a27;">
+            <?= strtoupper(substr($r['nombre'],0,1) . substr($r['ap_p'],0,1)) ?>
+        </div>
+    <?php endif; ?>
+</td>
                         <td><?= $r['nombre'] . ' ' . $r['ap_p'] . ' ' . $r['ap_m'] ?></td>
                         <td><?= $r['tel'] ?></td>
                         <td><?= $r['direccion'] ?? 'N/A' ?></td>
@@ -427,7 +439,7 @@
 <div id="modalRepartidor" class="modal">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--primary-green)">Registrar Repartidor</h3>
-        <form id="formRepartidor">
+        <form id="formRepartidor" enctype="multipart/form-data">
             <div class="form-grid">
                 <div class="form-group">
                     <label>Nombre</label>
@@ -453,6 +465,12 @@
                     <label>Notas</label>
                     <input type="text" name="notas">
                 </div>
+                <div class="form-group full">
+    <label>Foto</label>
+    <input type="file" name="foto" accept="image/*" onchange="previsualizarFoto(this, 'preview-nuevo')">
+    <img id="preview-nuevo" src="" alt="" 
+         style="display:none; margin-top:8px; width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid #e0e0e0;">
+</div>
             </div>
             <div style="display:flex; gap:10px; margin-top:1rem;">
                 <button type="submit" class="btn-registrar" style="flex:1; justify-content:center;">Guardar</button>
@@ -465,7 +483,7 @@
 <div id="modalEditar" class="modal">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--primary-green)">Editar Repartidor</h3>
-        <form id="formEditar">
+        <form id="formEditar" enctype="multipart/form-data">
             <input type="hidden" id="edit-id">
             <div class="form-grid">
                 <div class="form-group">
@@ -492,6 +510,12 @@
                     <label>Notas</label>
                     <input type="text" id="edit-notas">
                 </div>
+                <div class="form-group full">
+    <label>Foto (dejar vacío para no cambiar)</label>
+    <input type="file" id="edit-foto" name="foto" accept="image/*" onchange="previsualizarFoto(this, 'preview-editar')">
+    <img id="preview-editar" src="" alt=""
+         style="display:none; margin-top:8px; width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid #e0e0e0;">
+</div>
             </div>
             <div style="display:flex; gap:10px; margin-top:1rem;">
                 <button type="submit" class="btn-registrar" style="flex:1; justify-content:center;">
@@ -562,9 +586,13 @@ document.getElementById('formEditar').addEventListener('submit', function(e) {
     formData.append('tel',       document.getElementById('edit-tel').value);
     formData.append('direccion', document.getElementById('edit-direccion').value);
     formData.append('notas',     document.getElementById('edit-notas').value);
-
-
     formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+    // Adjuntar foto si se seleccionó una nueva
+    const fotoInput = document.getElementById('edit-foto');
+    if (fotoInput.files[0]) {
+        formData.append('foto', fotoInput.files[0]);
+    }
 
     fetch(`<?= base_url('FRUVER/editarrepartidor') ?>/${id}`, {
         method: 'POST',
@@ -600,6 +628,19 @@ function eliminarRepartidor(id, nombre) {
             alert('Error al eliminar.');
         }
     });
+}
+// Previsualizar foto antes de guardar
+function previsualizarFoto(input, previewId) {
+    const preview = document.getElementById(previewId);
+    const file = input.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
 }
 </script>
 

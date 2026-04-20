@@ -232,8 +232,17 @@ class FRUVER extends BaseController
         return view('pantalla_productos');
     }
 
-    public function guardarrepartidor() {
+public function guardarrepartidor() {
     $model = new \App\Models\RepartidorModel();
+
+    $foto = $this->request->getFile('foto');
+    $nombreFoto = null;
+
+    if ($foto && $foto->isValid() && !$foto->hasMoved()) {
+        $nombreFoto = $foto->getRandomName();
+        $foto->move(FCPATH . 'uploads/repartidores/', $nombreFoto);
+    }
+
     $data = [
         'nombre'    => $this->request->getPost('nombre'),
         'ap_p'      => $this->request->getPost('ap_p'),
@@ -241,6 +250,7 @@ class FRUVER extends BaseController
         'tel'       => $this->request->getPost('tel'),
         'direccion' => $this->request->getPost('direccion'),
         'notas'     => $this->request->getPost('notas'),
+        'foto'      => $nombreFoto,
     ];
 
     if ($model->insert($data)) {
@@ -261,21 +271,29 @@ public function mostrar_repartidores()
     return view('pantalla_repartidores', $data);
 }
 
-public function editarrepartidor($id){
-    $model= new RepartidorModel();
-    $data=[
-        'nombre'=>$this->request->getPost('nombre'),
-        'ap_p'=> $this->request->getPost('ap_p'),
-        'ap_m'=> $this->request->getPost('ap_m'),
-        'tel'=> $this->request->getPost('tel'),
-        'direccion'=> $this->request->getPost('direccion'),
-        'notas'=> $this->request->getPost('notas'),
+public function editarrepartidor($id) {
+    $model = new RepartidorModel();
+
+    $data = [
+        'nombre'    => $this->request->getPost('nombre'),
+        'ap_p'      => $this->request->getPost('ap_p'),
+        'ap_m'      => $this->request->getPost('ap_m'),
+        'tel'       => $this->request->getPost('tel'),
+        'direccion' => $this->request->getPost('direccion'),
+        'notas'     => $this->request->getPost('notas'),
     ];
-  
-   if($model->update($id, $data)){
-     return $this->response->setJSON(['success' => true]); 
-    } else  {
-      return $this->response->setJSON(['success' => false]);
+
+    $foto = $this->request->getFile('foto');
+    if ($foto && $foto->isValid() && !$foto->hasMoved()) {
+        $nombreFoto = $foto->getRandomName();
+        $foto->move(FCPATH . 'uploads/repartidores/', $nombreFoto);
+        $data['foto'] = $nombreFoto;
+    }
+
+    if ($model->update($id, $data)) {
+        return $this->response->setJSON(['success' => true]);
+    } else {
+        return $this->response->setJSON(['success' => false]);
     }
 }
 
