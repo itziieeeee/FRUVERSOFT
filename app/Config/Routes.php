@@ -55,7 +55,7 @@ $routes->post('merma/guardar', 'Merma::guardar');
 $routes->get('pantalla_inicio', 'FRUVER::pantalla_inicio');
 $routes->get('pantalla_administrador', 'FRUVER::pantalla_administrador');
 //$routes->get('pantalla_ventas', 'FRUVER::pantalla_ventas');
-$routes->get('pantalla_repartidores', 'FRUVER::pantalla_repartidores');
+//$routes->get('pantalla_repartidores', 'FRUVER::pantalla_repartidores');
 $routes->get('pantalla_pedidos', 'FRUVER::pantalla_pedidos');
 $routes->get('pantalla_productos', 'FRUVER::pantalla_productos');
 
@@ -71,3 +71,8 @@ $routes->get('existencias', 'Existencias::index');        // lista productos
 $routes->get('existencias/editar/(:num)', 'Existencias::editar/$1'); // editar producto por id
 $routes->post('existencias/entrada', 'Existencias::registrarEntrada'); // registrar entrada
 
+//conexion para la bd de los repartidores
+$routes->post('FRUVER/guardarrepartidor', 'FRUVER::guardarrepartidor');
+$routes->get('pantalla_repartidores', 'FRUVER::mostrar_repartidores');
+$routes->post('FRUVER/editarrepartidor/(:num)', 'FRUVER::editarrepartidor/$1');
+$routes->post('FRUVER/eliminarrepartidor/(:num)', 'FRUVER::eliminarrepartidor/$1');

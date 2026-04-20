@@ -1,15 +1,94 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!--ESTA ES LA PANTALLA DE CLIENTES -->
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+    <title>FRUVER · Gestión de Repartidores</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <title>FRUVER · Clientes</title>
+    
     <style>
-        * {
+        
+        :root {
+            --primary-green: #1d4a27;
+            --primary-orange: #f16b1a;
+            --light-green: #e8f3e6;
+            --gray-border: #e0e0e0;
+            --text-dark: #333;
+            --white: #ffffff;
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --radius-md: 12px;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: #f5f7fa; margin: 0; }
+
+        
+        .barra-superior { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 2rem; background: linear-gradient(90deg, var(--primary-green) 0%, #2a5e35 100%); color: white; }
+        .logo-area img { height: 60px; }
+        .btn-user { color: white; text-decoration: none; padding: 0.5rem 1rem; background: rgba(255,255,255,0.15); border-radius: 50px; font-size: 0.8rem; }
+
+        .menu-navegacion { background: white; padding: 0.5rem; display: flex; justify-content: center; border-bottom: 1px solid var(--gray-border); gap: 10px; }
+        .nav-link { padding: 0.7rem 1rem; color: var(--text-dark); text-decoration: none; font-weight: 600; font-size: 0.85rem; border-radius: 40px; }
+        .nav-link.activo { color: var(--primary-orange); background: rgba(241, 107, 26, 0.08); }
+
+        /* esto es para el contenido */
+        .main-container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        
+        .header-acciones {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+        }
+
+        .titulo-seccion { display: flex; align-items: center; gap: 12px; font-size: 1.4rem; color: var(--primary-green); font-weight: 700; }
+        
+        /* boton de registrar */
+        .btn-registrar {
+            background: var(--primary-orange);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+        .btn-registrar:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        /* esta es la tabla*/
+        .tabla-card { background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-md); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        thead { background: var(--primary-green); color: white; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--gray-border); }
+        tbody tr:hover { background-color: var(--light-green); }
+
+        /* la ventana modal del registro*/
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: white; padding: 2rem; border-radius: var(--radius-md);
+            width: 90%; max-width: 500px; position: relative;
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .form-group { margin-bottom: 1rem; display: flex; flex-direction: column; }
+        .form-group.full { grid-column: span 2; }
+        label { font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
+        input { padding: 0.6rem; border: 1px solid var(--gray-border); border-radius: 6px; }
+        {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -97,7 +176,7 @@
             color: #1d4a27;
         }
 
-        /* --- MENÚ DE NAVEGACIÓN --- */
+        /* --- este es el menu de navegacion --- */
         .menu-navegacion {
             background-color: #ffffff;
             padding: 0 24px;
@@ -235,159 +314,6 @@
             border-bottom: none;
         }
 
-        .fondototal {
-            background: #f16b1a10;
-            color: #b84500;
-            font-weight: 600;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            border: 1px solid #f16b1a60;
-            white-space: nowrap;
-        }
-
-        .tag-cliente {
-            background: #1d4a27;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .info-cliente-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px 12px;
-            background: #f5faf4;
-            padding: 12px;
-            border-radius: 20px;
-            margin-bottom: 16px;
-            font-size: 0.85rem;
-        }
-        .info-item {
-            display: flex;
-            flex-direction: column;
-        }
-        .info-label {
-            font-size: 0.7rem;
-            color: #4d6b53;
-            text-transform: uppercase;
-        }
-        .info-value {
-            font-weight: 600;
-            color: #1d3a24;
-            word-break: break-word;
-        }
-
-        .tipoc {
-            display: flex;
-            gap: 8px;
-            margin: 12px 0;
-        }
-        .tipoc button {
-            flex: 1;
-            background: #eef5ec;
-            border: 1.5px solid #bad2b4;
-            border-radius: 30px;
-            padding: 8px 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #1a4a27;
-            cursor: pointer;
-        }
-        .tipoc button.activo {
-            background: #1d4a27;
-            border-color: #1d4a27;
-            color: white;
-        }
-
-        .historiallist {
-            display: grid;
-            grid-template-columns: 70px 60px 50px 1fr 70px 80px;
-            gap: 4px;
-            padding: 8px 0;
-            border-bottom: 1px dashed #c5ddc0;
-            font-size: 0.75rem;
-            align-items: center;
-        }
-        .historial-header {
-            font-weight: 700;
-            color: #20612e;
-            border-bottom: 2px solid #b1d2aa;
-            padding-bottom: 6px;
-            margin-bottom: 4px;
-        }
-
-        .status {
-            padding: 3px 8px;
-            border-radius: 40px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 0.7rem;
-        }
-        .status.entregado { background: #daf1da; color: #156b2c; }
-        .status.enviado { background: #ffe5cc; color: #b65000; }
-        .status.pendiente { background: #fff0c0; color: #866e1c; }
-
-        .credito-mini {
-            background: #eef6ec;
-            border-radius: 20px;
-            padding: 14px;
-            margin-top: 12px;
-        }
-        .nlimite {
-            font-weight: 800;
-            font-size: 1.4rem;
-            color: #1d632d;
-        }
-        .barra-credito {
-            background: #cfdecb;
-            border-radius: 30px;
-            height: 24px;
-            margin: 10px 0;
-            display: flex;
-            overflow: hidden;
-            font-size: 0.7rem;
-            font-weight: 700;
-        }
-        .barrautilizada {
-            background: #1f8b4c;
-            color: white;
-            display: flex;
-            align-items: center;
-            padding-left: 12px;
-        }
-        .barradisponible {
-            background: #fed7b0;
-            color: #633f00;
-            display: flex;
-            align-items: center;
-            padding-left: 12px;
-        }
-        .li {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .botonclienten {
-            background: #f16b1a;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            padding: 8px 14px;
-            font-weight: 600;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-left: auto;
-            text-decoration: none;
-        }
-
         .scroll-area::-webkit-scrollbar {
             width: 6px;
         }
@@ -408,14 +334,11 @@
 </head>
 <body>
 
-    <div class="barra-superior">
+<div class="barra-superior">
         <div class="logo-area">
             <img src="<?= base_url('img/LOGO1.png') ?>" alt="Logo" width="140">
         </div>
-        <div class="buscador">
-            <input type="text" placeholder="Buscar...">
-            <button><i class="fas fa-search"></i></button>
-        </div>
+
         <div class="user-actions">
             <a href="#" class="btn-user"><i class="fas fa-user-shield"></i> <span>Admin</span></a>
             <a href="#" class="btn-user"><i class="fas fa-bell"></i> <span>Notificaciones</span></a>
@@ -433,6 +356,293 @@
             <a href="pantalla_productos" class="nav-link"><i class="fa-solid fa-apple-whole"></i> Productos</a>
         </div>
     </nav>
+
+
+<div class="main-container">
+    <div class="header-acciones">
+        <div class="titulo-seccion">
+            <i class="fa-solid fa-dolly"></i>
+            <span>Gestión de Repartidores</span>
+        </div>
+        <button class="btn-registrar" onclick="abrirModal()">
+            <i class="fas fa-plus"></i> Nuevo Repartidor
+        </button>
+    </div>
+
+    <div class="tabla-card">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Foto</th>
+                    <th>Nombre Completo</th>
+                    <th>Teléfono</th>
+                    <th>Dirección</th>
+                    <th>Notas</th>
+                    <th>Editar</th>
+                    <th>Eliminar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if(!empty($repartidores)): ?>
+                    <?php foreach($repartidores as $r): ?>
+                    <tr>
+                        <td><strong>#<?= $r['id'] ?></strong></td>
+                        <td>
+    <?php if(!empty($r['foto'])): ?>
+        <img src="<?= base_url('uploads/repartidores/' . $r['foto']) ?>" 
+             alt="foto"
+             style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid #e0e0e0;">
+    <?php else: ?>
+        <div style="width:42px; height:42px; border-radius:50%; background:#d1e6cf; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; color:#1d4a27;">
+            <?= strtoupper(substr($r['nombre'],0,1) . substr($r['ap_p'],0,1)) ?>
+        </div>
+    <?php endif; ?>
+</td>
+                        <td><?= $r['nombre'] . ' ' . $r['ap_p'] . ' ' . $r['ap_m'] ?></td>
+                        <td><?= $r['tel'] ?></td>
+                        <td><?= $r['direccion'] ?? 'N/A' ?></td>
+                        <td><small><?= $r['notas'] ?? '-' ?></small></td>
+                        <td>
+                       <button 
+        style="color:var(--primary-green); border:none; background:none; cursor:pointer;"
+        onclick="abrirEditar(
+            <?= $r['id'] ?>,
+            '<?= $r['nombre'] ?>',
+            '<?= $r['ap_p'] ?>',
+            '<?= $r['ap_m'] ?>',
+            '<?= $r['tel'] ?>',
+            '<?= $r['direccion'] ?? '' ?>',
+            '<?= $r['notas'] ?? '' ?>'
+        )">
+        <i class="fas fa-edit"></i>
+    </button>
+</td>
+
+<td>
+    <button 
+        style="color:#c0392b; border:none; background:none; cursor:pointer;"
+        onclick="eliminarRepartidor(<?= $r['id'] ?>, '<?= $r['nombre'] ?>')">
+        <i class="fas fa-trash"></i>
+    </button>
+</td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr><td colspan="6" style="text-align:center; padding:2rem;">No hay repartidores registrados.</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modalRepartidor" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:var(--primary-green)">Registrar Repartidor</h3>
+        <form id="formRepartidor" enctype="multipart/form-data">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" name="nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" name="tel" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido Paterno</label>
+                    <input type="text" name="ap_p" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido Materno</label>
+                    <input type="text" name="ap_m">
+                </div>
+                <div class="form-group full">
+                    <label>Dirección</label>
+                    <input type="text" name="direccion">
+                </div>
+                <div class="form-group full">
+                    <label>Notas</label>
+                    <input type="text" name="notas">
+                </div>
+                <div class="form-group full">
+    <label>Foto</label>
+    <input type="file" name="foto" accept="image/*" onchange="previsualizarFoto(this, 'preview-nuevo')">
+    <img id="preview-nuevo" src="" alt="" 
+         style="display:none; margin-top:8px; width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid #e0e0e0;">
+</div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:1rem;">
+                <button type="submit" class="btn-registrar" style="flex:1; justify-content:center;">Guardar</button>
+                <button type="button" onclick="cerrarModal()" style="flex:1; background:#ccc; border:none; border-radius:50px; cursor:pointer;">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modalEditar" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:var(--primary-green)">Editar Repartidor</h3>
+        <form id="formEditar" enctype="multipart/form-data">
+            <input type="hidden" id="edit-id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="edit-nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" id="edit-tel" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido Paterno</label>
+                    <input type="text" id="edit-ap_p" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido Materno</label>
+                    <input type="text" id="edit-ap_m">
+                </div>
+                <div class="form-group full">
+                    <label>Dirección</label>
+                    <input type="text" id="edit-direccion">
+                </div>
+                <div class="form-group full">
+                    <label>Notas</label>
+                    <input type="text" id="edit-notas">
+                </div>
+                <div class="form-group full">
+    <label>Foto (dejar vacío para no cambiar)</label>
+    <input type="file" id="edit-foto" name="foto" accept="image/*" onchange="previsualizarFoto(this, 'preview-editar')">
+    <img id="preview-editar" src="" alt=""
+         style="display:none; margin-top:8px; width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid #e0e0e0;">
+</div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:1rem;">
+                <button type="submit" class="btn-registrar" style="flex:1; justify-content:center;">
+                    Guardar cambios
+                </button>
+                <button type="button" onclick="cerrarEditar()" 
+                    style="flex:1; background:#ccc; border:none; border-radius:50px; cursor:pointer;">
+                    Cancelar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+<script>
+    const modal = document.getElementById('modalRepartidor');
+
+    function abrirModal() { modal.style.display = 'flex'; }
+    function cerrarModal() { modal.style.display = 'none'; }
+
+    // aqui enviamos los datos
+    document.getElementById('formRepartidor').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        fetch("<?= base_url('FRUVER/guardarrepartidor') ?>", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                alert("¡Repartidor guardado con éxito!");
+                window.location.href = "<?= base_url('pantalla_repartidores') ?>";
+            } else {
+                alert("Error al guardar");
+            }
+        });
+    });
+
+const modalEditar = document.getElementById('modalEditar');
+
+function abrirEditar(id, nombre, ap_p, ap_m, tel, direccion, notas) {
+    document.getElementById('edit-id').value        = id;
+    document.getElementById('edit-nombre').value    = nombre;
+    document.getElementById('edit-ap_p').value      = ap_p;
+    document.getElementById('edit-ap_m').value      = ap_m;
+    document.getElementById('edit-tel').value       = tel;
+    document.getElementById('edit-direccion').value = direccion;
+    document.getElementById('edit-notas').value     = notas;
+    modalEditar.style.display = 'flex';
+}
+
+function cerrarEditar() {
+    modalEditar.style.display = 'none';
+}
+
+document.getElementById('formEditar').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-id').value;
+
+    const formData = new FormData();
+    formData.append('nombre',    document.getElementById('edit-nombre').value);
+    formData.append('ap_p',      document.getElementById('edit-ap_p').value);
+    formData.append('ap_m',      document.getElementById('edit-ap_m').value);
+    formData.append('tel',       document.getElementById('edit-tel').value);
+    formData.append('direccion', document.getElementById('edit-direccion').value);
+    formData.append('notas',     document.getElementById('edit-notas').value);
+    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+    // Adjuntar foto si se seleccionó una nueva
+    const fotoInput = document.getElementById('edit-foto');
+    if (fotoInput.files[0]) {
+        formData.append('foto', fotoInput.files[0]);
+    }
+
+    fetch(`<?= base_url('FRUVER/editarrepartidor') ?>/${id}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('¡Repartidor actualizado con éxito!');
+            window.location.reload();
+        } else {
+            alert('Error al actualizar.');
+        }
+    });
+});
+
+function eliminarRepartidor(id, nombre) {
+    if (!confirm(`¿Seguro que deseas eliminar a ${nombre}?`)) return;
+
+    const formData = new FormData();
+    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+    fetch(`<?= base_url('FRUVER/eliminarrepartidor') ?>/${id}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('Repartidor eliminado.');
+            window.location.reload();
+        } else {
+            alert('Error al eliminar.');
+        }
+    });
+}
+// Previsualizar foto antes de guardar
+function previsualizarFoto(input, previewId) {
+    const preview = document.getElementById(previewId);
+    const file = input.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+</script>
 
 </body>
 </html>
