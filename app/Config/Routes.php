@@ -49,6 +49,7 @@ $routes->get('merma', 'Merma::index');
 $routes->post('merma/guardar', 'Merma::guardar');
 $routes->post('confirmar-entrada', 'GestionEntradas::guardar');
 $routes->post('merma/guardar', 'Merma::guardar');
+$routes->get('mermas', 'Merma::index');
 // ==========================
 // 7. General
 // ==========================
