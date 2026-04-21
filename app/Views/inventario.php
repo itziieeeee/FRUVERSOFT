@@ -529,6 +529,7 @@
                     <div class="form-group col-md-6">
                         <label class="font-weight-bold">Unidad de compra</label>
                         <select name="unidad_compra" class="form-control" required>
+                            <option value="" disabled selected hidden>Selecciona unidad...</option>
                             <option value="Caja">Caja</option>
                             <option value="Kilo">Kilo</option>
                             <option value="Domo">Domo</option>
@@ -552,6 +553,7 @@
                     <div class="form-group col-md-6">
                         <label class="font-weight-bold text-success">Unidad de venta</label>
                         <select name="unidad_venta" class="form-control" required>
+                            <option value="" disabled selected hidden>Selecciona unidad...</option>
                             <option value="Caja">Caja</option>
                             <option value="Kilo">Kilo</option>
                             <option value="Domo">Domo</option>
