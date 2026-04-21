@@ -31,7 +31,7 @@ body {
     flex-direction: column;
 }
 
-/* ===== HEADER ===== */
+/*  HEADER  */
 .barra-superior {
     display: flex;
     align-items: center;
@@ -53,11 +53,19 @@ body {
     display: flex;
 }
 
+.buscador form {
+    display: flex;
+    width: 100%;
+    height: 40px;
+    background-color: white;
+    border-radius: 50px;
+    overflow: hidden;
+}
+
 .buscador input {
     flex: 1;
     padding: 0.5rem 1rem;
     border: none;
-    border-radius: 50px 0 0 50px;
     font-size: 0.85rem;
     outline: none;
 }
@@ -66,7 +74,6 @@ body {
     background: var(--primary-orange);
     border: none;
     padding: 0.5rem 1rem;
-    border-radius: 0 50px 50px 0;
     color: white;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -126,7 +133,7 @@ body {
     transform: translateY(-1px);
 }
 
-/* ===== NAVEGACIÓN ===== */
+/*  NAVEGACIÓN*/
 .menu-navegacion {
     background: white;
     padding: 0.5rem 1.5rem;
@@ -170,7 +177,7 @@ body {
     border-bottom: 3px solid var(--primary-orange);
 }
 
-/* ===== CONTENIDO PRINCIPAL ===== */
+/*  CONTENIDO PRINCIPAL  */
 .contenido-principal {
     flex: 1;
     margin: 1rem;
@@ -205,7 +212,7 @@ body {
     border-radius: 14px;
 }
 
-/* ===== GRID 3 COLUMNAS ===== */
+/*  GRID 3 COLUMNAS  */
 .productos-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -215,8 +222,7 @@ body {
     overflow-y: auto;
     align-content: flex-start;
 }
-
-/* ===== TARJETA COMPLETA ===== */
+/*  TARJETA COMPLETA */
 .producto-card {
     background: white;
     border-radius: 1rem;
@@ -258,30 +264,52 @@ body {
     line-height: 1.4;
 }
 
+/* ===== ESTILO PARA EL P DE UNIDAD DE MEDIDA ===== */
 .precio-unidad {
     background: linear-gradient(120deg, #fff7ed, #fff2e6);
     padding: 0.5rem 0.8rem;
     border-radius: 1rem;
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.precio-unidad p {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
-.precio-venta {
-    font-weight: bold;
-    color: var(--primary-orange);
-    font-size: 1.1rem;
+.precio-unidad p i {
+    color: var(--primary-green);
+    font-size: 0.7rem;
 }
 
 .unidad-medida {
-    font-size: 0.7rem;
-    background: rgba(0,0,0,0.05);
-    padding: 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(241, 107, 26, 0.12);
+    padding: 4px 12px;
     border-radius: 30px;
-    color: var(--text-light);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--primary-orange);
 }
 
+.unidad-medida i {
+    font-size: 0.65rem;
+    color: var(--primary-orange);
+}
+
+/* ===== INVENTARIO PANEL ===== */
 .inventario-panel {
     background: var(--gray-light);
     border-radius: 0.8rem;
@@ -378,7 +406,7 @@ body {
     border-radius: 10px;
 }
 
-/* ===== MODAL EDITAR - CON COLORES #f8f9fa, #1d4a27, #f16b1a ===== */
+/* ===== MODAL EDITAR ===== */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -400,7 +428,7 @@ body {
 }
 
 .modal-container {
-    background: var(--gray-light); /* #f8f9fa */
+    background: var(--gray-light);
     border-radius: 20px;
     width: min(550px, 92vw);
     max-height: 90vh;
@@ -422,7 +450,7 @@ body {
 }
 
 .modal-header {
-    background: var(--primary-green); /* #1d4a27 */
+    background: var(--primary-green);
     padding: 1.2rem 1.5rem;
     border-radius: 20px 20px 0 0;
     display: flex;
@@ -479,13 +507,13 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--primary-green); /* #1d4a27 */
+    color: var(--primary-green);
     margin-bottom: 0.5rem;
 }
 
 .modal-field label i {
     width: 24px;
-    color: var(--primary-orange); /* #f16b1a */
+    color: var(--primary-orange);
 }
 
 .modal-field input,
@@ -504,7 +532,7 @@ body {
 .modal-field input:focus,
 .modal-field textarea:focus {
     outline: none;
-    border-color: var(--primary-orange); /* #f16b1a */
+    border-color: var(--primary-orange);
     box-shadow: 0 0 0 3px rgba(241, 107, 26, 0.1);
 }
 
@@ -569,7 +597,7 @@ body {
 .btn-save {
     padding: 0.7rem 2rem;
     border-radius: 40px;
-    background: var(--primary-orange); /* #f16b1a */
+    background: var(--primary-orange);
     border: none;
     color: white;
     font-weight: 700;
@@ -586,7 +614,6 @@ body {
     box-shadow: 0 4px 12px rgba(241, 107, 26, 0.3);
 }
 
-/* Custom scrollbar para modal */
 .modal-container::-webkit-scrollbar {
     width: 6px;
 }
@@ -652,5 +679,9 @@ body {
     }
     .modal-row {
         grid-template-columns: 1fr;
+    }
+    .precio-unidad {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }

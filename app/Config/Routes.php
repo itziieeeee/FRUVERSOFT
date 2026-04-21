@@ -49,6 +49,7 @@ $routes->get('merma', 'Merma::index');
 $routes->post('merma/guardar', 'Merma::guardar');
 $routes->post('confirmar-entrada', 'GestionEntradas::guardar');
 $routes->post('merma/guardar', 'Merma::guardar');
+$routes->get('mermas', 'Merma::index');
 // ==========================
 // 7. General
 // ==========================
@@ -76,3 +77,9 @@ $routes->post('FRUVER/guardarrepartidor', 'FRUVER::guardarrepartidor');
 $routes->get('pantalla_repartidores', 'FRUVER::mostrar_repartidores');
 $routes->post('FRUVER/editarrepartidor/(:num)', 'FRUVER::editarrepartidor/$1');
 $routes->post('FRUVER/eliminarrepartidor/(:num)', 'FRUVER::eliminarrepartidor/$1');
+
+
+
+
+$routes->get('existencias/getProducto/(:num)',  'Existencias::getProducto/$1');
+$routes->post('existencias/actualizar/(:num)',  'Existencias::actualizar/$1');

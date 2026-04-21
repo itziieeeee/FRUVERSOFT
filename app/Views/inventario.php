@@ -440,22 +440,24 @@
     <?php endif; ?>
 
     <!-- TARJETAS DE ACCIONES PRINCIPALES -->
-    <div class="opciones">
-        <a href="javascript:void(0);" class="botonesopciones" id="btnAbrirEntrada">
-            <img src="<?= base_url('img/Entrada.jpeg') ?>" alt="Entrada">
-            <span><i class="fas fa-arrow-down me-1"></i> Entrada</span>
-        </a>
-        <a href="javascript:void(0)" class="botonesopciones" data-toggle="modal" data-target="#modalMerma">
-            <img src="<?= base_url('img/Merma.jpeg') ?>" alt="Merma">
-            <span><i class="fas fa-trash-alt"></i> Merma</span>
-        </a>
-        <a href="<?= base_url('existencias') ?>" class="botonesopciones">
-            <img src="<?= base_url('img/existencias.png') ?>" alt="Existencias">
-            <span><i class="fas fa-clipboard-list"></i> Existencias</span>
-        </a>
-    </div>
+<div class="opciones">
+    <a href="javascript:void(0);" class="botonesopciones" id="btnAbrirEntrada">
+        <img src="<?= base_url('img/Entrada.jpeg') ?>" alt="Entrada">
+        <span><i class="fas fa-arrow-down me-1"></i> Entrada</span>
+    </a>
 
-    <!-- TABLA DE STOCK ACTUAL (mejorada) -->
+    <a href="<?= base_url('mermas') ?>" class="botonesopciones">
+        <img src="<?= base_url('img/Merma.jpeg') ?>" alt="Merma">
+        <span><i class="fas fa-trash-alt"></i> Merma</span>
+    </a>
+
+    <a href="<?= base_url('existencias') ?>" class="botonesopciones">
+        <img src="<?= base_url('img/existencias.png') ?>" alt="Existencias">
+        <span><i class="fas fa-clipboard-list"></i> Existencias</span>
+    </a>
+</div>
+
+    <!-- TABLA DE STOCK ACTUAL-->
     <div class="container-mordern">
         <div class="section-title">
             <i class="fas fa-apple-alt fa-lg" style="color: var(--naranja-fresh);"></i> 
@@ -488,87 +490,99 @@
     </div>
 </div>
 
-<!-- MODAL PERSONALIZADO - ENTRADA (Premium) -->
+<!-- MODAL ENTRADa -->
 <div id="productModal" class="modal-overlay-custom">
     <div class="modal-container-custom">
         <div class="modal-header-custom d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold"><i class="fas fa-truck-loading me-2"></i> Registrar Entrada de Producto</h5>
             <button type="button" id="closeModalBtn" class="close text-white" style="font-size: 1.8rem; opacity: 0.9;">&times;</button>
         </div>
+        
         <div class="modal-body p-4">
             <form id="productForm" method="POST" action="<?= base_url('confirmar-entrada') ?>">
-                <div class="form-group mb-3">
-                    <label class="font-weight-bold">🍏 Producto</label>
-                    <select name="id_producto" id="selectEntrada" class="form-control mi-buscador" style="width: 100%;" required>
-                        <option value="">Seleccione un producto...</option>
-                        <?php foreach ($productos as $p): ?>
-                            <option value="<?= $p['id'] ?>"><?= esc($p['nombre']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+                
+<div class="form-group mb-3">
+    <label class="font-weight-bold"><i class="fas fa-apple-alt"></i> Producto</label>
+    <select name="id_producto" id="selectEntrada" class="form-control" style="width: 100%;" required>
+        <option value="">Escribe para buscar...</option>
+        <?php foreach ($productos as $p): ?>
+            <option value="<?= $p['id'] ?>"><?= esc($p['nombre']) ?></option>
+        <?php endforeach; ?>
+    </select>
+</div>
+
                 <div class="form-row">
                     <div class="form-group col-md-6">
-                        <label><i class="fas fa-balance-scale"></i> Unidad de compra</label>
-                        <select name="unidad_compra" class="form-control">
-                            <option value="caja">📦 Caja</option>
-                            <option value="mazo">🌿 Mazo</option>
-                            <option value="arpilla">🪢 Arpilla</option>
-                            <option value="tonelada">⚖️ Tonelada</option>
+                        <label class="font-weight-bold">Precio de compra</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend"><span class="input-group-text">$</span></div>
+                            <input type="number" step="0.01" min= "0.01" name="precio_compra" class="form-control" placeholder="0.00" required>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="font-weight-bold">Cantidad de compra</label>
+                        <input type="number" step="1" min= "1" name="cantidad_compra" class="form-control" placeholder="Ej: 50" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label class="font-weight-bold">Unidad de compra</label>
+                        <select name="unidad_compra" class="form-control" required>
+                            <option value="Caja">Caja</option>
+                            <option value="Kilo">Kilo</option>
+                            <option value="Domo">Domo</option>
+                            <option value="Mazo">Mazo</option>
+                            <option value="Arpilla">Arpilla</option>
+                            <option value="Ramo">Ramo</option>
                         </select>
                     </div>
                     <div class="form-group col-md-6">
-                        <label><i class="fas fa-plus-circle"></i> Cantidad</label>
-                        <input type="number" step="0.001" name="cantidad" class="form-control" placeholder="Ej: 5.5" required>
+                        <label class="font-weight-bold">Precio sugerido</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend"><span class="input-group-text">$</span></div>
+                            <input type="number" step="0.01" min= "0.01" name="precio_sugerido" class="form-control" placeholder="0.00" required>
+                        </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-success btn-block mt-3 py-2 rounded-pill" style="background: var(--verde-fruta); border: none; font-weight: bold;">
-                    <i class="fas fa-save"></i> Guardar Entrada
+
+                <hr>
+
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label class="font-weight-bold text-success">Unidad de venta</label>
+                        <select name="unidad_venta" class="form-control" required>
+                            <option value="Caja">Caja</option>
+                            <option value="Kilo">Kilo</option>
+                            <option value="Domo">Domo</option>
+                            <option value="Mazo">Mazo</option>
+                            <option value="Arpilla">Arpilla</option>
+                            <option value="Ramo">Ramo</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="font-weight-bold text-success">Cantidad de venta</label>
+                        <input type="number" step="1" min= "1" name="cantidad_venta" class="form-control" placeholder="Ej: 100" required>
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="font-weight-bold">Categoría</label>
+                    <select name="categoria" class="form-control" required>
+                        <option value="Frutas">Frutas</option>
+                        <option value="Verduras">Verduras</option>
+                        <option value="Abarrotes">Abarrotes</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-block py-2 rounded-pill shadow" style="background: var(--verde-fruta); border: none; font-weight: bold;">
+                    <i class="fas fa-save me-2"></i> Guardar Registro de Inventario
                 </button>
             </form>
         </div>
     </div>
 </div>
 
-<!-- MODAL MERMA (Bootstrap + mejoras visuales) -->
-<div class="modal fade" id="modalMerma" tabindex="-1" role="dialog" aria-labelledby="mermaModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content" style="border-radius: 1.5rem; overflow: hidden;">
-      <div class="modal-header" style="background: #dc2626; border-bottom: none;">
-        <h5 class="modal-title text-white fw-bold"><i class="fas fa-trash-alt me-2"></i> Registrar Merma</h5>
-        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">&times;</button>
-      </div>
-      <div class="modal-body p-4">
-        <form method="POST" action="<?= base_url('merma/guardar') ?>">
-            <div class="form-group">
-                <label><i class="fas fa-search"></i> Producto a Mermar</label>
-                <select name="id_producto" id="selectMerma" class="form-control mi-buscador" required style="width: 100%;">
-                    <option value="">📋 Buscar producto...</option>
-                    <?php if (!empty($productos_merma)): ?>
-                        <?php foreach ($productos_merma as $pm): ?>
-                            <option value="<?= $pm['id_p'] ?>">
-                                <?= esc($pm['nombre']) ?> (Stock: <?= number_format($pm['e_total'],2) ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </select>
-                <small class="form-text text-muted">Selecciona producto con existencias disponibles</small>
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-minus-circle"></i> Cantidad a retirar</label>
-                <input type="number" step="0.001" name="cantidad" class="form-control" placeholder="0.00" required>
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-comment-dots"></i> Motivo / Observación</label>
-                <textarea name="motivo" class="form-control" rows="3" placeholder="Ej: producto dañado, caducidad, pérdida..."></textarea>
-            </div>
-            <button type="submit" class="btn btn-block rounded-pill" style="background: #dc2626; color: white; font-weight: bold; border: none; padding: 0.7rem;">
-                <i class="fas fa-check-circle"></i> Confirmar Merma
-            </button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- SCRIPTS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

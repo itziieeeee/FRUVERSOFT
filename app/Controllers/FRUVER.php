@@ -97,31 +97,31 @@ class FRUVER extends BaseController
     // 4. INVENTARIO Y CADUCIDAD
     // ==========================
 
-    // Función interna para procesar mermas por fecha
+// Función interna para procesar mermas por fecha (CORREGIDA)
     private function revisarCaducados()
     {
         $db = \Config\Database::connect();
         $hoy = date('Y-m-d');
 
-        // Buscar productos en 'entrada' que caducaron hoy o antes
+        // Buscamor entrada
         $caducados = $db->table('entrada')
                         ->where('fecha_cad <=', $hoy)
-                        ->where('cantidad >', 0)
+                        ->where('cantidad_venta >', 0)
                         ->get()
                         ->getResultArray();
 
         foreach ($caducados as $fila) {
-            $cantidad_mermar = $fila['cantidad'];
+            $cantidad_mermar = $fila['cantidad_venta'];
 
-            // A. Registrar en tabla merma
+            //Registro en tabla merma
             $db->table('merma')->insert([
-                'id_entrada' => $fila['id'],
+                'id_entrada' => $fila['id_entrada'], 
                 'cantidad'   => $cantidad_mermar,
                 'motivo'     => 'SISTEMA: CADUCIDAD AUTOMÁTICA (5 DÍAS)',
                 'fecha'      => $hoy
             ]);
 
-            // B. Actualizar existencias
+            //Actualizar existencias
             $existencia = $db->table('existencias')
                              ->where('id_producto', $fila['id_producto'])
                              ->get()
@@ -136,29 +136,31 @@ class FRUVER extends BaseController
                    ]);
             }
 
-            // C. Vaciar cantidad de esa entrada para no repetir el proceso
-            $db->table('entrada')->where('id', $fila['id'])->update(['cantidad' => 0]);
+            // Vaciamor la cantidad de entrada para que no se procese doble mañana
+            $db->table('entrada')
+               ->where('id_entrada', $fila['id_entrada']) // Antes decía 'id'
+               ->update(['cantidad_venta' => 0]);         // Antes decía 'cantidad'
         }
     }
 
     public function inventario()
     {
-        // Limpiamos antes de mostrar la tabla
+        // Limpiamo antes de mostrar la tabla
         $this->revisarCaducados(); 
 
         $db = \Config\Database::connect();
 
-        // 1. Lista general de productos
+        // Lista general de productos para la modal de Entrada
         $productos = $db->table('producto')->get()->getResultArray();
 
-        // 2. Stock consolidado para la tabla principal
+        // Stock consolidao para mostrar en la tabla principal
         $existencias = $db->table('existencias e')
             ->select('p.nombre, e.e_total, e.e_merma')
             ->join('producto p', 'p.id = e.id_producto')
             ->get()
             ->getResultArray();
 
-        // 3. NUEVA CONSULTA: Productos disponibles para MERMA
+        // Productos que tienen stock real para poder hacerles Merma manual
         $productos_merma = $db->table('existencias e')
             ->select('p.id as id_p, p.nombre, e.e_total')
             ->join('producto p', 'p.id = e.id_producto')
@@ -167,15 +169,13 @@ class FRUVER extends BaseController
             ->getResultArray();
 
         $data = [
-            'productos'       => $productos,       // Se usa en Entrada
-            'productos_merma' => $productos_merma, // Se usa en Merma
-            'existencias'     => $existencias      // Se usa en la Tabla
+            'productos'       => $productos,
+            'productos_merma' => $productos_merma,
+            'existencias'     => $existencias
         ];
 
-        return view('inventario', $data);
+        return view('inventario', $data); 
     }
-
-
 
     // ==========================
     // 5. VENDEDOR Y BUSCADOR
