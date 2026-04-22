@@ -4,28 +4,39 @@ namespace App\Controllers;
 
 class Merma extends BaseController
 {
-    public function index()
-    {
-        $db = \Config\Database::connect();
+   public function index()
+{
+    $db = \Config\Database::connect();
 
-        $data['productos_merma'] = $db->table('existencias e')
-            ->select('p.id as id_p, p.nombre, e.e_total')
-            ->join('producto p', 'p.id = e.id_producto')
-            ->where('e.e_total >', 0)
-            ->get()
-            ->getResultArray();
+    $data['productos_merma'] = $db->table('existencias e')
+        ->select('p.id as id_p, p.nombre, e.e_total')
+        ->join('producto p', 'p.id = e.id_producto')
+        ->where('e.e_total >', 0)
+        ->get()
+        ->getResultArray();
 
-        // Unir merma entrada 
-        $data['historial_mermas'] = $db->table('merma m')
-            ->select('p.nombre, m.cantidad, m.motivo, m.fecha')
-            ->join('entrada e', 'e.id = m.id_entrada')
-            ->join('producto p', 'p.id = e.id_producto')
-            ->orderBy('m.fecha', 'DESC')
-            ->get()
-            ->getResultArray();
+    $data['historial_mermas'] = $db->table('merma m')
+        ->select('p.nombre, m.cantidad, m.motivo, m.fecha')
+        ->join('entrada e', 'e.id = m.id_entrada')
+        ->join('producto p', 'p.id = e.id_producto')
+        ->orderBy('m.fecha', 'DESC')
+        ->get()
+        ->getResultArray();
 
-        return view('pantalla_mermas', $data);
-    }
+    $grafica = $db->query("
+    SELECT 
+        COALESCE(SUM(e.cantidad_compra), 0) AS total_entradas,
+        COALESCE(SUM(m.cantidad), 0) AS total_merma
+    FROM entrada e
+    LEFT JOIN merma m ON m.id_entrada = e.id
+")->getRowArray();
+
+$data['grafica_labels']   = ['Total General'];
+$data['grafica_entradas'] = [(int) $grafica['total_entradas']];
+$data['grafica_mermas']   = [(float) $grafica['total_merma']];
+
+    return view('pantalla_mermas', $data);
+}
 
     public function guardar()
     {

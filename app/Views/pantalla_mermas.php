@@ -36,6 +36,19 @@
             border-radius: 6px;
             font-weight: bold;
         }
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+        }
+        .chart-container h3 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -101,6 +114,7 @@
         </button>
     </form>
 
+    
     <div class="titulo-seccion" style="margin-bottom: 15px; font-size: 1.1rem;">
         <i class="fas fa-history"></i>
         <span>Historial de Mermas Recientes</span>
@@ -127,20 +141,77 @@
                     </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <tr><td colspan="4" style="text-align:center; padding:2rem;">No hay mermas registradas el día de hoy.</td></tr>
+                    <tr>
+                        <td colspan="4" style="text-align:center; padding:2rem;">
+                            No hay mermas registradas el día de hoy.
+                        </td>
+                    </tr>
                 <?php endif; ?>
             </tbody>
         </table>
     </div>
+
+    
+    <?php if (!empty($grafica_labels)): ?>
+    <div class="chart-container">
+        <h3>Grafico de control</h3>
+        <canvas id="graficaEntradaMerma"></canvas>
+    </div>
+    <?php endif; ?>
+
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     $(document).ready(function() {
-        // Inicializa el buscador avanzado en el select
         $('#select_producto').select2();
     });
+
+    <?php if (!empty($grafica_labels)): ?>
+    const labels   = <?= json_encode($grafica_labels) ?>;
+    const entradas = <?= json_encode($grafica_entradas) ?>;
+    const mermas   = <?= json_encode($grafica_mermas) ?>;
+
+    const ctx = document.getElementById('graficaEntradaMerma').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Entradas',
+                    data: entradas,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Merma',
+                    data: mermas,
+                    backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: {
+                    display: true,
+                    text: 'Comparativo de entradas con merma'
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Cantidad' } },
+                x: { title: { display: true, text: '' } }
+            }
+        }
+    });
+    <?php endif; ?>
 </script>
 
 </body>
