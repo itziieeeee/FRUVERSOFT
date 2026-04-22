@@ -228,9 +228,16 @@ class FRUVER extends BaseController
     }
 
     public function pantalla_productos()
-    {
-        return view('pantalla_productos');
-    }
+{
+    $model = new \App\Models\ProductoModel();
+
+    $data = [
+        'productos' => $model->orderBy('id', 'DESC')->paginate(10),
+        'pager'     => $model->pager
+    ];
+
+    return view('pantalla_productos', $data);
+}
 
 public function guardarrepartidor() {
     $model = new \App\Models\RepartidorModel();
@@ -306,4 +313,5 @@ public function eliminarrepartidor($id){
       return $this->response->setJSON(['success' => false]);
     }
 }
+
 }

@@ -83,3 +83,9 @@ $routes->post('FRUVER/eliminarrepartidor/(:num)', 'FRUVER::eliminarrepartidor/$1
 
 $routes->get('existencias/getProducto/(:num)',  'Existencias::getProducto/$1');
 $routes->post('existencias/actualizar/(:num)',  'Existencias::actualizar/$1');
+
+//boton nuevo producto 
+$routes->get('alta_producto', 'Producto::altaproducto');
+$routes->post('guardar_producto', 'Producto::guardar');
+$routes->get('pantalla_productos', 'Producto::pantalla_productos');
+$routes->delete('producto/eliminar/(:num)', 'Producto::eliminar/$1');

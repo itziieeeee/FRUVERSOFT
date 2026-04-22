@@ -6,44 +6,73 @@ use App\Models\ProductoModel;
 
 class Producto extends BaseController
 {
-    public function index()
+   
+    public function altaproducto()
     {
-        // Carga la vista del formulario
         return view('alta_producto');
     }
 
-    public function guardar()
-    {
-        $model = new ProductoModel();
-    
-        $data = [
-            'nombre' => $this->request->getPost('nombre'),
-            'descripcion' => $this->request->getPost('descripcion'),
-            'uni_medida' => $this->request->getPost('uni_medida'),
-            'unidad_compra' => $this->request->getPost('unidad_compra'),
-            'unidad_venta' => $this->request->getPost('unidad_venta'),
-             'categoria' => $this->request->getPost('categoria'),
-              'stock' => $this->request->getPost('stock'),
-               'precio_compra' => $this->request->getPost('precio_compra'),
-                'precio_venta' => $this->request->getPost('precio_venta'),
-        ];
+   public function guardar()
+{
+    helper(['form']);
+    $model = new ProductoModel();
 
-        if ($model->insert($data)) {
-            return redirect()->to(base_url('inventario/merma'))->with('mensaje', 'Guardado con éxito');
-        }
-        }
-   public function listar(){
-    $modelP = new ProductoModel();
+    //  IMAGEN
+    $file = $this->request->getFile('foto');
+    $nombreImagen = null;
 
-    // configurar paginacion
-    $datos = [
-    'productos' => $modelP->orderBy('nombre', 'ASC')->paginate(6, 'default'),
-    'pager' => $modelP->pager
+    if ($file && $file->isValid() && !$file->hasMoved()) {
+        
+        $tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg'];
+        $maxSize = 2048; 
+
+        if (!in_array($file->getMimeType(), $tiposPermitidos)) {
+            return redirect()->back()->with('error', 'Solo se permiten imágenes JPG o PNG');
+        }
+
+        if ($file->getSize() > $maxSize * 1024) {
+            return redirect()->back()->with('error', 'La imagen no debe superar 2MB');
+        }
+
+        $nombreImagen = $file->getRandomName();
+        $file->move(FCPATH . 'uploads/productos/', $nombreImagen);
+    }
+    $data = [
+    'nombre'      => $this->request->getPost('nombre'),
+    'descripcion' => $this->request->getPost('descripcion'),
+    'imagen'      => $nombreImagen
 ];
 
-return view('productos', $datos);
+    $model->insert($data);
 
-    return view('productos', $datos);
+    return redirect()->to(base_url('pantalla_productos'))
+                     ->with('mensaje', 'Producto guardado ');
 }
+    public function pantalla_productos()
+{
+    $model = new ProductoModel();
 
+    $orden = $this->request->getGet('orden');
+
+    // 
+    if ($orden == 'stock_mayor') {
+        $model->orderBy('e_total', 'DESC');
+    }
+
+    $data = [
+        'productos' => $model->paginate(10),
+        'pager'     => $model->pager
+    ];
+
+    return view('pantalla_productos', $data);
+}
+    public function eliminar($id)
+{
+    $modelo = new \App\Models\ProductoModel();
+    $modelo->delete($id);
+
+    return $this->response->setJSON([
+        'status' => 'ok'
+    ]);
+}
 }
