@@ -93,7 +93,7 @@
                 <option value="">Buscar producto...</option>
                 <?php foreach ($productos_merma as $pm): ?>
                     <option value="<?= $pm['id_p'] ?>">
-                        <?= $pm['nombre'] ?> (Disponible: <?= $pm['e_total'] ?>)
+                       #<?= $pm['id_p'] ?> - <?= $pm['nombre'] ?> (Disponible: <?= $pm['e_total'] ?>)
                     </option>
                 <?php endforeach; ?>
             </select>

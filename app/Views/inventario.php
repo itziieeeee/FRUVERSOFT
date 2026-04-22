@@ -116,7 +116,9 @@
                     <select name="id_producto" id="selectEntrada" class="form-control" style="width: 100%;" required>
                         <option value="">Escribe para buscar...</option>
                         <?php foreach ($productos as $p): ?>
-                            <option value="<?= $p['id'] ?>"><?= esc($p['nombre']) ?></option>
+                            <option value="<?= $p['id'] ?>">
+                              #<?= $p['id'] ?> - <?= esc($p['nombre']) ?>
+                            </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
