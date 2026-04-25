@@ -40,11 +40,13 @@ class PedidoController extends BaseController {
     $unidadesEnum = $matches[1];
 
     // Enviar TODO a la vista
+    $repartidores = (new \App\Models\RepartidorModel())->findAll();
     $datos = [
         'secc1'     => $pedidos,
         'productos' => $productos,
         'unidades'  => $unidadesEnum,
-        'clientes'  => $clientes 
+        'clientes'  => $clientes,
+        'repartidores' => $repartidores
     ];
 
     return view('pantalla_ventas', $datos);

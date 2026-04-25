@@ -182,6 +182,20 @@
         </select>
     </div>
 
+    <div class="form-group">
+    <label><i class="fa-solid fa-dolly" style="color:#1d4a27;"></i> Repartidor:</label>
+    <select id="selectRepartidor" name="id_repartidor">
+        <option value="">— Sin repartidor —</option>
+        <?php foreach($repartidores as $r): ?>
+            <option value="<?= $r['id'] ?>">
+                <?= $r['nombre'] . ' ' . $r['ap_p'] ?>
+                <?php if(!empty($r['foto'])): ?>
+                <?php endif; ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+</div>
+
     <form class="form-estado" id="formEstado">
         <div class="form-group">
             <label>Cambiar estado a:</label>
@@ -305,6 +319,7 @@ async function enviarPedido() {
         alert("Agrega al menos un producto antes de guardar el pedido.");
         return;
     }
+
     const productos = [];
     let hayError = false;
     filas.forEach(fila => {
@@ -324,15 +339,19 @@ async function enviarPedido() {
             total: total
         });
     });
+
     if (hayError) {
         alert("Error: algunos productos tienen datos incompletos.");
         return;
     }
+
     const datosEnvio = {
         id_pedido: 1,
         tipo_venta: document.getElementById('selectTipoVenta').value,
+        id_repartidor: document.getElementById('selectRepartidor').value || null,
         productos: productos
     };
+
     try {
         const respuesta = await fetch('<?= base_url("pedido/guardar_productos_pedido") ?>', {
             method: 'POST',
