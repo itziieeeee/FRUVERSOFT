@@ -172,6 +172,7 @@
                             <option value="Mazo">Mazo</option>
                             <option value="Arpilla">Arpilla</option>
                             <option value="Ramo">Ramo</option>
+                            <option value="Pieza">Pieza</option>
                         </select>
                     </div>
                     <div class="form-group col-md-6">
@@ -185,7 +186,7 @@
                     <select name="categoria" class="form-control" required>
                         <option value="Frutas">Frutas</option>
                         <option value="Verduras">Verduras</option>
-                        <option value="Abarrotes">Abarrotes</option>
+                        <option value="Abarrotes">Hojas</option>
                     </select>
                 </div>
 
@@ -260,3 +261,4 @@
 </script>
 </body>
 </html>
+

@@ -115,7 +115,7 @@ class FRUVER extends BaseController
 
             //Registro en tabla merma
             $db->table('merma')->insert([
-                'id_entrada' => $fila['id_entrada'], 
+                'id_entrada' => $fila['id'], 
                 'cantidad'   => $cantidad_mermar,
                 'motivo'     => 'SISTEMA: CADUCIDAD AUTOMÁTICA (5 DÍAS)',
                 'fecha'      => $hoy
@@ -138,7 +138,7 @@ class FRUVER extends BaseController
 
             // Vaciamor la cantidad de entrada para que no se procese doble mañana
             $db->table('entrada')
-               ->where('id_entrada', $fila['id_entrada']) // Antes decía 'id'
+               ->where('id', $fila['id']) // Antes decía 'id'
                ->update(['cantidad_venta' => 0]);         // Antes decía 'cantidad'
         }
     }

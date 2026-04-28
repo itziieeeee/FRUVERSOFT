@@ -12,7 +12,7 @@
     <style>
         .form-merma-inline {
             display: grid;
-            grid-template-columns: 2fr 1fr 2fr 1fr;
+            grid-template-columns: 2fr 1fr 1fr 2fr 1fr;
             gap: 15px;
             align-items: end;
             background: #fff;
@@ -86,33 +86,47 @@
         </div>
     </div>
 
-    <form action="<?= base_url('merma/guardar') ?>" method="POST" class="form-merma-inline">
-        <div class="form-group">
-            <label>Seleccionar Producto</label>
-            <select name="id_producto" id="select_producto" required>
-                <option value="">Buscar producto...</option>
-                <?php foreach ($productos_merma as $pm): ?>
-                    <option value="<?= $pm['id_p'] ?>">
-                       #<?= $pm['id_p'] ?> - <?= $pm['nombre'] ?> (Disponible: <?= $pm['e_total'] ?>)
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
+<form action="<?= base_url('merma/guardar') ?>" method="POST" class="form-merma-inline">
+    <div class="form-group">
+        <label>Seleccionar Producto</label>
+        <select name="id_producto" id="select_producto" required>
+            <option value="">Buscar producto...</option>
+            <?php foreach ($productos_merma as $pm): ?>
+                <option value="<?= $pm['id_p'] ?>">
+                   #<?= $pm['id_p'] ?> - <?= $pm['nombre'] ?> (Disponible: <?= $pm['e_total'] ?>)
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
 
-        <div class="form-group">
-            <label>Cantidad</label>
-            <input type="number" name="cantidad" min="1" step="1" placeholder="0" required>
-        </div>
+    <div class="form-group">
+        <label>Cantidad</label>
+        <input type="number" name="cantidad" min="0.01" step="0.01" placeholder="0.01" required>
+    </div>
 
-        <div class="form-group">
-            <label>Motivo / Razón</label>
-            <input type="text" name="motivo" placeholder="Ej. Producto golpeado" required>
-        </div>
+    <div class="form-group">
+        <label class="font-weight-bold text-success">Unidad</label>
+        <select name="unidad_venta" required>
+            <option value="" disabled selected hidden>Selecciona unidad...</option>
+            <option value="Caja">Caja</option>
+            <option value="Kilo">Kilo</option>
+            <option value="Domo">Domo</option>
+            <option value="Mazo">Mazo</option>
+            <option value="Arpilla">Arpilla</option>
+            <option value="Ramo">Ramo</option>
+            <option value="Pieza">Pieza</option>
+        </select>
+    </div>
 
-        <button type="submit" class="btn-registrar" style="height: 42px;">
-            <i class="fas fa-save"></i> Registrar Merma
-        </button>
-    </form>
+    <div class="form-group">
+        <label>Motivo / Razón</label>
+        <input type="text" name="motivo" placeholder="Ej. Producto golpeado" required>
+    </div>
+
+    <button type="submit" class="btn-registrar" style="height: 42px; background-color: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer;">
+        <i class="fas fa-save"></i> Registrar Merma
+    </button>
+</form>
 
     
     <div class="titulo-seccion" style="margin-bottom: 15px; font-size: 1.1rem;">

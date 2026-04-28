@@ -325,10 +325,13 @@
         <div class="logo-area">
             <img src="<?= base_url('img/LOGO1.png') ?>" alt="Logo" width="140">
         </div>
-        <div class="buscador">
-            <input type="text" placeholder="Buscar...">
-            <button><i class="fas fa-search"></i></button>
-        </div>
+
+        <form action="<?= base_url('pantalla_productos') ?>" method="GET" class="buscador">
+        <input type="text" name="q" placeholder="Buscar producto..." value="<?= isset($_GET['q']) ? esc($_GET['q']) : '' ?>">
+        <button type="submit"><i class="fas fa-search"></i></button>
+        </form>
+
+
         <div class="user-actions">
             <a href="#" class="btn-user"><i class="fas fa-user-shield"></i> <span>Admin</span></a>
             <a href="#" class="btn-user"><i class="fas fa-bell"></i> <span>Notificaciones</span></a>

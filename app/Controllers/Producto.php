@@ -48,31 +48,33 @@ class Producto extends BaseController
     return redirect()->to(base_url('pantalla_productos'))
                      ->with('mensaje', 'Producto guardado ');
 }
-    public function pantalla_productos()
-{
-    $model = new ProductoModel();
 
+public function pantalla_productos()
+{
+    $model = new \App\Models\ProductoModel();
+
+    $q = $this->request->getGet('q');
     $orden = $this->request->getGet('orden');
 
-    // 
+    // Aplicamos los filtros
+    if (!empty($q)) {
+        $model->groupStart()
+              ->like('nombre', $q)
+              ->orLike('descripcion', $q)
+              ->groupEnd();
+    }
+
     if ($orden == 'stock_mayor') {
         $model->orderBy('e_total', 'DESC');
     }
 
+    // Cargamos los datos
     $data = [
         'productos' => $model->paginate(10),
-        'pager'     => $model->pager
+        'pager'     => $model->pager,
+        'q'         => $q
     ];
 
     return view('pantalla_productos', $data);
-}
-    public function eliminar($id)
-{
-    $modelo = new \App\Models\ProductoModel();
-    $modelo->delete($id);
-
-    return $this->response->setJSON([
-        'status' => 'ok'
-    ]);
 }
 }
