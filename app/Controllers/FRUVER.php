@@ -240,6 +240,10 @@ class FRUVER extends BaseController
 }
 
 public function guardarrepartidor() {
+    error_reporting(0);
+    
+    header('Content-Type: application/json');
+    
     $model = new \App\Models\RepartidorModel();
 
     $foto = $this->request->getFile('foto');
@@ -263,8 +267,9 @@ public function guardarrepartidor() {
     if ($model->insert($data)) {
         echo json_encode(['success' => true]);
     } else {
-        echo json_encode(['success' => false]);
+        echo json_encode(['success' => false, 'message' => 'Error al insertar en la base de datos']);
     }
+    exit;
 }
 //para mostrar al repartidor 
 public function mostrar_repartidores() 
