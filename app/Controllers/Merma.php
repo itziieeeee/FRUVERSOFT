@@ -38,20 +38,24 @@ $data['grafica_mermas']   = [(float) $grafica['total_merma']];
     return view('pantalla_mermas', $data);
 }
 
+
 public function guardar()
 {
     date_default_timezone_set('America/Mexico_City');
-    
     $db = \Config\Database::connect();
 
+    // 1. Capturar datos del formulario
     $id_producto = $this->request->getPost('id_producto'); 
     $cantidad_mermar = (float) $this->request->getPost('cantidad');
     $motivo = $this->request->getPost('motivo');
 
+    // Validación de seguridad
     if (!$id_producto || $cantidad_mermar <= 0) {
-        return redirect()->to(base_url('mermas'))->with('error', 'Datos no válidos.');
+        // AJUSTE: Cambia 'mermas' por el nombre real de tu ruta de la vista
+        return redirect()->back()->with('error', 'Datos no válidos.');
     }
 
+    // 2. BUSCAR LA ENTRADA (Lote) DE DONDE SACAR LA MERMA
     $entrada = $db->table('entrada')
                   ->where('id_producto', $id_producto)
                   ->where('cantidad_venta >', 0) 
@@ -60,27 +64,25 @@ public function guardar()
                   ->getRowArray();
 
     if (!$entrada) {
-        return redirect()->to(base_url('mermas'))->with('error', 'No hay stock disponible en el lote seleccionado.');
+        return redirect()->back()->with('error', 'No hay stock disponible para este producto en las entradas.');
     }
 
-    if ($entrada['cantidad_venta'] < $cantidad_mermar) {
-        return redirect()->to(base_url('mermas'))->with('error', 'La cantidad supera el stock del lote (Disponible: ' . $entrada['cantidad_venta'] . ')');
-    }
-
-    // 2. INSERTAR EN MERMA 
+    // 3. INSERTAR EN TABLA MERMA
+    // Tu tabla pide: id, cantidad, fecha, motivo, id_entrada, aplicada
     $db->table('merma')->insert([
         'cantidad'   => $cantidad_mermar,
         'fecha'      => date('Y-m-d H:i:s'), 
         'motivo'     => $motivo,
-        'id_entrada' => $entrada['id'] 
+        'id_entrada' => $entrada['id'],
+        'aplicada'   => 1 // Marcamos como aplicada
     ]);
 
-    // 3. ACTUALIZAR ENTRADA
+    // 4. ACTUALIZAR TABLA ENTRADA (Descontar del lote)
     $db->table('entrada')
        ->where('id', $entrada['id'])
        ->update(['cantidad_venta' => $entrada['cantidad_venta'] - $cantidad_mermar]);
 
-    // 4. ACTUALIZAR EXISTENCIAS TOTALES
+    // 5. ACTUALIZAR EXISTENCIAS TOTALES
     $existencia = $db->table('existencias')
                      ->where('id_producto', $id_producto)
                      ->get()
@@ -95,7 +97,10 @@ public function guardar()
            ]);
     }
 
-    return redirect()->to(base_url('mermas'))->with('mensaje', '¡Merma registrada exitosamente a las ' . date('H:i') . '!');
+    // AJUSTE: Asegúrate que esta ruta 'inventario/mermas' o similar exista
+    return redirect()->back()->with('mensaje', '¡Merma registrada exitosamente!');
 }
+
+
 }
 

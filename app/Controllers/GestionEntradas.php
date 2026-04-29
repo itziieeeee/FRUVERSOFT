@@ -21,9 +21,11 @@ class GestionEntradas extends BaseController
         $categoria       = $this->request->getPost('categoria');
 
         // Validación
-        if (!$id_producto || !$cantidad_compra || !$cantidad_venta) {
-            return redirect()->back()->with('error', 'Por favor, complete todos los campos obligatorios.');
-        }
+        if (!$id_producto || !$cantidad_compra || !$cantidad_venta || !$unidad_compra || !$unidad_venta || !$categoria) {
+        return redirect()->back()
+            ->withInput() // Esto mantiene lo que el usuario ya escribió para que no se borre
+            ->with('error', 'Faltan datos: Asegúrate de seleccionar Unidad de Compra, Venta y Categoría.');
+    }
 
         // --- LÓGICA DE FECHAS AUTOMÁTICA ---
         $fecha_compra = date('Y-m-d H:i:s'); 
