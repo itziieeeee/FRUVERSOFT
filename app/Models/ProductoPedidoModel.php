@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use CodeIgniter\Model;
@@ -15,6 +14,7 @@ class ProductoPedidoModel extends Model {
         'precio_venta',
         'unidad_venta',
         'tipo_venta',
+        'subtotal',
         'total'
     ];
 }

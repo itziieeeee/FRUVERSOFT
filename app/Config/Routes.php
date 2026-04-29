@@ -89,3 +89,10 @@ $routes->get('alta_producto', 'Producto::altaproducto');
 $routes->post('guardar_producto', 'Producto::guardar');
 $routes->get('pantalla_productos', 'Producto::pantalla_productos');
 $routes->delete('producto/eliminar/(:num)', 'Producto::eliminar/$1');
+
+$routes->post('pedido/guardar_productos_pedido', 'PedidoController::guardar_productos_pedido');
+$routes->post('status/cambiar',       'PedidoController::cambiarEstado');
+$routes->delete('pedido/eliminar/(:num)', 'PedidoController::eliminarPedido/$1');
+
+// En Routes.php debería estar:
+$routes->get('pantalla_ventas', 'PedidoController::pantalla_ventas');

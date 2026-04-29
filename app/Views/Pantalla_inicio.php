@@ -5,26 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>FRUVER INICIO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="<?= base_url('css/inicio.css') ?>">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= base_url('CSS/inicio.css') ?>">
+    
 </head>
 <body>
 
-    <!-- Navbar blanca con logo a la izquierda y botones a la derecha -->
+    <!-- Navbar transparente con logo a la izquierda y botones a la derecha -->
     <nav class="navbar" id="navbar">
         <div class="logo">
-            <img src="<?= base_url('IMG/LOGO1.png') ?>" alt="FRUVER">
+             <img src="<?= base_url('IMG/LOGO1.png') ?>" alt="FRUVER">
         </div>
         <div class="nav-buttons">
-            <a href="<?= base_url('registro') ?>" class="btn-registro"><i class="fas fa-leaf"></i> Registrarse</a>
-            <a href="<?= base_url('admin') ?>" class="btn-admin"><i class="fas fa-user-shield"></i> Admin</a>
+            <a href="#" class="btn-registro"><i class="fas fa-leaf"></i> Registrarse</a>
+            <a href="#" class="btn-admin"><i class="fas fa-user-shield"></i> Admin</a>
         </div>
     </nav>
 
     <!-- Carrusel fullscreen -->
     <div class="carrusel">
         <div class="carruselcontenedor">
-            <!-- Slide 1  Principal FRUVER -->
+            <!-- Slide 1 - Principal FRUVER -->
             <div class="carousel-slide active" data-index="0">
                 <div class="slide-bg" style="background-image: url('https://images.pexels.com/photos/616401/pexels-photo-616401.jpeg?auto=compress&cs=tinysrgb&w=1600');"></div>
                 <div class="slide-overlay"></div>
@@ -37,17 +38,18 @@
                 </div>
             </div>
 
-     <!-- Slide 2 - Envíos -->
-<div class="carousel-slide" data-index="1">
-<div class="slide-bg" style="background-image: url('https://images.pexels.com/photos/1132047/pexels-photo-1132047.jpeg?auto=compress&cs=tinysrgb&w=1600');"></div>
-    <div class="slide-overlay"></div>
-    <div class="slide-content">
-        <h1>Garantía de frescura y calidad en cada envío</h1>
-        <a href="<?= base_url('') ?>" class="btn-ingresar">
-            <i class="fa-solid fa-store"></i> SUCURSALES
-        </a>
-    </div>
-</div>
+            <!-- Slide 2 - Envíos -->
+            <div class="carousel-slide" data-index="1">
+                <div class="slide-bg" style="background-image: url('https://images.pexels.com/photos/1132047/pexels-photo-1132047.jpeg?auto=compress&cs=tinysrgb&w=1600');"></div>
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                    <h1>Garantía de frescura y calidad en cada envío</h1>
+                   <!-- <a href="#" class="btn-ingresar">
+                       <i class="fa-solid fa-store"></i> SUCURSALES
+                    </a>-->
+                </div>
+            </div>
+        </div>
 
         <!-- Botones de navegación -->
         <div class="carousel-btn btn-prev" onclick="changeSlide(-1)">

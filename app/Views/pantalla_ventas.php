@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>FRUVER · Control de Pedidos</title>
-    <!-- Fuentes e iconos -->
+
+     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?= base_url('css/ventasestilo.css') ?>">
@@ -64,6 +65,147 @@
             border-bottom: 3px solid var(--primary-orange);
         }
 
+        /* Estilos adicionales para la sección unificada */
+        .seccion-unificada {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            padding: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .grid-2-columnas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .divider-vertical {
+            border-left: 2px solid var(--gray-border);
+            padding-left: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2-columnas {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .divider-vertical {
+                border-left: none;
+                padding-left: 0;
+                border-top: 2px solid var(--gray-border);
+                padding-top: 1.5rem;
+                margin-top: 0.5rem;
+            }
+        }
+
+        .fila-flex {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .fila-flex .form-group {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .btn-guardar-pedido {
+            margin-top: 1.8rem;
+            text-align: right;
+            border-top: 1px solid var(--gray-border);
+            padding-top: 1.5rem;
+        }
+
+        .subtitulo-seccion {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-green);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--light-green);
+        }
+        /* Modal de éxito */
+.modal-exito {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-exito .modal-contenido {
+    background: white;
+    border-radius: 20px;
+    max-width: 450px;
+    width: 90%;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease;
+}
+
+.modal-exito .icono-exito {
+    font-size: 4rem;
+    color: #1d4a27;
+    margin-bottom: 1rem;
+}
+
+.modal-exito h3 {
+    color: #1d4a27;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.modal-exito .detalle-pedido {
+    background: #e8f3e6;
+    border-radius: 12px;
+    padding: 1rem;
+    margin: 1rem 0;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.modal-exito .detalle-pedido p {
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-exito .btn-cerrar {
+    background: linear-gradient(105deg, #f16b1a, #e05a0c);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 40px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: transform 0.2s;
+}
+
+.modal-exito .btn-cerrar:hover {
+    transform: scale(1.02);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
 </style>
 <body>
 
@@ -90,8 +232,8 @@
 </nav>
 
 <div class="container">
-    <!-- SECCIÓN 1: Nueva venta / pedido -->
-    <div class="seccion">
+    <!-- SECCIÓN UNIFICADA: Nueva venta / pedido + Gestión de estado -->
+    <div class="seccion-unificada">
         <h2><i class="fa-solid fa-cart-plus"></i> Nuevo Pedido</h2>
         
         <div class="form-group" style="margin-bottom: 24px;">
@@ -107,41 +249,85 @@
             </select>
         </div>
 
-        <h3><i class="fa-solid fa-apple-alt"></i> Registrar Productos</h3>
-        <form class="form-producto" id="formAgregarProducto">
-            <div class="form-group">
-                <label>Producto</label>
-                <select id="selectProducto" name="id_producto" required>
-                    <option value="">Seleccione producto...</option>
-                    <?php foreach($productos as $prod): ?>
-                        <option value="<?= $prod['id']; ?>" data-precio="<?= $prod['precio_sugerido']; ?>" data-unidad="<?= $prod['unidad_compra'] ?? ''; ?>">
-                            <?= $prod['nombre']; ?>
-                        </option> 
-                    <?php endforeach; ?>
-                </select>
-                <div id="hintUnidad" class="hint-unidad"></div>
-            </div>
-            
-            <div class="form-group">
-                <label>Unidad de venta</label>
-                <select id="selectUnidad" name="unidad_venta" required>
-                    <option value="">Seleccione unidad...</option>
-                    <?php if(!empty($unidades)): ?>
-                        <?php foreach($unidades as $unidad): ?>
-                            <option value="<?= $unidad; ?>"><?= ucfirst($unidad); ?></option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </select>
+        <div class="grid-2-columnas">
+            <!-- Columna izquierda: Registrar Productos -->
+            <div>
+                <div class="subtitulo-seccion"><i class="fa-solid fa-apple-alt"></i> Registrar Productos</div>
+                <form class="form-producto" id="formAgregarProducto">
+                    <div class="form-group">
+                        <label>Producto</label>
+                        <select id="selectProducto" name="id_producto" required>
+                            <option value="">Seleccione producto...</option>
+                            <?php foreach($productos as $prod): ?>
+                                <option value="<?= $prod['id']; ?>" data-precio="<?= $prod['precio_sugerido']; ?>" data-unidad="<?= $prod['unidad_venta'] ?? ''; ?>">
+                                    <?= $prod['nombre']; ?>
+                                </option> 
+                            <?php endforeach; ?>
+                        </select>
+                        <div id="hintUnidad" class="hint-unidad"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Unidad de venta</label>
+                        <select id="selectUnidad" name="unidad_venta" required>
+                            <option value="">Seleccione unidad...</option>
+                            <?php if(!empty($unidades)): ?>
+                                <?php foreach($unidades as $unidad): ?>
+                                    <option value="<?= $unidad; ?>"><?= ucfirst($unidad); ?></option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Cantidad</label>
+                        <input type="number" step="0.01" min="0.01" name="cantidad" placeholder="Ej: 2.5" required id="inputCantidad">
+                    </div>
+                    <button type="submit" class="btn-primary"><i class="fa-solid fa-circle-plus"></i> Agregar Producto</button>
+                </form>
             </div>
 
-            <div class="form-group">
-                <label>Cantidad</label>
-                <input type="number" step="0.01" min="0.01" name="cantidad" placeholder="Ej: 2.5" required id="inputCantidad">
-            </div>
-            <button type="submit" class="btn-primary"><i class="fa-solid fa-circle-plus"></i> Agregar Producto</button>
-        </form>
+            <!-- Columna derecha: Gestión del Pedido (Tipo venta + Entrega) -->
+            <div class="divider-vertical">
+                <div class="subtitulo-seccion"><i class="fa-solid fa-truck-fast"></i> Gestión del Pedido</div>
+                <form id="formEstado">
+                    <div class="fila-flex">
+                        <div class="form-group">
+                            <label>Tipo de venta:</label>
+                            <select id="selectTipoVenta" name="tipo_venta" class="select-gestion">
+                                <option value="contado">Contado</option>
+                                <option value="credito">Crédito</option>
+                            </select>
+                        </div>
 
-        <div class="tabla-container">
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-dolly" style="color:#1d4a27;"></i> Entrega:</label>
+                            <select id="selectEntrega" name="tipo_entrega" class="select-gestion">
+                                <option value="tienda">Tienda</option>
+                                <option value="domicilio">Domicilio</option>
+                            </select>
+                        </div>
+
+                        <!-- Campo adicional para repartidor (se muestra solo si entrega es domicilio) -->
+                        <div class="form-group" id="grupoRepartidor" style="display: none;">
+                            <label><i class="fa-solid fa-motorcycle"></i> Repartidor:</label>
+                            <select id="selectRepartidor" name="id_repartidor">
+                                <option value="">Seleccione repartidor...</option>
+                               <?php foreach($repartidores as $repartidor): ?>
+    <option value="<?= $repartidor['id']; ?>">
+        <?= $repartidor['nombre'] . ' ' . $repartidor['ap_p']; ?>
+    </option>
+<?php endforeach; ?>
+                                
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de productos en este pedido -->
+        <div class="tabla-container" style="margin-top: 2rem;">
             <h3><i class="fa-solid fa-list"></i> Productos en este pedido</h3>
             <table class="tabla-productos" id="tablaProductos">
                 <thead>
@@ -167,62 +353,23 @@
             </button>
         </div>
     </div>
-
-    <!-- SECCIÓN 2: Gestión de estado del pedido -->
-    <div class="seccion">
-        <h2><i class="fa-solid fa-truck-fast"></i> Gestión del Pedido</h2>
-        <form class="form-estado" id="formEstado">
-          <div class="fila-flex">
-
-    <div class="form-group">
-        <label>Tipo de venta:</label>
-        <select id="selectTipoVenta" name="tipo_venta">
-            <option value="contado">Contado</option>
-            <option value="credito">Crédito</option>
-        </select>
-    </div>
-
-    <div class="form-group">
-    <label><i class="fa-solid fa-dolly" style="color:#1d4a27;"></i> Repartidor:</label>
-    <select id="selectRepartidor" name="id_repartidor">
-        <option value="">— Sin repartidor —</option>
-        <?php foreach($repartidores as $r): ?>
-            <option value="<?= $r['id'] ?>">
-                <?= $r['nombre'] . ' ' . $r['ap_p'] ?>
-                <?php if(!empty($r['foto'])): ?>
-                <?php endif; ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-</div>
-
-    <form class="form-estado" id="formEstado">
-        <div class="form-group">
-            <label>Cambiar estado a:</label>
-            <select id="selectEstadoGlobal" name="estado_actual" required>
-                <option value="Pedido">Pedido - Solicitado</option>
-                <option value="Pedido confirmado">Pedido confirmado</option>
-                <option value="Pedido en transito">Pedido en tránsito</option>
-                <option value="Venta confirmada">Venta confirmada</option>
-                <option value="Pedido pagado">Pedido pagado</option>
-                <option value="Pedido cancelado">Pedido cancelado</option>
-            </select>
-        </div>
-        <button type="submit" class="btn-primary"><i class="fas fa-sync-alt"></i> Actualizar Pedido</button>
-    </form>
-
-</div>
-            
-        </form>
-    </div>
 </div>
 
 <script>
 
-
+// Mostrar/ocultar campo repartidor según tipo de entrega
+document.getElementById('selectEntrega').addEventListener('change', function() {
+    const grupoRepartidor = document.getElementById('grupoRepartidor');
+    if (this.value === 'domicilio') {
+        grupoRepartidor.style.display = 'block';
+    } else {
+        grupoRepartidor.style.display = 'none';
+        // Limpiar selección de repartidor si se oculta
+        document.getElementById('selectRepartidor').value = '';
+    }
+});
 
 // AGREGAR PRODUCTO
-
 document.getElementById('formAgregarProducto').addEventListener('submit', function(e) {
     e.preventDefault();
 
@@ -316,8 +463,41 @@ document.getElementById('selectProducto').addEventListener('change', function() 
 async function enviarPedido() {
     const filas = document.querySelectorAll('#tbodyProductos tr');
     if (filas.length === 0) {
-        alert("Agrega al menos un producto antes de guardar el pedido.");
+        Swal.fire({
+            icon: 'warning',
+            title: 'Carrito vacío',
+            text: 'Agrega al menos un producto antes de guardar el pedido.',
+            confirmButtonColor: '#f16b1a'
+        });
         return;
+    }
+
+    const idCliente = document.getElementById('selectCliente').value;
+    if (!idCliente) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Cliente no seleccionado',
+            text: 'Selecciona un cliente para continuar.',
+            confirmButtonColor: '#f16b1a'
+        });
+        return;
+    }
+
+    const tipoVenta = document.getElementById('selectTipoVenta').value;
+    const tipoEntrega = document.getElementById('selectEntrega').value;
+    let idRepartidor = null;
+    
+    if (tipoEntrega === 'domicilio') {
+        idRepartidor = document.getElementById('selectRepartidor').value;
+        if (!idRepartidor) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Repartidor requerido',
+                text: 'Para envío a domicilio, selecciona un repartidor.',
+                confirmButtonColor: '#f16b1a'
+            });
+            return;
+        }
     }
 
     const productos = [];
@@ -327,28 +507,40 @@ async function enviarPedido() {
         const unidad = fila.cells[1]?.innerText || "";
         const cantidad = parseFloat(fila.querySelector('.cantidad-valor')?.innerText) || 0;
         const precio = parseFloat(fila.querySelector('.precio-unitario')?.value) || 0;
-        const subtotal = parseFloat(fila.querySelector('.subtotal-editable')?.value) || 0;
-        const total = cantidad * precio;
         if (!id_producto || !unidad || cantidad <= 0) hayError = true;
         productos.push({
             id_producto: id_producto,
             unidad: unidad,
             cantidad: cantidad,
-            precio_venta: precio,
-            subtotal: subtotal,
-            total: total
+            precio_venta: precio
         });
     });
 
     if (hayError) {
-        alert("Error: algunos productos tienen datos incompletos.");
+        Swal.fire({
+            icon: 'error',
+            title: 'Error en productos',
+            text: 'Algunos productos tienen datos incompletos.',
+            confirmButtonColor: '#f16b1a'
+        });
         return;
     }
 
+    // Mostrar loading
+    Swal.fire({
+        title: 'Guardando pedido...',
+        text: 'Por favor espera',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
     const datosEnvio = {
-        id_pedido: 1,
-        tipo_venta: document.getElementById('selectTipoVenta').value,
-        id_repartidor: document.getElementById('selectRepartidor').value || null,
+        id_cliente: idCliente,
+        tipo_venta: tipoVenta,
+        tipo_entrega: tipoEntrega,
+        id_repartidor: idRepartidor,
         productos: productos
     };
 
@@ -359,17 +551,49 @@ async function enviarPedido() {
             body: JSON.stringify(datosEnvio)
         });
         const resultado = await respuesta.json();
-        alert(resultado.message);
-        if(resultado.status === 'success'){
-            location.reload();
+        
+        if (resultado.status === 'success') {
+            // Mostrar modal con detalles del pedido
+            Swal.fire({
+                icon: 'success',
+                title: '¡Pedido guardado!',
+                html: `
+                    <div style="text-align: left; background: #e8f3e6; border-radius: 12px; padding: 1rem; margin-top: 1rem;">
+                        <p><i class="fas fa-receipt" style="color:#1d4a27;"></i> <strong>Folio:</strong> ${resultado.data.folio}</p>
+                        <p><i class="fas fa-user" style="color:#1d4a27;"></i> <strong>Cliente:</strong> ${resultado.data.cliente}</p>
+                        <p><i class="fas fa-tag" style="color:#1d4a27;"></i> <strong>Tipo de venta:</strong> ${resultado.data.tipo_venta === 'credito' ? 'Crédito' : 'Contado'}</p>
+                        <p><i class="fas fa-truck" style="color:#1d4a27;"></i> <strong>Entrega:</strong> ${resultado.data.tipo_entrega === 'domicilio' ? 'Domicilio' : 'En tienda'}</p>
+                        ${resultado.data.repartidor ? `<p><i class="fas fa-motorcycle" style="color:#1d4a27;"></i> <strong>Repartidor:</strong> ${resultado.data.repartidor}</p>` : ''}
+                        <p><i class="fas fa-dollar-sign" style="color:#1d4a27;"></i> <strong>Total:</strong> $${parseFloat(resultado.data.total).toFixed(2)}</p>
+                    </div>
+                `,
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#f16b1a',
+                allowOutsideClick: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    location.reload();
+                }
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: resultado.message,
+                confirmButtonColor: '#f16b1a'
+            });
         }
     } catch(error) {
         console.error(error);
-        alert("Error al guardar el pedido. Revisa conexión.");
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de conexión',
+            text: 'No se pudo guardar el pedido. Revisa tu conexión.',
+            confirmButtonColor: '#f16b1a'
+        });
     }
 }
-
-// Búsqueda en tabla de pedidos
+// Búsqueda en tabla de pedidos (si existe en la página)
 document.getElementById('btnBuscarPedido')?.addEventListener('click', function() {
     const busqueda = document.getElementById('inputBuscarPedido').value.toLowerCase();
     const filas = document.querySelectorAll('#tablaPedidosBody tr');

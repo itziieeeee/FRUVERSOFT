@@ -46,7 +46,6 @@
         <div class="cabezacard">
             <i class="fas fa-users"></i>
             <h2>Clientes</h2>
-            <span class="fondo">n registros</span>
             <a href="<?= base_url('pantalla_rcliente') ?>" class="botonclienten">
                 <i class="fas fa-plus-circle"></i> Nuevo
             </a>
@@ -55,30 +54,28 @@
             <div style="margin-bottom: 12px;">
                 <h3 style="font-size:0.9rem; color:#22662c; margin-bottom:4px;">Mayoreo</h3>
                 <table class="minit">
-                    <thead><tr><th>Negocio</th><th>Cliente</th><th>Total</th></tr></thead>
+                    <thead>
+                        <tr><th>Cliente</th><th>Total</th></tr></thead>
                     <tbody>
-                        <tr><td>Distribuidora "Por Salud"</td><td>Juan Pérez</td><td><span class="fondototal">$7,890</span></td></tr>
-                        <tr><td>Verduleña "Mi casita"</td><td>Karla Juárez</td><td><span class="fondototal">$5,488</span></td></tr>
-                        <tr><td>Huerto Dorado</td><td>Kenia Flores</td><td><span class="fondototal">$5,400</span></td></tr>
-                        <tr><td>Frutas "El Edén"</td><td>Luis Martínez</td><td><span class="fondototal">$4,920</span></td></tr>
+                        <tr><td>Juan Pérez</td><td><span class="fondototal">$7,890</span></td></tr>
+                        <tr><td>Karla Juárez</td><td><span class="fondototal">$5,488</span></td></tr>
                     </tbody>
                 </table>
             </div>
             <div>
                 <h3 style="font-size:0.9rem; color:#22662c; margin:8px 0 4px;">Menudeo</h3>
                 <table class="minit">
-                    <thead><tr><th>Negocio</th><th>Cliente</th><th>Total</th></tr></thead>
+                    <thead><tr><th>Cliente</th><th>Total</th></tr></thead>
                     <tbody>
-                        <tr><td>Frutas "Max"</td><td>Luis Martínez</td><td><span class="fondototal">$2,920</span></td></tr>
-                        <tr><td>Verduleria "El periquito"</td><td>Karla Juárez</td><td><span class="fondototal">$3,488</span></td></tr>
-                        <tr><td>Raices deliciosas</td><td>Kenia Flores</td><td><span class="fondototal">$3,400</span></td></tr>
-                        <tr><td>Distribuidora "Sabor a campo"</td><td>Juan Pérez</td><td><span class="fondototal">$4,890</span></td></tr>
+                        <tr><td>Luis Martínez</td><td><span class="fondototal">$2,920</span></td></tr>
+                        <tr><td>Karla Juárez</td><td><span class="fondototal">$3,488</span></td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
+    
     <div class="card">
         <div class="cabezacard">
             <i class="fas fa-id-card"></i>
@@ -86,36 +83,21 @@
         </div>
         <div class="scroll-area">
             <div class="info-cliente-grid">
-                <div class="info-item"><span class="info-label">Nombre</span><span class="info-value">Juan Pérez</span></div>
-                <div class="info-item"><span class="info-label">RFC</span><span class="info-value">JPR9ZUAN8ERZ1</span></div>
-                <div class="info-item"><span class="info-label">Dirección</span><span class="info-value">C Principal 123, Veracruz</span></div>
+                <div class="info-item"><span class="info-label">Nombre</span><span class="info-value">Juan Pérez</span></div><br>
+                <div class="info-item"><span class="info-label">RFC</span><span class="info-value">JPR9ZUAN8ERZ1</span></div><br>
+                <div class="info-item"><span class="info-label">Dirección</span><span class="info-value">C Principal 123, Veracruz</span></div><br>
                 <div class="info-item"><span class="info-label">Contacto</span><span class="info-value">untaljuan@gmail.com</span></div>
             </div>
 
-            <div style="margin:8px 0 12px; display:flex; align-items:center; gap:10px;">
-                <span class="tag-cliente"><i class="fas fa-store"></i> Crédito / Mayoreo</span>
-                <span style="font-size:0.7rem; background:#f3f9f0; padding:4px 10px; border-radius:30px;">límite $50k</span>
-            </div>
+            
 
             <div class="tipoc">
+                <div class="info-item"><span class="info-label">Tipo de cliente</span></div>
                 <button class="activo"><i class="fas fa-check-circle"></i> Contado/Menudeo</button>
                 <button><i class="fas fa-credit-card"></i> Crédito/Mayoreo</button>
             </div>
 
-            <div class="credito-mini">
-                <div class="li">
-                    <span>Límite autorizado</span>
-                    <span class="nlimite">$50,000</span>
-                </div>
-                <div class="barra-credito">
-                    <div class="barrautilizada" style="width:25%;">$12.5k</div>
-                    <div class="barradisponible" style="width:75%;">$37.5k</div>
-                </div>
-                <div class="li">
-                    <span><i class="fas fa-circle" style="color:#1f8b4c;"></i> Usado: $12,500</span>
-                    <span><i class="fas fa-circle" style="color:#f5a35c;"></i> Disponible: $37,500</span>
-                </div>
-            </div>
+           
         </div>
     </div>
 
