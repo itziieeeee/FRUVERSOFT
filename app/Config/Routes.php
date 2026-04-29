@@ -26,8 +26,10 @@ $routes->get('menusolo', 'FRUVER::menusolo');
 // ==========================
 $routes->get('alta_cliente', 'FRUVER::nuevo_cliente');
 $routes->post('guardar_cliente', 'FRUVER::guardar_cliente');
-$routes->get('pantalla_clientes', 'FRUVER::pantalla_clientes'); 
+$routes->get('pantalla_clientes', 'Clientes::pantalla_clientes');
+$routes->get('clientes/detalle/(:num)', 'Clientes::detalle/$1');
 $routes->get('pantalla_rcliente', 'FRUVER::nuevo_cliente');
+
 
 // ==========================
 // 4. Inventario
