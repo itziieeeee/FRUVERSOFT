@@ -93,3 +93,6 @@ $routes->delete('producto/eliminar/(:num)', 'Producto::eliminar/$1');
 $routes->post('pedido/guardar_productos_pedido', 'PedidoController::guardar_productos_pedido');
 $routes->post('status/cambiar',       'PedidoController::cambiarEstado');
 $routes->delete('pedido/eliminar/(:num)', 'PedidoController::eliminarPedido/$1');
+
+// En Routes.php debería estar:
+$routes->get('pantalla_ventas', 'PedidoController::pantalla_ventas');
