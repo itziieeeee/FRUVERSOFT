@@ -65,6 +65,7 @@
             color: var(--naranja);
             border: 2px solid var(--naranja);
         }
+        
         .main-container { display: flex; height: calc(100vh - 140px); padding: 20px; gap: 20px; }
 
         .sidebar {
