@@ -13,7 +13,7 @@ class Existencias extends BaseController
 
         $data = [
             'productos' => $productos,
-            'pager'     => $model->pager,  // viene del model
+            'pager'     => $model->pager, 
         ];
 
         return view('existencias', $data);

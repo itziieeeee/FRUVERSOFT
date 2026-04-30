@@ -151,7 +151,16 @@ class PedidoController extends BaseController {
                 'message' => 'Error al guardar en base de datos. Verifica los datos e intenta de nuevo.'
             ]);
         }
+$db->transComplete();
 
+if ($db->transStatus() === false) {
+    // Capturar el error real
+    $error = $db->error();
+    return $this->response->setJSON([
+        'status'  => 'error',
+        'message' => 'Error: ' . ($error['message'] ?? 'desconocido')
+    ]);
+}
         $folio = 'PED-' . str_pad($idPedido, 5, '0', STR_PAD_LEFT);
 
         return $this->response->setJSON([
@@ -166,32 +175,4 @@ class PedidoController extends BaseController {
             ]
         ]);
     }
-    public function cambiarEstado() {
-    $id     = $this->request->getPost('id');
-    $estado = $this->request->getPost('estado');
-
-    $db = \Config\Database::connect();
-    $db->table('pedido')->where('id', $id)->update(['estado_actual' => $estado]);
-    $db->table('status')->insert([
-        'id_pedido' => $id,
-        'estado'    => $estado,
-        'fecha'     => date('Y-m-d H:i:s'),
-    ]);
-
-    return $this->response->setJSON(['success' => true]);
-}
-
-public function eliminarPedido($id) {
-    $db = \Config\Database::connect();
-    $db->transStart();
-        $db->table('status')->where('id_pedido', $id)->delete();
-        $db->table('producto_pedido')->where('id_pedido', $id)->delete();
-        $db->table('pedido')->where('id', $id)->delete();
-    $db->transComplete();
-
-    return $this->response->setJSON([
-        'success' => $db->transStatus(),
-        'message' => $db->transStatus() ? 'Eliminado' : 'Error al eliminar'
-    ]);
-}
 }

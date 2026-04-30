@@ -131,16 +131,17 @@
                             <input type="number" step="0.01" min="0.01" name="precio_compra" class="form-control" placeholder="0.00" required>
                         </div>
                     </div>
+
                     <div class="form-group col-md-6">
                         <label class="font-weight-bold">Cantidad de compra</label>
-                        <input type="number" step="1" min="1" name="cantidad_compra" class="form-control" placeholder="Ej: 50" required>
+                        <input type="number" id="cantidad_compra" step="0.1" min="0.1" name="cantidad_compra" class="form-control" placeholder="Ej: 50" required>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <label class="font-weight-bold">Unidad de compra</label>
-                        <select name="unidad_compra" class="form-control" required>
+                            <select name="unidad_compra" class="form-control" required>
                             <option value="" disabled selected hidden>Selecciona unidad...</option>
                             <option value="Caja">Caja</option>
                             <option value="Kilo">Kilo</option>
@@ -175,18 +176,25 @@
                             <option value="Pieza">Pieza</option>
                         </select>
                     </div>
+  
                     <div class="form-group col-md-6">
-                        <label class="font-weight-bold text-success">Cantidad de venta</label>
-                        <input type="number" step="1" min="1" name="cantidad_venta" class="form-control" placeholder="Ej: 100" required>
+                        <label class="font-weight-bold text-success">Conversion</label>
+                        <input type="number" id="valor_conversion" step="0.1" min="0.1" name="valor_conversion" class="form-control" placeholder="Ej: 5" required>
                     </div>
-                </div>
+
+                    
+                    <div class="form-group col-md-6">
+                        <label class="font-weight-bold text-success">Cantidad para venta</label>
+                        <input type="number" id="total_venta" step="0.1" min="0.1" name="cantidad_venta" class="form-control" placeholder="Resultado" readonly required>
+                    </div>
 
                 <div class="form-group mb-4">
                     <label class="font-weight-bold">Categoría</label>
                     <select name="categoria" class="form-control" required>
+                    <option value="" disabled selected hidden>Selecciona categoría...</option>    
                         <option value="Frutas">Frutas</option>
                         <option value="Verduras">Verduras</option>
-                        <option value="Abarrotes">Hojas</option>
+                        <option value="Hierbas">Hierbas</option>
                     </select>
                 </div>
 
@@ -247,6 +255,36 @@
             e.preventDefault();
             window.location.href = '<?= base_url('existencias') ?>';
         });
+
+
+
+        //calculo automatico de entrada, osea la conversion
+        
+        document.addEventListener('input', function (event) {
+        // Verificamos si lo que cambió fue el input de compra o el de conversión
+        if (event.target.id === 'cantidad_compra' || event.target.id === 'valor_conversion') {
+        
+        const compra = document.getElementById('cantidad_compra');
+        const conversion = document.getElementById('valor_conversion');
+        const resultado = document.getElementById('total_venta');
+
+        // Convertimos a números (si están vacíos, usamos 0)
+        const v1 = parseFloat(compra.value) || 0;
+        const v2 = parseFloat(conversion.value) || 0;
+
+        // Realizamos la multiplicación
+        const total = v1 * v2;
+
+        // Si el resultado es mayor a 0, lo ponemos en el campo
+        if (total > 0) {
+            resultado.value = total.toFixed(2);
+        } else {
+            resultado.value = "";
+        }
+        }
+        });
+
+    
         
         // Validación extra
         $('form').on('submit', function(e) {
