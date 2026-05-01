@@ -23,11 +23,13 @@ class PedidoController extends BaseController {
             ->getResultArray();
 
         // Obtener productos con precio sugerido desde entrada
+        // Obtener productos con precio sugerido (agrupados para evitar duplicados)
         $productos = $db->table('producto p')
-            ->select('p.id, p.nombre, e.unidad_venta, e.precio_sugerido')
-            ->join('entrada e', 'e.id_producto = p.id')
-            ->get()
-            ->getResultArray();
+        ->select('p.id, p.nombre, MAX(e.unidad_venta) as unidad_venta, MAX(e.precio_sugerido) as precio_sugerido')
+        ->join('entrada e', 'e.id_producto = p.id', 'left') // Usamos left join por si un producto no tiene entradas aún
+        ->groupBy('p.id, p.nombre') 
+        ->get()
+        ->getResultArray();
 
         // Obtener ENUM unidad_venta de producto_pedido
         $query = $db->query("SHOW COLUMNS FROM producto_pedido LIKE 'unidad_venta'");
