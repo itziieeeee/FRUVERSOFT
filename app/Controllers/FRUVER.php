@@ -93,9 +93,8 @@ class FRUVER extends BaseController
         return redirect()->to(base_url('pantalla_clientes'));
     }
 
-    // ==========================
-    // 4. INVENTARIO Y CADUCIDAD
-    // ==========================
+    // 
+    // 
 
 // Función interna para procesar mermas por fecha (CORREGIDA)
     private function revisarCaducados()
@@ -177,9 +176,7 @@ class FRUVER extends BaseController
         return view('inventario', $data); 
     }
 
-    // ==========================
-    // 5. VENDEDOR Y BUSCADOR
-    // ==========================
+    // vendedor
     public function pantalla_vendedor()
     {
         $data['productos'] = []; 
@@ -197,9 +194,7 @@ class FRUVER extends BaseController
         return view('vendedor/panel_p', $data);
     }
 
-    // ==========================
-    // 6. OTRAS PANTALLAS
-    // ==========================
+    
     public function pantalla_inicio()
     {
         return view('pantalla_inicio');

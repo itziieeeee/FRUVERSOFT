@@ -11,7 +11,7 @@ class Producto extends BaseController
     {
         return view('alta_producto');
     }
-
+    
    public function guardar()
 {
     helper(['form']);
@@ -38,11 +38,11 @@ class Producto extends BaseController
         $file->move(FCPATH . 'uploads/productos/', $nombreImagen);
     }
 
-    // ✅ NORMALIZAR NOMBRE: quita espacios y deja Primera letra mayúscula
+    //  NORMALIZAR NOMBRE: quita espacios y deja Primera letra mayúscula
     $nombreRaw   = trim($this->request->getPost('nombre'));
     $nombreNormalizado = ucfirst(strtolower($nombreRaw));
 
-    // ✅ VERIFICAR SI YA EXISTE antes de intentar insertar
+    //  VERIFICAR SI YA EXISTE antes de intentar insertar
     $existe = $model->where('LOWER(nombre)', strtolower($nombreRaw))->first();
 
     if ($existe) {

@@ -6,14 +6,17 @@ use CodeIgniter\Model;
 
 class ClienteModel extends Model
 {
-    protected $table = 'clientes';
+    protected $table      = 'clientes';
     protected $primaryKey = 'id_cliente';
+    protected $useAutoIncrement = true;
+    protected $returnType = 'array';
 
     protected $allowedFields = [
         'nombre',
         'apellido_paterno',
         'apellido_materno',
         'rfc',
-        'tipo_cliente'
+        'tipo_cliente',
+        'tel'
     ];
 }
