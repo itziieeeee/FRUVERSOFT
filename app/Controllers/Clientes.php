@@ -2,7 +2,6 @@
 
 namespace App\Controllers;
 
-use App\Models\ClientesModel;
 use App\Models\ClienteModel;
 use App\Models\DireccionModel;
 
@@ -77,16 +76,25 @@ class Clientes extends BaseController
         return redirect()->to(base_url('pantalla_clientes'));
     }
 
-    public function detalle($id)
+    public function detalle($id = null)
     {
-        $model       = new ClienteModel();
-        $pedidoModel = new \App\Models\PedidoModel();
+        if (!$id) return $this->response->setJSON(['error' => 'No ID']);
 
-        $cliente   = $model->find($id);
+        $db = \Config\Database::connect();
+        
+        $query = $db->table('clientes')
+                    ->select('clientes.*, direccion.calle, direccion.numero, direccion.colonia, direccion.municipio, direccion.estado')
+                    ->join('direccion', 'direccion.id_cliente = clientes.id_cliente', 'left')
+                    ->where('clientes.id_cliente', $id)
+                    ->get();
+
+        $cliente = $query->getRow();
+        
+        $pedidoModel = new \App\Models\PedidoModel();
         $historial = $pedidoModel->where('id_cliente', $id)->findAll();
 
         return $this->response->setJSON([
-            'cliente'  => $cliente,
+            'cliente'   => $cliente,
             'historial' => $historial
         ]);
     }

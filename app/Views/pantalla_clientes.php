@@ -227,7 +227,15 @@ function verCliente(id, el) {
         document.getElementById('det-nom').innerText = nom;
         document.getElementById('det-rfc').innerText = data.cliente.rfc || 'N/A';
         document.getElementById('det-con').innerText = data.cliente.tel || 'N/A';
-        document.getElementById('det-dir').innerText = data.cliente.direccion || 'N/A';
+       const dir = [
+    data.cliente.calle,
+    data.cliente.numero,
+    data.cliente.colonia,
+    data.cliente.municipio,
+    data.cliente.estado
+].filter(Boolean).join(', ');
+
+document.getElementById('det-dir').innerText = dir || 'N/A';
 
         let h = "";
         if (!data.historial || data.historial.length === 0) {
@@ -242,6 +250,23 @@ function verCliente(id, el) {
     .catch(err => {
         console.error(err);
         alert("No se pudo conectar. Revisa la consola con F12.");
+    });
+}
+</script>
+
+<script>
+function filtrar() {
+    let filtro = document.getElementById('busc').value.toLowerCase();
+    let tarjetas = document.querySelectorAll('.cliente-card');
+
+    tarjetas.forEach(card => {
+        let nombre = card.querySelector('strong').innerText.toLowerCase();
+
+        if (nombre.includes(filtro)) {
+            card.style.display = "flex";
+        } else {
+            card.style.display = "none";
+        }
     });
 }
 </script>
