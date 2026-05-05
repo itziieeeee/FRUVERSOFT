@@ -273,12 +273,26 @@ public function mostrar_repartidores()
 
     $repartidores = $db->query("SELECT * FROM repartidor")->getResultArray();
 
-    // Pedidos agrupados por repartidor
+    // Pedidos con nombre del cliente y su dirección
     $pedidosRaw = $db->query("
-        SELECT id_repartidor, id, estado_actual, total, fecha
-        FROM pedido
-        WHERE id_repartidor IS NOT NULL
-        ORDER BY id_repartidor, id DESC
+        SELECT 
+            p.id_repartidor,
+            p.id,
+            p.estado_actual,
+            p.total,
+            p.fecha,
+            c.nombre AS cliente_nombre,
+            c.apellido_paterno AS cliente_ap,
+            d.calle,
+            d.numero,
+            d.colonia,
+            d.municipio,
+            d.estado AS cliente_estado
+        FROM pedido p
+        LEFT JOIN clientes c  ON c.id_cliente = p.id_cliente
+        LEFT JOIN direccion d ON d.id_cliente = p.id_cliente
+        WHERE p.id_repartidor IS NOT NULL
+        ORDER BY p.id_repartidor, p.id DESC
     ")->getResultArray();
 
     $pedidosPorRepartidor = [];

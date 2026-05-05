@@ -302,20 +302,29 @@
     });
 
     function eliminarRepartidor(id, nombre) {
-        if (!confirm(`¿Seguro que deseas eliminar a ${nombre}?`)) return;
-        const formData = new FormData();
-        formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
-        fetch(`<?= base_url('FRUVER/eliminarrepartidor') ?>/${id}`, { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Repartidor eliminado.');
-                    window.location.reload();
-                } else {
-                    alert('Error al eliminar.');
-                }
-            });
+    // Verificar si tiene pedidos asignados
+    const pedidos = pedidosPorRepartidor[id] || [];
+    
+    if (pedidos.length > 0) {
+        alert(`No puedes eliminar a ${nombre} porque tiene ${pedidos.length} pedido(s) asignado(s).\n\nPrimero reasigna o finaliza sus pedidos.`);
+        return;
     }
+
+    if (!confirm(`¿Seguro que deseas eliminar a ${nombre}?`)) return;
+
+    const formData = new FormData();
+    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+    fetch(`<?= base_url('FRUVER/eliminarrepartidor') ?>/${id}`, { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('Repartidor eliminado.');
+                window.location.reload();
+            } else {
+                alert('Error al eliminar.');
+            }
+        });
+}
 
     function previsualizarFoto(input, previewId) {
         const preview = document.getElementById(previewId);
@@ -354,7 +363,8 @@ function verPedidos(idRepartidor) {
         <thead>
             <tr style="background:#f0f8f0;">
                 <th style="padding:8px;text-align:left;">#Pedido</th>
-                <th style="padding:8px;text-align:left;">Fecha</th>
+                <th style="padding:8px;text-align:left;">Cliente</th>
+                <th style="padding:8px;text-align:left;">Dirección</th>
                 <th style="padding:8px;text-align:left;">Total</th>
                 <th style="padding:8px;text-align:left;">Estado</th>
             </tr>
@@ -370,9 +380,20 @@ function verPedidos(idRepartidor) {
         for (const [clave, val] of Object.entries(colores)) {
             if (p.estado_actual?.toLowerCase().includes(clave)) { color = val; break; }
         }
+
+        // Armar dirección completa
+        const direccion = (p.calle && p.numero)
+            ? `${p.calle} #${p.numero}, Col. ${p.colonia ?? ''}, ${p.municipio ?? ''}`
+            : '<span style="color:#bbb;">Sin dirección</span>';
+
+        const cliente = (p.cliente_nombre)
+            ? `${p.cliente_nombre} ${p.cliente_ap ?? ''}`
+            : '<span style="color:#bbb;">Sin cliente</span>';
+
         html += `<tr style="border-bottom:1px solid #eee;">
             <td style="padding:8px;"><strong>#${p.id}</strong></td>
-            <td style="padding:8px;">${p.fecha.substring(0,10)}</td>
+            <td style="padding:8px;">${cliente}</td>
+            <td style="padding:8px;font-size:0.82rem;color:#444;">${direccion}</td>
             <td style="padding:8px;">$${parseFloat(p.total).toFixed(2)}</td>
             <td style="padding:8px;color:${color};font-weight:600;">${p.estado_actual ?? '-'}</td>
         </tr>`;
