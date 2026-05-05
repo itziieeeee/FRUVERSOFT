@@ -23,11 +23,13 @@ class PedidoController extends BaseController {
             ->getResultArray();
 
         // Obtener productos con precio sugerido desde entrada
+        // Obtener productos con precio sugerido (agrupados para evitar duplicados)
         $productos = $db->table('producto p')
-            ->select('p.id, p.nombre, e.unidad_venta, e.precio_sugerido')
-            ->join('entrada e', 'e.id_producto = p.id')
-            ->get()
-            ->getResultArray();
+        ->select('p.id, p.nombre, MAX(e.unidad_venta) as unidad_venta, MAX(e.precio_sugerido) as precio_sugerido')
+        ->join('entrada e', 'e.id_producto = p.id', 'left') // Usamos left join por si un producto no tiene entradas aún
+        ->groupBy('p.id, p.nombre') 
+        ->get()
+        ->getResultArray();
 
         // Obtener ENUM unidad_venta de producto_pedido
         $query = $db->query("SHOW COLUMNS FROM producto_pedido LIKE 'unidad_venta'");
@@ -146,21 +148,28 @@ class PedidoController extends BaseController {
         $db->transComplete();
 
         if ($db->transStatus() === false) {
+            // Obtenemos el error técnico de la base de datos
+            $error = $db->error();
             return $this->response->setJSON([
                 'status'  => 'error',
-                'message' => 'Error al guardar en base de datos. Verifica los datos e intenta de nuevo.'
+                'message' => 'Error de Base de Datos: ' . ($error['message'] ?? 'Error desconocido'),
+                'debug'   => $error // Esto te dará el código de error (ej. 1452, 1364, etc.)
             ]);
         }
-$db->transComplete();
 
-if ($db->transStatus() === false) {
-    // Capturar el error real
-    $error = $db->error();
-    return $this->response->setJSON([
-        'status'  => 'error',
-        'message' => 'Error: ' . ($error['message'] ?? 'desconocido')
-    ]);
-}
+        // Si llegó aquí, todo salió bien
+        $folio = 'PED-' . str_pad($idPedido, 5, '0', STR_PAD_LEFT);
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => [
+                'folio'        => $folio,
+                'cliente'      => $nombreCliente,
+                'tipo_venta'   => $tipoVenta,
+                'tipo_entrega' => $tipoEntrega,
+                'repartidor'   => $nombreRepartidor,
+                'total'        => number_format($totalGeneral, 2),
+            ]
+        ]);
         $folio = 'PED-' . str_pad($idPedido, 5, '0', STR_PAD_LEFT);
 
         return $this->response->setJSON([

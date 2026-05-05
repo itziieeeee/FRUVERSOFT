@@ -367,15 +367,15 @@
                     <td>
                         <select class="estado-select" id="estado-<?= $pedido['id'] ?>">
                             <?php
-                            $estados = [
-                                'Pedido'            => 'Pedido',
-                                'Pedido confirmado' => 'Confirmado',
-                                'Pedido en transito'=> 'En tránsito',
-                                'Venta confirmada'  => 'Entregado',
-                                'Pedido a credito'  => 'A crédito',
-                                'Pedido pagado'     => 'Pagado',
-                                'Pedido cancelado'  => 'Cancelado',
-                            ];
+                           $estados = [
+    'Pedido'             => 'Pedido',
+    'Pedido confirmado'  => 'Confirmado',
+    'Pedido en tránsito' => 'En tránsito',  // ← con tilde
+    'Venta confirmada'   => 'Entregado',
+    'Pedido a crédito'   => 'A crédito',    // ← con tilde
+    'Pedido pagado'      => 'Pagado',
+    'Pedido cancelado'   => 'Cancelado',
+];
                             foreach($estados as $valor => $etiqueta): ?>
                                 <option value="<?= $valor ?>"
                                     <?= $pedido['estado_actual'] === $valor ? 'selected' : '' ?>>

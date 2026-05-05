@@ -36,23 +36,40 @@
         </div>
     </nav>
 
-    <!-- Contenido principal -->
+    <!-- ✅ UN SOLO main -->
     <main class="contenedor-principal">
-
-        <!-- Formulario -->
         <div class="card-form">
+
             <div class="cabezacard">
                 <i class="fas fa-clipboard-list"></i>
                 <h2>Nuevo Producto</h2>
             </div>
 
-            <!-- UN SOLO form, action apunta al método guardar del controlador -->
-            <form action="<?= base_url('producto/guardar') ?>" method="POST" enctype="multipart/form-data" id="formProducto" novalidate>
+            <!-- ✅ MENSAJES ARRIBA DEL FORM -->
+            <?php if (session()->getFlashdata('error')): ?>
+                <div style="background:#fff0f0; border-left:4px solid #e53e3e; color:#c53030;
+                            padding:0.9rem 1.2rem; border-radius:8px; margin-bottom:1rem; font-weight:500;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?= session()->getFlashdata('error') ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if (session()->getFlashdata('mensaje')): ?>
+                <div style="background:#f0fff4; border-left:4px solid #1a5f3a; color:#1a5f3a;
+                            padding:0.9rem 1.2rem; border-radius:8px; margin-bottom:1rem; font-weight:500;">
+                    <i class="fas fa-check-circle"></i>
+                    <?= session()->getFlashdata('mensaje') ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- ✅ UN SOLO form completo -->
+            <form action="<?= base_url('producto/guardar') ?>" method="POST"
+                  enctype="multipart/form-data" id="formProducto" novalidate>
                 <?= csrf_field() ?>
 
                 <div class="form-grid">
 
-                    <!-- Nombre del producto -->
+                    <!-- Nombre -->
                     <div class="campo campo-full">
                         <label for="nombre">
                             <i class="fas fa-tag"></i>
@@ -61,38 +78,40 @@
                         </label>
                         <input type="text" id="nombre" name="nombre"
                                placeholder="Ej. Tomate Saladet, Fresa, Sandía..."
-                               required
-                               maxlength="100"
-                               aria-required="true"
+                               required maxlength="100" aria-required="true"
                                value="<?= old('nombre') ?>">
                         <div class="mensaje-error" id="error-nombre"></div>
                     </div>
 
                     <!-- Descripción -->
                     <div class="campo campo-full">
-                        <label for="descripcion"><i class="fas fa-align-left"></i> Descripción</label>
+                        <label for="descripcion">
+                            <i class="fas fa-align-left"></i> Descripción
+                        </label>
                         <textarea id="descripcion" name="descripcion"
                                   placeholder="Características adicionales, variedad, presentación, origen..."
                                   maxlength="500"><?= old('descripcion') ?></textarea>
                     </div>
 
-                    <!-- Imagen del producto -->
+                    <!-- Imagen -->
                     <div class="campo campo-full">
                         <label for="foto">
                             <i class="fas fa-image"></i> Imagen del producto
                             <span class="requerido">*</span>
                         </label>
-                        <input type="file" id="foto" name="foto" accept="image/jpeg, image/png, image/jpg" required>
+                        <input type="file" id="foto" name="foto"
+                               accept="image/jpeg, image/png, image/jpg" required>
                         <small class="hint">Formatos permitidos: JPG, PNG, JPEG. Máx: 2MB</small>
                         <div class="mensaje-error" id="error-foto"></div>
                     </div>
 
-                    <!-- Vista previa de imagen -->
+                    <!-- Vista previa -->
                     <div class="campo campo-full">
-                        <img id="preview" src="" alt="Vista previa" style="max-width:150px; display:none; margin-top:10px;">
+                        <img id="preview" src="" alt="Vista previa"
+                             style="max-width:150px; display:none; margin-top:10px;">
                     </div>
 
-                    <!-- Acciones -->
+                    <!-- Botones -->
                     <div class="form-actions">
                         <button type="reset" class="btn-secundario" id="btnLimpiar">
                             <i class="fas fa-undo-alt"></i> Limpiar
@@ -104,6 +123,7 @@
 
                 </div>
             </form>
+
         </div>
     </main>
 
@@ -112,7 +132,6 @@
         document.getElementById('foto').addEventListener('change', function(e) {
             const file = e.target.files[0];
             const preview = document.getElementById('preview');
-
             if (file) {
                 preview.src = URL.createObjectURL(file);
                 preview.style.display = 'block';
@@ -130,13 +149,13 @@
             document.getElementById('preview').src = '';
         });
 
-        // Validación del formulario antes de enviar
+        // Validación antes de enviar
         document.getElementById('formProducto').addEventListener('submit', function(e) {
             let isValid = true;
 
-            const nombre = document.getElementById('nombre');
+            const nombre    = document.getElementById('nombre');
             const errorNombre = document.getElementById('error-nombre');
-            const foto = document.getElementById('foto');
+            const foto      = document.getElementById('foto');
             const errorFoto = document.getElementById('error-foto');
 
             // Validar nombre
@@ -160,7 +179,7 @@
             } else {
                 const archivo = foto.files[0];
                 const tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg'];
-                const maxSize = 2 * 1024 * 1024; // 2MB
+                const maxSize = 2 * 1024 * 1024;
 
                 if (!tiposPermitidos.includes(archivo.type)) {
                     errorFoto.textContent = 'Solo se permiten imágenes JPG o PNG';
@@ -173,17 +192,13 @@
                 }
             }
 
-            if (!isValid) {
-                e.preventDefault();
-            }
+            if (!isValid) e.preventDefault();
         });
 
-        // Prevenir envío con Enter en inputs de texto
+        // Prevenir envío con Enter
         document.querySelectorAll('input[type="text"]').forEach(input => {
             input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                }
+                if (e.key === 'Enter') e.preventDefault();
             });
         });
     </script>

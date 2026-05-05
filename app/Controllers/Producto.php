@@ -11,20 +11,20 @@ class Producto extends BaseController
     {
         return view('alta_producto');
     }
-
+    
    public function guardar()
 {
     helper(['form']);
     $model = new ProductoModel();
 
-    //  IMAGEN
+    // IMAGEN
     $file = $this->request->getFile('foto');
     $nombreImagen = null;
 
     if ($file && $file->isValid() && !$file->hasMoved()) {
         
         $tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg'];
-        $maxSize = 2048; 
+        $maxSize = 2048;
 
         if (!in_array($file->getMimeType(), $tiposPermitidos)) {
             return redirect()->back()->with('error', 'Solo se permiten imágenes JPG o PNG');
@@ -37,16 +37,30 @@ class Producto extends BaseController
         $nombreImagen = $file->getRandomName();
         $file->move(FCPATH . 'uploads/productos/', $nombreImagen);
     }
+
+    //  NORMALIZAR NOMBRE: quita espacios y deja Primera letra mayúscula
+    $nombreRaw   = trim($this->request->getPost('nombre'));
+    $nombreNormalizado = ucfirst(strtolower($nombreRaw));
+
+    //  VERIFICAR SI YA EXISTE antes de intentar insertar
+    $existe = $model->where('LOWER(nombre)', strtolower($nombreRaw))->first();
+
+    if ($existe) {
+        return redirect()->back()
+                         ->with('error', "El producto \"$nombreNormalizado\" ya está registrado.")
+                         ->withInput();
+    }
+
     $data = [
-    'nombre'      => $this->request->getPost('nombre'),
-    'descripcion' => $this->request->getPost('descripcion'),
-    'imagen'      => $nombreImagen
-];
+        'nombre'      => $nombreNormalizado,
+        'descripcion' => $this->request->getPost('descripcion'),
+        'imagen'      => $nombreImagen
+    ];
 
     $model->insert($data);
 
     return redirect()->to(base_url('pantalla_productos'))
-                     ->with('mensaje', 'Producto guardado ');
+                     ->with('mensaje', 'Producto guardado correctamente.');
 }
 
 public function pantalla_productos()

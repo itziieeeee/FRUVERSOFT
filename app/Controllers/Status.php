@@ -5,28 +5,40 @@ use App\Models\StatusModel;
 
 class Status extends BaseController
 {
-    // CAMBIAR ESTADO (AJAX)
     public function cambiar()
     {
         $model = new StatusModel();
 
-        $id = $this->request->getPost('id');
+        $id     = $this->request->getPost('id');
         $estado = $this->request->getPost('estado');
 
-        $model->actualizarEstado($id, $estado);
+        if (!$id || !$estado) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Datos inválidos']);
+        }
 
-        return $this->response->setJSON([
-            'success' => true
-        ]);
+        $estadosValidos = [
+            'Pedido',
+            'Pedido confirmado',
+            'Pedido en tránsito',
+            'Venta confirmada',
+            'Pedido a crédito',
+            'Pedido pagado',
+            'Pedido cancelado'
+        ];
+
+        if (!in_array($estado, $estadosValidos)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Estado no válido']);
+        }
+
+        $result = $model->actualizarEstado($id, $estado);
+
+        return $this->response->setJSON(['success' => (bool)$result]);
     }
 
-    // MOSTRAR VISTA
-   public function pantalla_pedidos()
-{
-    $model = new StatusModel();
-
-    $data['sp'] = $model->obtenerPedidos();
-
-    return view('pantalla_pedidos', $data);
-}
+    public function pantalla_pedidos()
+    {
+        $model = new StatusModel();
+        $data['sp'] = $model->obtenerPedidos();
+        return view('pantalla_pedidos', $data);
+    }
 }

@@ -26,8 +26,10 @@ $routes->get('menusolo', 'FRUVER::menusolo');
 // ==========================
 $routes->get('alta_cliente', 'FRUVER::nuevo_cliente');
 $routes->post('guardar_cliente', 'FRUVER::guardar_cliente');
-$routes->get('pantalla_clientes', 'FRUVER::pantalla_clientes'); 
+$routes->get('pantalla_clientes', 'Clientes::pantalla_clientes');
+$routes->get('clientes/detalle/(:num)', 'Clientes::detalle/$1');
 $routes->get('pantalla_rcliente', 'FRUVER::nuevo_cliente');
+
 
 // ==========================
 // 4. Inventario
@@ -79,6 +81,10 @@ $routes->post('FRUVER/editarrepartidor/(:num)', 'FRUVER::editarrepartidor/$1');
 $routes->post('FRUVER/eliminarrepartidor/(:num)', 'FRUVER::eliminarrepartidor/$1');
 
 
+$routes->post('status/cambiar', 'Status::cambiar');
+$routes->get('pantalla_pedidos', 'Status::pantalla_pedidos');
+
+
 
 
 $routes->get('existencias/getProducto/(:num)',  'Existencias::getProducto/$1');
@@ -96,3 +102,10 @@ $routes->delete('pedido/eliminar/(:num)', 'PedidoController::eliminarPedido/$1')
 
 // En Routes.php debería estar:
 $routes->get('pantalla_ventas', 'PedidoController::pantalla_ventas');
+
+
+//clientes
+$routes->post('clientes/registrar', 'Clientes::registrar');
+
+$routes->get('pantalla_rcliente', 'Clientes::pantalla_rcliente');
+$routes->post('clientes/registrar', 'Clientes::registrar');
