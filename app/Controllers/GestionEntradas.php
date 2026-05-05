@@ -7,70 +7,58 @@ use App\Controllers\BaseController;
 class GestionEntradas extends BaseController
 {
     public function guardar()
-    {
-        $db = \Config\Database::connect();
+{
+    $db = \Config\Database::connect();
+    
+    // Ahora recibimos ARRAYS desde la vista
+    $ids_productos    = $this->request->getPost('id_producto');
+    $precios_compra   = $this->request->getPost('precio_compra');
+    $cantidades_compra = $this->request->getPost('cantidad_compra');
+    $unidades_compra  = $this->request->getPost('unidad_compra');
+    $precios_sugeridos = $this->request->getPost('precio_sugerido');
+    $unidades_venta   = $this->request->getPost('unidad_venta');
+    $cantidades_venta  = $this->request->getPost('cantidad_venta');
+    $categorias       = $this->request->getPost('categoria');
 
-        // Datos de la ventana modal
-        $id_producto     = $this->request->getPost('id_producto');
-        $precio_compra   = $this->request->getPost('precio_compra');
-        $cantidad_compra = $this->request->getPost('cantidad_compra');
-        $unidad_compra   = $this->request->getPost('unidad_compra');
-        $precio_sugerido = $this->request->getPost('precio_sugerido');
-        $unidad_venta    = $this->request->getPost('unidad_venta');
-        $cantidad_venta  = $this->request->getPost('cantidad_venta');
-        $categoria       = $this->request->getPost('categoria');
-
-        // Validación
-        if (!$id_producto || !$cantidad_compra || !$cantidad_venta || !$unidad_compra || !$unidad_venta || !$categoria) {
-        return redirect()->back()
-            ->withInput() // Esto mantiene lo que el usuario ya escribió para que no se borre
-            ->with('error', 'Faltan datos: Asegúrate de seleccionar Unidad de Compra, Venta y Categoría.');
+    if (empty($ids_productos)) {
+        return redirect()->back()->with('error', 'La lista de productos está vacía.');
     }
 
-        // --- LÓGICA DE FECHAS AUTOMÁTICA ---
-        $fecha_compra = date('Y-m-d H:i:s'); 
-        $caducidad    = date('Y-m-d', strtotime('+5 days')); // Fecha actual + 5 días
+    $fecha_compra = date('Y-m-d H:i:s');
+    $caducidad    = date('Y-m-d', strtotime('+5 days'));
 
-        // Registrar en la tabla 'entrada'
+    // Procesamos cada producto de la tabla
+    foreach ($ids_productos as $index => $id_producto) {
         $db->table('entrada')->insert([
             'id_producto'     => $id_producto,
-            'precio_compra'   => $precio_compra,
-            'cantidad_compra' => $cantidad_compra,
-            'unidad_compra'   => $unidad_compra,
-            'precio_sugerido' => $precio_sugerido,
-            'unidad_venta'    => $unidad_venta,
-            'cantidad_venta'  => $cantidad_venta,
-            'categoria'       => $categoria,
-            'fecha'           => $fecha_compra, 
-            'fecha_cad'       => $caducidad     
+            'precio_compra'   => $precios_compra[$index],
+            'cantidad_compra' => $cantidades_compra[$index],
+            'unidad_compra'   => $unidades_compra[$index],
+            'precio_sugerido' => $precios_sugeridos[$index],
+            'unidad_venta'    => $unidades_venta[$index],
+            'cantidad_venta'  => $cantidades_venta[$index],
+            'categoria'       => $categorias[$index],
+            'fecha'           => $fecha_compra,
+            'fecha_cad'       => $caducidad
         ]);
 
-       
-        // Buscar si el producto ya tiene un registro de stock
-        $existencia = $db->table('existencias')
-                         ->where('id_producto', $id_producto)
-                         ->get()
-                         ->getRowArray();
+        // Actualizar stock en 'existencias'
+        $existencia = $db->table('existencias')->where('id_producto', $id_producto)->get()->getRowArray();
 
         if ($existencia) {
-            // Si ya existe, sumamor la nueva cantidad de venta al total actual
-            $db->table('existencias')
-               ->where('id_producto', $id_producto)
-               ->update([
-                   'e_total' => $existencia['e_total'] + $cantidad_venta
-               ]);
+            $db->table('existencias')->where('id_producto', $id_producto)->update([
+                'e_total' => $existencia['e_total'] + $cantidades_venta[$index]
+            ]);
         } else {
-            // Si el producto es nuevo en el inventario, creamos su primer registro de stock
             $db->table('existencias')->insert([
                 'id_producto' => $id_producto,
-                'e_total'     => $cantidad_venta,
+                'e_total'     => $cantidades_venta[$index],
                 'e_bloqueo'   => 0,
                 'e_merma'     => 0
             ]);
         }
-
-        // Redirección con mensaje de éxito
-        return redirect()->to(base_url('inventario'))
-                         ->with('mensaje', '¡Entrada registrada con éxito! El producto caduca el: ' . $caducidad);
     }
+
+    return redirect()->to(base_url('inventario'))->with('mensaje', '¡Se han registrado ' . count($ids_productos) . ' productos correctamente!');
+}
 }
