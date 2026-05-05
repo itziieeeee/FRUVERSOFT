@@ -148,21 +148,28 @@ class PedidoController extends BaseController {
         $db->transComplete();
 
         if ($db->transStatus() === false) {
+            // Obtenemos el error técnico de la base de datos
+            $error = $db->error();
             return $this->response->setJSON([
                 'status'  => 'error',
-                'message' => 'Error al guardar en base de datos. Verifica los datos e intenta de nuevo.'
+                'message' => 'Error de Base de Datos: ' . ($error['message'] ?? 'Error desconocido'),
+                'debug'   => $error // Esto te dará el código de error (ej. 1452, 1364, etc.)
             ]);
         }
-$db->transComplete();
 
-if ($db->transStatus() === false) {
-    // Capturar el error real
-    $error = $db->error();
-    return $this->response->setJSON([
-        'status'  => 'error',
-        'message' => 'Error: ' . ($error['message'] ?? 'desconocido')
-    ]);
-}
+        // Si llegó aquí, todo salió bien
+        $folio = 'PED-' . str_pad($idPedido, 5, '0', STR_PAD_LEFT);
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => [
+                'folio'        => $folio,
+                'cliente'      => $nombreCliente,
+                'tipo_venta'   => $tipoVenta,
+                'tipo_entrega' => $tipoEntrega,
+                'repartidor'   => $nombreRepartidor,
+                'total'        => number_format($totalGeneral, 2),
+            ]
+        ]);
         $folio = 'PED-' . str_pad($idPedido, 5, '0', STR_PAD_LEFT);
 
         return $this->response->setJSON([
