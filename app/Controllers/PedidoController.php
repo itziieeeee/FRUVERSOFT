@@ -10,34 +10,28 @@ class PedidoController extends BaseController {
         $pedidoModel = new PedidoModel();
         $db = \Config\Database::connect();
 
-        // Obtener pedidos con nombre del cliente
         $pedidos = $pedidoModel
             ->select("pedido.*, CONCAT(clientes.nombre, ' ', clientes.apellido_paterno) as nombre_cliente")
             ->join('clientes', 'clientes.id_cliente = pedido.id_cliente')
             ->findAll();
 
-        // Obtener clientes
         $clientes = $db->table('clientes')
             ->select('id_cliente, nombre, apellido_paterno, apellido_materno, tipo_cliente')
             ->get()
             ->getResultArray();
 
-        // Obtener productos con precio sugerido desde entrada
-        // Obtener productos con precio sugerido (agrupados para evitar duplicados)
         $productos = $db->table('producto p')
-        ->select('p.id, p.nombre, MAX(e.unidad_venta) as unidad_venta, MAX(e.precio_sugerido) as precio_sugerido')
-        ->join('entrada e', 'e.id_producto = p.id', 'left') // Usamos left join por si un producto no tiene entradas aún
-        ->groupBy('p.id, p.nombre') 
-        ->get()
-        ->getResultArray();
+            ->select('p.id, p.nombre, MAX(e.unidad_venta) as unidad_venta, MAX(e.precio_sugerido) as precio_sugerido')
+            ->join('entrada e', 'e.id_producto = p.id', 'left')
+            ->groupBy('p.id, p.nombre')
+            ->get()
+            ->getResultArray();
 
-        // Obtener ENUM unidad_venta de producto_pedido
         $query = $db->query("SHOW COLUMNS FROM producto_pedido LIKE 'unidad_venta'");
         $row = $query->getRow();
         preg_match_all("/'([^']+)'/", $row->Type, $matches);
         $unidadesEnum = $matches[1];
 
-        // Obtener repartidores
         $repartidores = $db->table('repartidor')
             ->select('id, nombre, ap_p, ap_m')
             ->get()
@@ -57,7 +51,6 @@ class PedidoController extends BaseController {
     public function guardar_productos_pedido() {
         $json = $this->request->getJSON(true);
 
-        // Validación básica
         if (empty($json['productos']) || !isset($json['id_cliente']) || $json['id_cliente'] === '') {
             return $this->response->setJSON([
                 'status'  => 'error',
@@ -76,16 +69,16 @@ class PedidoController extends BaseController {
                         ? (int) $json['id_repartidor']
                         : null;
 
-        // Calcular total general
+        // 1. Calcular total
         $totalGeneral = 0;
         foreach ($json['productos'] as $prod) {
             $totalGeneral += (float)$prod['cantidad'] * (float)$prod['precio_venta'];
         }
 
-        // Estado inicial según tipo de venta
-        $estadoInicial = ($tipoVenta === 'credito') ? 'Pedido a credito' : 'Pedido';
+        // 2. Estado inicial
+        $estadoInicial = ($tipoVenta === 'credito') ? 'Pedido a crédito' : 'Pedido';
 
-        // Nombre del cliente para la respuesta
+        // 3. Nombre del cliente
         if ($idCliente === 0) {
             $nombreCliente = 'Público general';
         } else {
@@ -96,7 +89,7 @@ class PedidoController extends BaseController {
             $nombreCliente = $clienteRow['nombre_completo'] ?? 'Desconocido';
         }
 
-        // Nombre del repartidor para la respuesta
+        // 4. Nombre del repartidor
         $nombreRepartidor = null;
         if ($idRepartidor) {
             $rep = $db->table('repartidor')
@@ -106,10 +99,9 @@ class PedidoController extends BaseController {
             $nombreRepartidor = $rep['nombre_completo'] ?? null;
         }
 
-        // Iniciar transacción
+        // 5. Transacción
         $db->transStart();
 
-        // 1. Insertar pedido
         $pedidoModel->insert([
             'fecha'         => date('Y-m-d H:i:s'),
             'id_cliente'    => $idCliente,
@@ -117,10 +109,11 @@ class PedidoController extends BaseController {
             'tipo_entrega'  => $tipoEntrega,
             'total'         => $totalGeneral,
             'estado_actual' => $estadoInicial,
+            'tipo_pago'     => $tipoVenta,      
+    'monto_pagado'  => 0.00,    
         ]);
         $idPedido = $db->insertID();
 
-        // 2. Insertar productos del pedido
         foreach ($json['productos'] as $prod) {
             $cantidad = (float) $prod['cantidad'];
             $precio   = (float) $prod['precio_venta'];
@@ -138,7 +131,6 @@ class PedidoController extends BaseController {
             ]);
         }
 
-        // 3. Insertar estado inicial en tabla status
         $db->table('status')->insert([
             'id_pedido' => $idPedido,
             'estado'    => $estadoInicial,
@@ -148,39 +140,33 @@ class PedidoController extends BaseController {
         $db->transComplete();
 
         if ($db->transStatus() === false) {
-            // Obtenemos el error técnico de la base de datos
             $error = $db->error();
             return $this->response->setJSON([
                 'status'  => 'error',
                 'message' => 'Error de Base de Datos: ' . ($error['message'] ?? 'Error desconocido'),
-                'debug'   => $error // Esto te dará el código de error (ej. 1452, 1364, etc.)
+                'debug'   => $error
             ]);
         }
 
-        // Si llegó aquí, todo salió bien
-        $folio = 'PED-' . str_pad($idPedido, 5, '0', STR_PAD_LEFT);
-        return $this->response->setJSON([
-            'status' => 'success',
-            'data'   => [
-                'folio'        => $folio,
-                'cliente'      => $nombreCliente,
-                'tipo_venta'   => $tipoVenta,
-                'tipo_entrega' => $tipoEntrega,
-                'repartidor'   => $nombreRepartidor,
-                'total'        => number_format($totalGeneral, 2),
-            ]
-        ]);
+        // 6. ← AQUÍ va la validación, DESPUÉS de la transacción exitosa
+        $statusModel    = new \App\Models\StatusModel();
+        $validacion     = $statusModel->validarYConfirmar($idPedido);
+        $autoConfirmado = $validacion['success'];
+        $faltantes      = $validacion['faltantes'] ?? [];
+
         $folio = 'PED-' . str_pad($idPedido, 5, '0', STR_PAD_LEFT);
 
         return $this->response->setJSON([
             'status' => 'success',
             'data'   => [
-                'folio'        => $folio,
-                'cliente'      => $nombreCliente,
-                'tipo_venta'   => $tipoVenta,
-                'tipo_entrega' => $tipoEntrega,
-                'repartidor'   => $nombreRepartidor,
-                'total'        => number_format($totalGeneral, 2),
+                'folio'           => $folio,
+                'cliente'         => $nombreCliente,
+                'tipo_venta'      => $tipoVenta,
+                'tipo_entrega'    => $tipoEntrega,
+                'repartidor'      => $nombreRepartidor,
+                'total'           => number_format($totalGeneral, 2),
+                'auto_confirmado' => $autoConfirmado,
+                'faltantes'       => $faltantes,
             ]
         ]);
     }

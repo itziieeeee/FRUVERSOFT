@@ -109,3 +109,6 @@ $routes->post('clientes/registrar', 'Clientes::registrar');
 
 $routes->get('pantalla_rcliente', 'Clientes::pantalla_rcliente');
 $routes->post('clientes/registrar', 'Clientes::registrar');
+$routes->post('pedido/actualizar_pago', 'Status::actualizar_pago');
+$routes->post('pedido/validar', 'Status::validar_pedido');
+$routes->post('pedido/detalle', 'Status::detalle_pedido');

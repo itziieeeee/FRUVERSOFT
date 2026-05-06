@@ -553,29 +553,35 @@ async function enviarPedido() {
         const resultado = await respuesta.json();
         
         if (resultado.status === 'success') {
-            // Mostrar modal con detalles del pedido
-            Swal.fire({
-                icon: 'success',
-                title: '¡Pedido guardado!',
-                html: `
-                    <div style="text-align: left; background: #e8f3e6; border-radius: 12px; padding: 1rem; margin-top: 1rem;">
-                        <p><i class="fas fa-receipt" style="color:#1d4a27;"></i> <strong>Folio:</strong> ${resultado.data.folio}</p>
-                        <p><i class="fas fa-user" style="color:#1d4a27;"></i> <strong>Cliente:</strong> ${resultado.data.cliente}</p>
-                        <p><i class="fas fa-tag" style="color:#1d4a27;"></i> <strong>Tipo de venta:</strong> ${resultado.data.tipo_venta === 'credito' ? 'Crédito' : 'Contado'}</p>
-                        <p><i class="fas fa-truck" style="color:#1d4a27;"></i> <strong>Entrega:</strong> ${resultado.data.tipo_entrega === 'domicilio' ? 'Domicilio' : 'En tienda'}</p>
-                        ${resultado.data.repartidor ? `<p><i class="fas fa-motorcycle" style="color:#1d4a27;"></i> <strong>Repartidor:</strong> ${resultado.data.repartidor}</p>` : ''}
-                        <p><i class="fas fa-dollar-sign" style="color:#1d4a27;"></i> <strong>Total:</strong> $${parseFloat(resultado.data.total).toFixed(2)}</p>
-                    </div>
-                `,
-                confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#f16b1a',
-                allowOutsideClick: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    location.reload();
-                }
-            });
-        } else {
+    const d = resultado.data;
+
+    // Línea de stock: confirmado o sin stock
+    const lineaStock = d.auto_confirmado
+        ? `<p><i class="fas fa-check-circle" style="color:#1d4a27;"></i> <strong>Stock:</strong> <span style="color:#1d4a27; font-weight:700;">Confirmado automáticamente </span></p>`
+        : `<p><i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i> <strong>Stock:</strong> <span style="color:#f59e0b;">Inventario insuficiente — pedido en espera </span></p>`;
+
+    Swal.fire({
+        icon: 'success',
+        title: '¡Pedido guardado!',
+        html: `
+            <div style="text-align:left; background:#e8f3e6; border-radius:12px; padding:1rem; margin-top:1rem;">
+                <p><i class="fas fa-receipt" style="color:#1d4a27;"></i> <strong>Folio:</strong> ${d.folio}</p>
+                <p><i class="fas fa-user" style="color:#1d4a27;"></i> <strong>Cliente:</strong> ${d.cliente}</p>
+                <p><i class="fas fa-tag" style="color:#1d4a27;"></i> <strong>Tipo de venta:</strong> ${d.tipo_venta === 'credito' ? 'Crédito' : 'Contado'}</p>
+                <p><i class="fas fa-truck" style="color:#1d4a27;"></i> <strong>Entrega:</strong> ${d.tipo_entrega === 'domicilio' ? 'Domicilio' : 'En tienda'}</p>
+                ${d.repartidor ? `<p><i class="fas fa-motorcycle" style="color:#1d4a27;"></i> <strong>Repartidor:</strong> ${d.repartidor}</p>` : ''}
+                <p><i class="fas fa-dollar-sign" style="color:#1d4a27;"></i> <strong>Total:</strong> $${parseFloat(d.total).toFixed(2)}</p>
+                ${lineaStock}
+            </div>
+        `,
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#f16b1a',
+        allowOutsideClick: false
+    }).then((result) => {
+        if (result.isConfirmed) location.reload();
+    });
+}
+    else {
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
