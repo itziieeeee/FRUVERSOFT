@@ -109,3 +109,9 @@ $routes->post('clientes/registrar', 'Clientes::registrar');
 
 $routes->get('pantalla_rcliente', 'Clientes::pantalla_rcliente');
 $routes->post('clientes/registrar', 'Clientes::registrar');
+
+$routes->delete('existencias/eliminar/(:num)', 'Existencias::eliminar/$1');
+$routes->post('existencias/eliminar/(:num)', 'Existencias::eliminar/$1');
+
+$routes->post('clientes/eliminar/(:num)', 'Clientes::eliminar/$1');
+$routes->post('clientes/actualizar', 'Clientes::actualizar');

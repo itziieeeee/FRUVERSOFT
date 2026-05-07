@@ -1,101 +1,76 @@
 <?php
-
 namespace App\Controllers;
-
 use App\Models\ClienteModel;
 use App\Models\DireccionModel;
 
 class Clientes extends BaseController
 {
-    public function pantalla_clientes($id = null)
+    public function pantalla_clientes()
     {
         $model = new ClienteModel();
-
         $data['lista_clientes'] = $model->findAll();
-
-        $data['cliente'] = null;
-        if ($id !== null) {
-            $data['cliente'] = $model->getDatosClientes($id);
-        }
-
         return view('pantalla_clientes', $data);
     }
 
-    public function pantalla_rcliente()
-    {
-        return view('pantalla_rcliente', [
-            'errores'   => [],
-            'old_input' => []
-        ]);
-    }
-
-    public function registrar()
+    public function actualizar()
     {
         $clienteModel   = new ClienteModel();
         $direccionModel = new DireccionModel();
+        $id = $this->request->getPost('id_cliente');
 
-        $rules = [
-            'nombre'           => 'required|min_length[2]',
-            'apellido_paterno' => 'permit_empty',
-            'apellido_materno' => 'permit_empty',
-            'rfc'              => 'permit_empty|max_length[13]',
-            'tipo_cliente'     => 'required',
-            'tel'              => 'permit_empty|max_length[12]',
-            'calle'            => 'required',
-            'numero'           => 'required',
-            'colonia'          => 'required',
-            'municipio'        => 'permit_empty',
-            'estado'           => 'required',
-        ];
-
-        if (! $this->validate($rules)) {
-            return view('pantalla_rcliente', [
-                'errores'   => $this->validator->getErrors(),
-                'old_input' => $this->request->getPost()
-            ]);
+        if (!$id) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'ID no recibido']);
         }
 
-        $idCliente = $clienteModel->insert([
+        $dataCliente = [
             'nombre'           => $this->request->getPost('nombre'),
-            'apellido_paterno' => $this->request->getPost('apellido_paterno'),
-            'apellido_materno' => $this->request->getPost('apellido_materno'),
-            'rfc'              => $this->request->getPost('rfc'),
-            'tipo_cliente'     => $this->request->getPost('tipo_cliente'),
+            'apellido_paterno' => $this->request->getPost('ap'),
+            'apellido_materno' => $this->request->getPost('am'),
             'tel'              => $this->request->getPost('tel'),
-        ]);
+            'rfc'              => $this->request->getPost('rfc'),
+        ];
 
-        $direccionModel->insert([
-            'calle'      => $this->request->getPost('calle'),
-            'numero'     => $this->request->getPost('numero'),
-            'colonia'    => $this->request->getPost('colonia'),
-            'municipio'  => $this->request->getPost('municipio'),
-            'estado'     => $this->request->getPost('estado'),
-            'id_cliente' => $idCliente,
-        ]);
-
-        return redirect()->to(base_url('pantalla_clientes'));
+        try {
+            $clienteModel->update($id, $dataCliente);
+            $estado = $this->request->getPost('estado');
+            $direccionModel->where('id_cliente', $id)->set(['estado' => $estado])->update();
+            return $this->response->setJSON(['status' => 'success', 'msg' => 'Actualizado']);
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => $e->getMessage()]);
+        }
     }
 
     public function detalle($id = null)
     {
-        if (!$id) return $this->response->setJSON(['error' => 'No ID']);
-
         $db = \Config\Database::connect();
-        
-        $query = $db->table('clientes')
-                    ->select('clientes.*, direccion.calle, direccion.numero, direccion.colonia, direccion.municipio, direccion.estado')
-                    ->join('direccion', 'direccion.id_cliente = clientes.id_cliente', 'left')
-                    ->where('clientes.id_cliente', $id)
-                    ->get();
+        $cliente = $db->table('clientes')
+            ->select('clientes.*, direccion.estado')
+            ->join('direccion', 'direccion.id_cliente = clientes.id_cliente', 'left')
+            ->where('clientes.id_cliente', $id)
+            ->get()->getRow();
+        return $this->response->setJSON(['cliente' => $cliente]);
+    }
 
-        $cliente = $query->getRow();
-        
-        $pedidoModel = new \App\Models\PedidoModel();
-        $historial = $pedidoModel->where('id_cliente', $id)->findAll();
+  
+    public function eliminar($id = null)
+    {
+        try {
+            $db = \Config\Database::connect();
+            $db->table('direccion')->where('id_cliente', $id)->delete();
+            $db->table('clientes')->where('id_cliente', $id)->delete();
+            return $this->response->setJSON(['status' => 'success', 'msg' => 'Cliente eliminado']);
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => $e->getMessage()]);
+        }
+    }
 
-        return $this->response->setJSON([
-            'cliente'   => $cliente,
-            'historial' => $historial
-        ]);
+    public function registrar()
+    {
+        // tu código existente de registrar
+    }
+
+    public function pantalla_rcliente()
+    {
+        return view('pantalla_rcliente');
     }
 }

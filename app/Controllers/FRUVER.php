@@ -7,7 +7,7 @@ use App\Models\UsuarioModel;
 use App\Models\StatusModel;
 use App\Models\RepartidorModel;
 
-class FRUVER extends BaseController
+class FRUVER extends BaseController//controador principal
 {
     // ==========================
     // 1. INICIO Y SESIÓN

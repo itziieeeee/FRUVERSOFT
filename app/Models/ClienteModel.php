@@ -11,6 +11,7 @@ class ClienteModel extends Model
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
 
+    // Estos campos deben coincidir exactamente con tu base de datos
     protected $allowedFields = [
         'nombre',
         'apellido_paterno',

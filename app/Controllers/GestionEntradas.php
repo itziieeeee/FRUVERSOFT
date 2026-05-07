@@ -53,7 +53,7 @@ class GestionEntradas extends BaseController
                          ->getRowArray();
 
         if ($existencia) {
-            // Si ya existe, sumamor la nueva cantidad de venta al total actual
+            // Si ya existe, sumamos la nueva cantidad de venta al total actual
             $db->table('existencias')
                ->where('id_producto', $id_producto)
                ->update([
