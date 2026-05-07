@@ -101,106 +101,66 @@
     </div>
 </div>
 
-<!-- MODAL ENTRADA -->
+<!-- MODAL ENTRADA DINÁMICO -->
 <div id="productModal" class="modal-overlay-custom">
-    <div class="modal-container-custom">
+    <div class="modal-container-custom" style="max-width: 90%; width: 1000px;">
         <div class="modal-header-custom d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold"><i class="fas fa-truck-loading me-2"></i> Registrar Entrada de Producto</h5>
+            <h5 class="mb-0 fw-bold"><i class="fas fa-truck-loading me-2"></i> Registro de Entrada Múltiple</h5>
             <button type="button" id="closeModalBtn" class="close text-white" style="font-size: 1.8rem; opacity: 0.9;">&times;</button>
         </div>
         
         <div class="modal-body p-4">
-            <form id="productForm" method="POST" action="<?= base_url('confirmar-entrada') ?>">
-                <div class="form-group mb-3">
-                    <label class="font-weight-bold"><i class="fas fa-apple-alt"></i> Producto</label>
-                    <select name="id_producto" id="selectEntrada" class="form-control" style="width: 100%;" required>
-                        <option value="">Escribe para buscar...</option>
+            <!-- SECCIÓN DE CAPTURA RÁPIDA -->
+            <div class="alert alert-light border d-flex align-items-end gap-3 mb-4 shadow-sm">
+                <div class="flex-grow-1">
+                    <label class="fw-bold mb-1"><i class="fas fa-search"></i> Buscar Producto (Captura Rápida)</label>
+                    <select id="selectEntrada" class="form-control">
+                        <option value="">Escribe el nombre del producto...</option>
                         <?php foreach ($productos as $p): ?>
-                            <option value="<?= $p['id'] ?>">
-                              #<?= $p['id'] ?> - <?= esc($p['nombre']) ?>
+                            <option value="<?= $p['id'] ?>" data-nombre="<?= esc($p['nombre']) ?>">
+                                #<?= $p['id'] ?> - <?= esc($p['nombre']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label class="font-weight-bold">Precio de compra</label>
-                        <div class="input-group">
-                            <div class="input-group-prepend"><span class="input-group-text">$</span></div>
-                            <input type="number" step="0.01" min="0.01" name="precio_compra" class="form-control" placeholder="0.00" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group col-md-6">
-                        <label class="font-weight-bold">Cantidad de compra</label>
-                        <input type="number" id="cantidad_compra" step="0.1" min="0.1" name="cantidad_compra" class="form-control" placeholder="Ej: 50" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label class="font-weight-bold">Unidad de compra</label>
-                            <select name="unidad_compra" class="form-control" required>
-                            <option value="" disabled selected hidden>Selecciona unidad...</option>
-                            <option value="Caja">Caja</option>
-                            <option value="Kilo">Kilo</option>
-                            <option value="Domo">Domo</option>
-                            <option value="Mazo">Mazo</option>
-                            <option value="Arpilla">Arpilla</option>
-                            <option value="Ramo">Ramo</option>
-                        </select>
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label class="font-weight-bold">Precio sugerido</label>
-                        <div class="input-group">
-                            <div class="input-group-prepend"><span class="input-group-text">$</span></div>
-                            <input type="number" step="0.01" min="0.01" name="precio_sugerido" class="form-control" placeholder="0.00" required>
-                        </div>
-                    </div>
-                </div>
-
-                <hr>
-
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label class="font-weight-bold text-success">Unidad de venta</label>
-                        <select name="unidad_venta" class="form-control" required>
-                            <option value="" disabled selected hidden>Selecciona unidad...</option>
-                            <option value="Caja">Caja</option>
-                            <option value="Kilo">Kilo</option>
-                            <option value="Domo">Domo</option>
-                            <option value="Mazo">Mazo</option>
-                            <option value="Arpilla">Arpilla</option>
-                            <option value="Ramo">Ramo</option>
-                            <option value="Pieza">Pieza</option>
-                        </select>
-                    </div>
-  
-                    <div class="form-group col-md-6">
-                        <label class="font-weight-bold text-success">Conversion</label>
-                        <input type="number" id="valor_conversion" step="0.1" min="0.1" name="valor_conversion" class="form-control" placeholder="Ej: 5" required>
-                    </div>
-
-                    
-                    <div class="form-group col-md-6">
-                        <label class="font-weight-bold text-success">Cantidad para venta</label>
-                        <input type="number" id="total_venta" step="0.1" min="0.1" name="cantidad_venta" class="form-control" placeholder="Resultado" readonly required>
-                    </div>
-
-                <div class="form-group mb-4">
-                    <label class="font-weight-bold">Categoría</label>
-                    <select name="categoria" class="form-control" required>
-                    <option value="" disabled selected hidden>Selecciona categoría...</option>    
-                        <option value="Frutas">Frutas</option>
-                        <option value="Verduras">Verduras</option>
-                        <option value="Hierbas">Hierbas</option>
-                    </select>
-                </div>
-
-                <button type="submit" class="btn btn-success btn-block py-2 rounded-pill shadow" style="background: var(--verde-fruta); border: none; font-weight: bold;">
-                    <i class="fas fa-save me-2"></i> Guardar Registro de Inventario
+                <button type="button" id="btnAgregarFila" class="btn btn-primary" style="height: 38px; background: #2c3e50; border: none;">
+                    <i class="fas fa-plus"></i> Añadir
                 </button>
+            </div>
+
+            <form id="productForm" method="POST" action="<?= base_url('confirmar-entrada') ?>">
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-hover border">
+                        <thead class="bg-light sticky-top">
+                            <tr>
+                                <th style="width: 25%;">Producto</th>
+                                <th>P. Compra</th>
+                                <th>Cant. Compra</th>
+                                <th>Unidad (C/V)</th>
+                                <th>P. Sugerido</th>
+                                <th>Conversion</th>
+                                <th>Venta Total</th>
+                                <th>Categoría</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaEntradas">
+                            <!-- Aquí se insertarán las filas dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="vacioMensaje" class="text-center py-4 text-muted">
+                    <i class="fas fa-clipboard-list fa-3x mb-2"></i>
+                    <p>No hay productos en la lista de entrada.</p>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <span class="badge badge-info p-2" id="contadorProductos">Productos en lista: 0</span>
+                    <button type="submit" id="btnGuardarTodo" class="btn btn-success px-5 rounded-pill shadow" style="display:none; background: var(--verde-fruta); border: none; font-weight: bold;">
+                        <i class="fas fa-save me-2"></i> Guardar Todo el Inventario
+                    </button>
+                </div>
             </form>
         </div>
     </div>
@@ -211,6 +171,107 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
+
+    $(document).ready(function() {
+    const modalEntrada = $('#productModal');
+    const cuerpoTabla = $('#cuerpoTablaEntradas');
+    const selectBusqueda = $('#selectEntrada');
+
+    // Al abrir el modal, iniciamos Select2
+    $('#btnAbrirEntrada').on('click', function(e) {
+        e.preventDefault();
+        modalEntrada.addClass('active');
+        selectBusqueda.select2({
+            dropdownParent: modalEntrada,
+            width: '100%'
+        });
+    });
+
+    // Agregar producto a la tabla
+    $('#btnAgregarFila').on('click', function() {
+        const id = selectBusqueda.val();
+        const nombre = selectBusqueda.find(':selected').data('nombre');
+
+        if (!id) return alert("Selecciona un producto primero.");
+
+        const nuevaFila = `
+        <tr class="fila-producto">
+        <td>
+            <input type="hidden" name="id_producto[]" value="${id}">
+            <small class="fw-bold d-block text-truncate" style="max-width: 150px;">${nombre}</small>
+        </td>
+        <td><input type="number" step="0.01" min="0.01" name="precio_compra[]" class="form-control form-control-sm" required></td>
+        <td><input type="number" step="0.1" min="0.1" name="cantidad_compra[]" class="form-control form-control-sm cant-compra" required></td>
+        <td>
+            <!-- UNIDAD DE COMPRA -->
+            <select name="unidad_compra[]" class="form-control form-control-sm mb-1" required>
+                <option value="" disabled selected hidden>Compra...</option>
+                <option value="Caja">Caja</option>
+                <option value="Kilo">Kilo</option>
+                <option value="Domo">Domo</option>
+                <option value="Mazo">Mazo</option>
+                <option value="Arpilla">Arpilla</option>
+                <option value="Ramo">Ramo</option>
+            </select>
+            
+            <!-- UNIDAD DE VENTA -->
+            <select name="unidad_venta[]" class="form-control form-control-sm" required>
+                <option value="" disabled selected hidden>Venta...</option>
+                <option value="Caja">Caja</option>
+                <option value="Kilo">Kilo</option>
+                <option value="Domo">Domo</option>
+                <option value="Mazo">Mazo</option>
+                <option value="Arpilla">Arpilla</option>
+                <option value="Ramo">Ramo</option>
+                <option value="Pieza">Pieza</option>
+            </select>
+        </td>
+        <td><input type="number" step="0.01" min="0.01" name="precio_sugerido[]" class="form-control form-control-sm" required></td>
+        <td><input type="number" step="0.1" min="0.1" name="valor_conversion[]" class="form-control form-control-sm valor-conv" required></td>
+        <td><input type="number" name="cantidad_venta[]" class="form-control form-control-sm total-venta" readonly required></td>
+        <td>
+            <select name="categoria[]" class="form-control form-control-sm" required>
+                <option value="Frutas">Frutas</option>
+                <option value="Verduras">Verduras</option>
+                <option value="Hierbas">Hierbas</option>
+            </select>
+        </td>
+        <td><button type="button" class="btn btn-sm btn-danger btnEliminarFila"><i class="fas fa-trash"></i></button></td>
+    </tr>`;
+
+        cuerpoTabla.append(nuevaFila);
+        actualizarInterfaz();
+        selectBusqueda.val(null).trigger('change'); // Limpiar buscador
+    });
+
+    // Cálculos automáticos por fila
+    cuerpoTabla.on('input', '.cant-compra, .valor-conv', function() {
+        const fila = $(this).closest('tr');
+        const cant = parseFloat(fila.find('.cant-compra').val()) || 0;
+        const conv = parseFloat(fila.find('.valor-conv').val()) || 0;
+        const total = (cant * conv).toFixed(2);
+        fila.find('.total-venta').val(total > 0 ? total : "");
+    });
+
+    // Eliminar fila
+    cuerpoTabla.on('click', '.btnEliminarFila', function() {
+        $(this).closest('tr').remove();
+        actualizarInterfaz();
+    });
+
+    function actualizarInterfaz() {
+    // Ahora solo contamos las filas que están DENTRO del cuerpo de la tabla del modal
+    const filas = $('#cuerpoTablaEntradas .fila-producto').length;
+    
+    $('#contadorProductos').text(`Productos en lista: ${filas}`);
+    $('#vacioMensaje').toggle(filas === 0);
+    $('#btnGuardarTodo').toggle(filas > 0);
+}
+
+    $('#closeModalBtn').on('click', () => modalEntrada.removeClass('active'));
+    });
+
+
     $(document).ready(function() {
         // FILTRO EN TIEMPO REAL PARA LA TABLA
         $("#buscadorTabla").on("keyup", function() {

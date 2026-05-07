@@ -56,56 +56,94 @@
                     <th>Teléfono</th>
                     <th>Dirección</th>
                     <th>Notas</th>
+                    <th>Estado</th>
+                    <th>Pedidos</th>
                     <th>Editar</th>
                     <th>Eliminar</th>
                 </tr>
             </thead>
-            <tbody>
-                <?php if(!empty($repartidores)): ?>
-                    <?php foreach($repartidores as $r): ?>
-                    <tr>
-                        <td><strong>#<?= $r['id'] ?></strong></td>
-                        <td>
-                            <?php if(!empty($r['foto'])): ?>
-                                <img src="<?= base_url('uploads/repartidores/' . $r['foto']) ?>"
-                                     alt="foto"
-                                     style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid #e0e0e0;">
-                            <?php else: ?>
-                                <div style="width:42px; height:42px; border-radius:50%; background:#d1e6cf; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; color:#1d4a27;">
-                                    <?= strtoupper(substr($r['nombre'],0,1) . substr($r['ap_p'],0,1)) ?>
-                                </div>
-                            <?php endif; ?>
-                        </td>
-                        <td><?= $r['nombre'] . ' ' . $r['ap_p'] . ' ' . $r['ap_m'] ?></td>
-                        <td><?= $r['tel'] ?></td>
-                        <td><?= $r['direccion'] ?? 'N/A' ?></td>
-                        <td><small><?= $r['notas'] ?? '-' ?></small></td>
-                        <td>
-                            <button style="color:var(--primary-green); border:none; background:none; cursor:pointer;"
-                                onclick="abrirEditar(
-                                    <?= $r['id'] ?>,
-                                    '<?= $r['nombre'] ?>',
-                                    '<?= $r['ap_p'] ?>',
-                                    '<?= $r['ap_m'] ?>',
-                                    '<?= $r['tel'] ?>',
-                                    '<?= $r['direccion'] ?? '' ?>',
-                                    '<?= $r['notas'] ?? '' ?>'
-                                )">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                        </td>
-                        <td>
-                            <button style="color:#c0392b; border:none; background:none; cursor:pointer;"
-                                onclick="eliminarRepartidor(<?= $r['id'] ?>, '<?= $r['nombre'] ?>')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
+    <tbody>
+    <?php if(!empty($repartidores)): ?>
+        <?php foreach($repartidores as $r): ?>
+        <?php
+            $pedidos  = $pedidosPorRepartidor[$r['id']] ?? [];
+            $asignado = count($pedidos) > 0;
+        ?>
+        <tr>
+            <td><strong>#<?= $r['id'] ?></strong></td>
+            <td>
+                <?php if(!empty($r['foto'])): ?>
+                    <img src="<?= base_url('uploads/repartidores/' . $r['foto']) ?>"
+                         alt="foto"
+                         style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #e0e0e0;">
                 <?php else: ?>
-                    <tr><td colspan="8" style="text-align:center; padding:2rem;">No hay repartidores registrados.</td></tr>
+                    <div style="width:42px;height:42px;border-radius:50%;background:#d1e6cf;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;color:#1d4a27;">
+                        <?= strtoupper(substr($r['nombre'],0,1) . substr($r['ap_p'],0,1)) ?>
+                    </div>
                 <?php endif; ?>
-            </tbody>
+            </td>
+            <td><?= $r['nombre'] . ' ' . $r['ap_p'] . ' ' . $r['ap_m'] ?></td>
+            <td><?= $r['tel'] ?></td>
+            <td><?= $r['direccion'] ?? 'N/A' ?></td>
+            <td><small><?= $r['notas'] ?? '-' ?></small></td>
+
+            <!-- ESTADO -->
+            <td>
+                <?php if($asignado): ?>
+                    <span style="background:#d4edda;color:#155724;padding:4px 12px;
+                                 border-radius:20px;font-size:0.78rem;font-weight:600;">
+                        ● Asignado
+                    </span>
+                <?php else: ?>
+                    <span style="background:#f8d7da;color:#721c24;padding:4px 12px;
+                                 border-radius:20px;font-size:0.78rem;font-weight:600;">
+                        ● Libre
+                    </span>
+                <?php endif; ?>
+            </td>
+
+            <!-- PEDIDOS -->
+            <td>
+                <?php if($asignado): ?>
+                    <button onclick="verPedidos(<?= $r['id'] ?>)"
+                        style="background:none;border:1px solid #1d4a27;color:#1d4a27;
+                               border-radius:20px;padding:4px 12px;cursor:pointer;font-size:0.8rem;">
+                        <i class="fas fa-box"></i> <?= count($pedidos) ?> pedido(s)
+                    </button>
+                <?php else: ?>
+                    <span style="color:#bbb;font-size:0.85rem;">Sin pedidos</span>
+                <?php endif; ?>
+            </td>
+
+            <!-- EDITAR -->
+            <td>
+                <button style="color:var(--primary-green);border:none;background:none;cursor:pointer;"
+                    onclick="abrirEditar(
+                        <?= $r['id'] ?>,
+                        '<?= $r['nombre'] ?>',
+                        '<?= $r['ap_p'] ?>',
+                        '<?= $r['ap_m'] ?>',
+                        '<?= $r['tel'] ?>',
+                        '<?= $r['direccion'] ?? '' ?>',
+                        '<?= $r['notas'] ?? '' ?>'
+                    )">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </td>
+
+            <!-- ELIMINAR -->
+            <td>
+                <button style="color:#c0392b;border:none;background:none;cursor:pointer;"
+                    onclick="eliminarRepartidor(<?= $r['id'] ?>, '<?= $r['nombre'] ?>')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <tr><td colspan="10" style="text-align:center;padding:2rem;">No hay repartidores registrados.</td></tr>
+    <?php endif; ?>
+</tbody>
         </table>
     </div>
 </div>
@@ -264,20 +302,29 @@
     });
 
     function eliminarRepartidor(id, nombre) {
-        if (!confirm(`¿Seguro que deseas eliminar a ${nombre}?`)) return;
-        const formData = new FormData();
-        formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
-        fetch(`<?= base_url('FRUVER/eliminarrepartidor') ?>/${id}`, { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Repartidor eliminado.');
-                    window.location.reload();
-                } else {
-                    alert('Error al eliminar.');
-                }
-            });
+    // Verificar si tiene pedidos asignados
+    const pedidos = pedidosPorRepartidor[id] || [];
+    
+    if (pedidos.length > 0) {
+        alert(`No puedes eliminar a ${nombre} porque tiene ${pedidos.length} pedido(s) asignado(s).\n\nPrimero reasigna o finaliza sus pedidos.`);
+        return;
     }
+
+    if (!confirm(`¿Seguro que deseas eliminar a ${nombre}?`)) return;
+
+    const formData = new FormData();
+    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+    fetch(`<?= base_url('FRUVER/eliminarrepartidor') ?>/${id}`, { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('Repartidor eliminado.');
+                window.location.reload();
+            } else {
+                alert('Error al eliminar.');
+            }
+        });
+}
 
     function previsualizarFoto(input, previewId) {
         const preview = document.getElementById(previewId);
@@ -292,6 +339,70 @@
         }
     }
 </script>
+<!-- Modal Pedidos -->
+<div id="modalPedidos" class="modal">
+    <div class="modal-content" style="max-width:520px;">
+        <h3 style="margin-top:0;color:var(--primary-green)">
+            <i class="fas fa-box"></i> Pedidos del Repartidor
+        </h3>
+        <div id="listaPedidos"></div>
+        <button onclick="document.getElementById('modalPedidos').style.display='none'"
+            style="margin-top:1rem;width:100%;background:#ccc;border:none;
+                   border-radius:50px;padding:10px;cursor:pointer;">
+            Cerrar
+        </button>
+    </div>
+</div>
 
+<script>
+const pedidosPorRepartidor = <?= json_encode($pedidosPorRepartidor) ?>;
+
+function verPedidos(idRepartidor) {
+    const pedidos = pedidosPorRepartidor[idRepartidor] || [];
+    let html = `<table style="width:100%;border-collapse:collapse;font-size:0.87rem;">
+        <thead>
+            <tr style="background:#f0f8f0;">
+                <th style="padding:8px;text-align:left;">#Pedido</th>
+                <th style="padding:8px;text-align:left;">Cliente</th>
+                <th style="padding:8px;text-align:left;">Dirección</th>
+                <th style="padding:8px;text-align:left;">Total</th>
+                <th style="padding:8px;text-align:left;">Estado</th>
+            </tr>
+        </thead><tbody>`;
+
+    pedidos.forEach(p => {
+        const colores = {
+            'tránsito': '#e67e22',
+            'pagado':   '#27ae60',
+            'crédito':  '#2980b9',
+        };
+        let color = '#555';
+        for (const [clave, val] of Object.entries(colores)) {
+            if (p.estado_actual?.toLowerCase().includes(clave)) { color = val; break; }
+        }
+
+        // Armar dirección completa
+        const direccion = (p.calle && p.numero)
+            ? `${p.calle} #${p.numero}, Col. ${p.colonia ?? ''}, ${p.municipio ?? ''}`
+            : '<span style="color:#bbb;">Sin dirección</span>';
+
+        const cliente = (p.cliente_nombre)
+            ? `${p.cliente_nombre} ${p.cliente_ap ?? ''}`
+            : '<span style="color:#bbb;">Sin cliente</span>';
+
+        html += `<tr style="border-bottom:1px solid #eee;">
+            <td style="padding:8px;"><strong>#${p.id}</strong></td>
+            <td style="padding:8px;">${cliente}</td>
+            <td style="padding:8px;font-size:0.82rem;color:#444;">${direccion}</td>
+            <td style="padding:8px;">$${parseFloat(p.total).toFixed(2)}</td>
+            <td style="padding:8px;color:${color};font-weight:600;">${p.estado_actual ?? '-'}</td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('listaPedidos').innerHTML = html;
+    document.getElementById('modalPedidos').style.display = 'flex';
+}
+</script>
 </body>
 </html>

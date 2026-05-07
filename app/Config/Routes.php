@@ -115,3 +115,6 @@ $routes->post('existencias/eliminar/(:num)', 'Existencias::eliminar/$1');
 
 $routes->post('clientes/eliminar/(:num)', 'Clientes::eliminar/$1');
 $routes->post('clientes/actualizar', 'Clientes::actualizar');
+$routes->post('pedido/actualizar_pago', 'Status::actualizar_pago');
+$routes->post('pedido/validar', 'Status::validar_pedido');
+$routes->post('pedido/detalle', 'Status::detalle_pedido');

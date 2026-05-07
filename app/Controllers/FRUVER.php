@@ -269,13 +269,41 @@ public function guardarrepartidor() {
 //para mostrar al repartidor 
 public function mostrar_repartidores() 
 {
-    $model = new \App\Models\RepartidorModel();
-    
-    //extraemos los datos de la tabla
-    $data['repartidores'] = $model->findAll(); 
+    $db = \Config\Database::connect();
 
-    // pasamos los datos a la pagina
-    return view('pantalla_repartidores', $data);
+    $repartidores = $db->query("SELECT * FROM repartidor")->getResultArray();
+
+    // Pedidos con nombre del cliente y su dirección
+    $pedidosRaw = $db->query("
+        SELECT 
+            p.id_repartidor,
+            p.id,
+            p.estado_actual,
+            p.total,
+            p.fecha,
+            c.nombre AS cliente_nombre,
+            c.apellido_paterno AS cliente_ap,
+            d.calle,
+            d.numero,
+            d.colonia,
+            d.municipio,
+            d.estado AS cliente_estado
+        FROM pedido p
+        LEFT JOIN clientes c  ON c.id_cliente = p.id_cliente
+        LEFT JOIN direccion d ON d.id_cliente = p.id_cliente
+        WHERE p.id_repartidor IS NOT NULL
+        ORDER BY p.id_repartidor, p.id DESC
+    ")->getResultArray();
+
+    $pedidosPorRepartidor = [];
+    foreach ($pedidosRaw as $p) {
+        $pedidosPorRepartidor[$p['id_repartidor']][] = $p;
+    }
+
+    return view('pantalla_repartidores', [
+        'repartidores'         => $repartidores,
+        'pedidosPorRepartidor' => $pedidosPorRepartidor,
+    ]);
 }
 
 public function editarrepartidor($id) {

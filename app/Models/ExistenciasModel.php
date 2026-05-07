@@ -4,7 +4,7 @@ use CodeIgniter\Model;
 
 class ExistenciasModel extends Model
 {
-    protected $table = 'existencias';
+    protected $table      = 'existencias';
     protected $primaryKey = 'id';
     protected $allowedFields = ['e_total', 'e_bloqueo', 'e_merma', 'id_producto'];
 
@@ -30,6 +30,7 @@ class ExistenciasModel extends Model
         $offset = ($page - 1) * $perPage;
         $total = $builder->countAllResults(false);
         $this->pager->makeLinks($page, $perPage, $total);
+        
         return $builder->limit($perPage, $offset)->get()->getResultArray();
     }
 
@@ -55,18 +56,21 @@ class ExistenciasModel extends Model
 
     public function actualizarExistencia($id, $datos)
     {
+        // Actualizar descripción en la tabla productos
         if (isset($datos['descripcion'])) {
             $this->db->table('producto')
                 ->where('id', $id)
                 ->update(['descripcion' => $datos['descripcion']]);
         }
 
+        // Actualizar unidad de medida en la tabla entradas
         if (isset($datos['unidad_medida'])) {
             $this->db->table('entrada')
                 ->where('id_producto', $id)
                 ->update(['unidad_venta' => $datos['unidad_medida']]);
         }
 
+        // Actualizar datos de stock en la tabla existencias
         $updateData = [];
         if (isset($datos['existencias_totales'])) {
             $updateData['e_total'] = $datos['existencias_totales'];
@@ -81,6 +85,45 @@ class ExistenciasModel extends Model
                 ->update($updateData);
         }
 
+        return true;
+    }
+
+    public function validarStockPedido($productos)
+    {
+        $faltantes = [];
+
+        foreach ($productos as $prod) {
+            $id_producto = (int) $prod['id_producto'];
+            $cantidad    = (float) $prod['cantidad'];
+
+            $existencia = $this->db->table('existencias')
+                ->select('e_total, e_bloqueo')
+                ->where('id_producto', $id_producto)
+                ->get()->getRowArray();
+
+            $disponible = $existencia ? ($existencia['e_total'] - $existencia['e_bloqueo']) : 0;
+
+            if ($disponible < $cantidad) {
+                $faltantes[] = [
+                    'id_producto' => $id_producto,
+                    'requerido'   => $cantidad,
+                    'disponible'  => $disponible,
+                ];
+            }
+        }
+
+        return $faltantes;
+    }
+
+    public function descontarStock($productos)
+    {
+        foreach ($productos as $prod) {
+            $this->db->table('existencias')
+                ->where('id_producto', (int) $prod['id_producto'])
+                ->set('e_total',   'e_total - '   . (float)$prod['cantidad'], false)
+                ->set('e_bloqueo', 'e_bloqueo + ' . (float)$prod['cantidad'], false)
+                ->update();
+        }
         return true;
     }
 }

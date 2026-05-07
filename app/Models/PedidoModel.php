@@ -13,6 +13,8 @@ class PedidoModel extends Model {
         'id_repartidor',
         'tipo_entrega',
         'total',
-        'estado_actual'
+        'estado_actual', 
+        'monto_pagado',  
+        'tipo_pago',
     ];
 }
