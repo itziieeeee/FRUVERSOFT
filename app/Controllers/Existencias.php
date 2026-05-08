@@ -38,23 +38,24 @@ class Existencias extends BaseController
     }
 
     public function actualizar($id)
-    {
-        header('Content-Type: application/json');
-        try {
-            $model = new ExistenciasModel();
-            $datos = [
-                'descripcion'            => $this->request->getPost('descripcion'),
-                'unidad_medida'          => $this->request->getPost('unidad_medida'),
-                'existencias_totales'    => $this->request->getPost('existencias_totales'),
-                'existencias_bloqueadas' => $this->request->getPost('existencias_bloqueadas'),
-            ];
-            $model->actualizarExistencia($id, $datos);
-            echo json_encode(['success' => true, 'message' => 'Actualizado correctamente']);
-        } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-        }
-        die();
+{
+    header('Content-Type: application/json');
+    try {
+        $model = new ExistenciasModel();
+        $datos = [
+            'nombre'                 => $this->request->getPost('nombre'),
+            'descripcion'            => $this->request->getPost('descripcion'),
+            'unidad_medida'          => $this->request->getPost('unidad_medida'),
+            'existencias_totales'    => $this->request->getPost('existencias_totales'),
+            'existencias_bloqueadas' => $this->request->getPost('existencias_bloqueadas'),
+        ];
+        $model->actualizarExistencia($id, $datos);
+        echo json_encode(['success' => true, 'message' => 'Actualizado correctamente']);
+    } catch (\Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
+    die();
+}
 
     
     public function eliminar($id)

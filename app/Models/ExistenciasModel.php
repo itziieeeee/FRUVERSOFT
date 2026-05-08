@@ -55,38 +55,47 @@ class ExistenciasModel extends Model
     }
 
     public function actualizarExistencia($id, $datos)
-    {
-        // Actualizar descripción en la tabla productos
-        if (isset($datos['descripcion'])) {
-            $this->db->table('producto')
-                ->where('id', $id)
-                ->update(['descripcion' => $datos['descripcion']]);
-        }
+{
+    $productoData = [];
 
-        // Actualizar unidad de medida en la tabla entradas
-        if (isset($datos['unidad_medida'])) {
-            $this->db->table('entrada')
-                ->where('id_producto', $id)
-                ->update(['unidad_venta' => $datos['unidad_medida']]);
-        }
-
-        // Actualizar datos de stock en la tabla existencias
-        $updateData = [];
-        if (isset($datos['existencias_totales'])) {
-            $updateData['e_total'] = $datos['existencias_totales'];
-        }
-        if (isset($datos['existencias_bloqueadas'])) {
-            $updateData['e_bloqueo'] = $datos['existencias_bloqueadas'];
-        }
-
-        if (!empty($updateData)) {
-            $this->db->table('existencias')
-                ->where('id_producto', $id)
-                ->update($updateData);
-        }
-
-        return true;
+    if (isset($datos['nombre'])) {
+        $productoData['nombre'] = $datos['nombre'];
     }
+    if (isset($datos['descripcion'])) {
+        $productoData['descripcion'] = $datos['descripcion'];
+    }
+
+    // Actualizar nombre y/o descripción en tabla producto
+    if (!empty($productoData)) {
+        $this->db->table('producto')
+            ->where('id', $id)
+            ->update($productoData);
+    }
+
+    // Actualizar unidad de medida en tabla entradas
+    if (isset($datos['unidad_medida'])) {
+        $this->db->table('entrada')
+            ->where('id_producto', $id)
+            ->update(['unidad_venta' => $datos['unidad_medida']]);
+    }
+
+    // Actualizar stock en tabla existencias
+    $updateData = [];
+    if (isset($datos['existencias_totales'])) {
+        $updateData['e_total'] = $datos['existencias_totales'];
+    }
+    if (isset($datos['existencias_bloqueadas'])) {
+        $updateData['e_bloqueo'] = $datos['existencias_bloqueadas'];
+    }
+
+    if (!empty($updateData)) {
+        $this->db->table('existencias')
+            ->where('id_producto', $id)
+            ->update($updateData);
+    }
+
+    return true;
+}
 
     public function validarStockPedido($productos)
     {

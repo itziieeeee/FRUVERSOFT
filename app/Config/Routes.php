@@ -118,3 +118,16 @@ $routes->post('clientes/actualizar', 'Clientes::actualizar');
 $routes->post('pedido/actualizar_pago', 'Status::actualizar_pago');
 $routes->post('pedido/validar', 'Status::validar_pedido');
 $routes->post('pedido/detalle', 'Status::detalle_pedido');
+
+$routes->post('guardar_cliente', 'Clientes::registrar');
+
+$routes->get('pantalla_productos',  'Producto::pantalla_productos');
+ 
+// Alta
+$routes->get('alta_producto',       'Producto::altaproducto');
+$routes->post('producto/guardar',   'Producto::guardar');
+ 
+$routes->post('producto/editar/(:num)',   'Producto::editar/$1');
+ 
+$routes->post('producto/eliminar/(:num)', 'Producto::eliminar/$1');
+ 

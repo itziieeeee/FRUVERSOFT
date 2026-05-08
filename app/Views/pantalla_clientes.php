@@ -296,7 +296,7 @@
                     <h3><?= htmlspecialchars($c['nombre']) ?> <?= htmlspecialchars($c['apellido_paterno'] ?? '') ?></h3>
                     <p><i class="fas fa-phone-alt"></i> <?= $c['tel'] ?? 'N/A' ?></p>
                     <p><i class="fas fa-id-card"></i> <?= $c['rfc'] ?? 'S/N RFC' ?></p>
-                    <p><i class="fas fa-map-marker-alt"></i> <?= $c['estado'] ?? 'México' ?></p>
+                    <p><i class="fas fa-map-marker-alt"></i> <?= $c['estado'] ?? '' ?></p>
                 </div>
                 <div class="card-btns">
                     <button class="btn btn-edit" onclick="abrirEditar(<?= $c['id_cliente'] ?>)">
@@ -534,6 +534,16 @@ document.getElementById('modalEdit').addEventListener('click', function(e) {
 });
 document.getElementById('modalConfirmar').addEventListener('click', function(e) {
     if (e.target === this) cerrarConfirmar();
+});
+// ===================== FLASH MESSAGES =====================
+window.addEventListener('DOMContentLoaded', function () {
+    <?php if (session()->getFlashdata('flash_success')): ?>
+        showToast('<?= session()->getFlashdata('flash_success') ?>', 'success');
+    <?php endif; ?>
+
+    <?php if (session()->getFlashdata('flash_error')): ?>
+        showToast('<?= session()->getFlashdata('flash_error') ?>', 'error');
+    <?php endif; ?>
 });
 </script>
 </body>

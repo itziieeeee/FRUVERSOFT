@@ -1,383 +1,197 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- ESTA ES LA PANTALLA DE PRODUCTOS -->
-    
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <title>FRUVER · Productos</title>
     
-    <style>
-        /* ===== ESTILOS BASE ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <link rel="stylesheet" href="<?= base_url('css/productos.css') ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>FRUVER · Catálogo de Productos</title>
+    
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f7fb;
-            color: #2d3748;
-        }
-
-        /* ===== BARRA SUPERIOR ===== */
-        .barra-superior {
-            background: linear-gradient(135deg, #1a5f3a 0%, #0d3b22 100%);
-            padding: 0.8rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .logo-area img {
-            max-height: 55px;
-            object-fit: contain;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-        }
-
-        .buscador {
-            display: flex;
-            flex: 1;
-            max-width: 400px;
-            margin: 0 1rem;
-        }
-
-        .buscador input {
-            flex: 1;
-            padding: 0.7rem 1rem;
-            border: none;
-            border-radius: 30px 0 0 30px;
-            font-size: 0.9rem;
-            outline: none;
-            background-color: #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
-
-        .buscador button {
-            background-color: #f5a623;
-            border: none;
-            padding: 0.7rem 1.2rem;
-            border-radius: 0 30px 30px 0;
-            cursor: pointer;
-            color: white;
-            transition: background 0.3s;
-        }
-
-        .buscador button:hover {
-            background-color: #e69500;
-        }
-
-        .user-actions {
-            display: flex;
-            gap: 0.8rem;
-        }
-
-        .btn-user {
-            background-color: rgba(255,255,255,0.15);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 30px;
-            text-decoration: none;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s;
-        }
-
-        .btn-user:hover {
-            background-color: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-        }
-
-        /* ===== MENÚ DE NAVEGACIÓN ===== */
-        .menu-navegacion {
-            background-color: white;
-            border-bottom: 3px solid #e2e8f0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .nav-links {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            flex-wrap: wrap;
-        }
-
-        .nav-link {
-            padding: 0.8rem 1.5rem;
-            text-decoration: none;
-            color: #4a5568;
-            font-weight: 500;
-            border-radius: 30px;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .nav-link i {
-            font-size: 1.1rem;
-        }
-
-        .nav-link:hover {
-            background-color: #f0fff4;
-            color: #1a5f3a;
-        }
-
-        .nav-link.activo {
-            background: linear-gradient(135deg, #1a5f3a, #0d3b22);
-            color: white;
-            box-shadow: 0 4px 10px rgba(26,95,58,0.3);
-        }
-
-        /* ===== CONTENEDOR CATÁLOGO ===== */
-        .catalogo-container {
-            max-width: 1300px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
-
-        .catalogo-container h2 {
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            color: #1a5f3a;
-            border-left: 5px solid #f5a623;
-            padding-left: 1rem;
-            font-weight: 600;
-        }
-
-        /* ===== GRID DE CARDS ===== */
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 1.8rem;
-            margin-bottom: 2rem;
-        }
-
-        .product-card {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .product-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.12);
-        }
-
-        .card-img {
-            background: #f7fafc;
-            height: 180px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        .card-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.4s;
-        }
-
-        .product-card:hover .card-img img {
-            transform: scale(1.05);
-        }
-
-        .card-info {
-            padding: 1rem 1rem 1.2rem;
-        }
-
-        .product-name {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #2d3748;
-            margin-bottom: 0.5rem;
-        }
-
-        .product-desc {
-            font-size: 0.85rem;
-            color: #718096;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        /* ===== PAGINACIÓN ===== */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .pagination a, 
-        .pagination strong {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 40px;
-            height: 40px;
-            padding: 0 0.8rem;
-            border-radius: 8px;
-            background-color: white;
-            color: #4a5568;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
-            border: 1px solid #e2e8f0;
-        }
-
-        .pagination a:hover {
-            background-color: #f0fff4;
-            border-color: #1a5f3a;
-            color: #1a5f3a;
-        }
-
-        .pagination strong {
-            background: linear-gradient(135deg, #1a5f3a, #0d3b22);
-            color: white;
-            border: none;
-        }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            .barra-superior {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .buscador {
-                max-width: 100%;
-                width: 100%;
-                margin: 0.5rem 0;
-            }
-            
-            .user-actions {
-                justify-content: center;
-            }
-            
-            .nav-links {
-                gap: 0.3rem;
-            }
-            
-            .nav-link {
-                padding: 0.5rem 1rem;
-                font-size: 0.8rem;
-            }
-            
-            .catalogo-container {
-                padding: 0 1rem;
-            }
-            
-            .cards-grid {
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                gap: 1rem;
-            }
-            
-            .card-img {
-                height: 150px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .cards-grid {
-                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            }
-            
-            .product-name {
-                font-size: 0.95rem;
-            }
-            
-            .product-desc {
-                font-size: 0.75rem;
-            }
-            
-            .catalogo-container h2 {
-                font-size: 1.4rem;
-            }
-        }
-    </style>
 </head>
 <body>
 
+<!-- HEADER -->
+<header>
     <div class="barra-superior">
         <div class="logo-area">
-            <img src="<?= base_url('img/LOGO1.png') ?>" alt="Logo" width="140">
+            <img src="<?= base_url('img/LOGO1.png') ?>" alt="Logo FRUVER">
         </div>
-
-        <form action="<?= base_url('pantalla_productos') ?>" method="GET" class="buscador">
-        <input type="text" name="q" placeholder="Buscar producto..." value="<?= isset($_GET['q']) ? esc($_GET['q']) : '' ?>">
-        <button type="submit"><i class="fas fa-search"></i></button>
-        </form>
-
-
+        <div class="buscador">
+            <form method="GET">
+                <input type="text" name="q"
+                    value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>"
+                    placeholder="Buscar productos...">
+                <button type="submit"><i class="fas fa-search"></i> </button>
+            </form>
+        </div>
         <div class="user-actions">
-            <a href="#" class="btn-user"><i class="fas fa-user-shield"></i> <span>Admin</span></a>
-            <a href="#" class="btn-user"><i class="fas fa-bell"></i> <span>Notificaciones</span></a>
-            <a href="<?= base_url('menusolo') ?>" class="btn-user"><i class="fas fa-sign-out-alt"></i> <span>Regresar</span></a>
+            <a href="#" class="btn-user"><i class="fas fa-user-shield"></i> Admin</a>
+            <a href="#" class="btn-user"><i class="fas fa-bell"></i> Notificaciones</a>
+            <a href="<?= base_url('menusolo') ?>" class="btn-user"><i class="fas fa-sign-out-alt"></i> Regresar</a>
         </div>
     </div>
+</header>
 
-    <nav class="menu-navegacion">
-        <div class="nav-links">
-            <a href="pantalla_ventas" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
-            <a href="pantalla_pedidos" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
-            <a href="<?=base_url('pantalla_inventario')?>" class="nav-link"><i class="fas fa-boxes"></i> Inventario</a>
-            <a href="pantalla_clientes" class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
-            <a href="pantalla_repartidores" class="nav-link"><i class="fa-solid fa-dolly"></i> Repartidores</a>
-            <a href="pantalla_productos" class="nav-link activo"><i class="fa-solid fa-apple-whole"></i> Productos</a>
+<!-- NAVEGACIÓN -->
+<nav class="menu-navegacion">
+    <div class="nav-links">
+        <a href="pantalla_ventas"      class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
+        <a href="pantalla_pedidos"     class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
+        <a href="<?= base_url('pantalla_inventario') ?>" class="nav-link"><i class="fas fa-boxes"></i> Inventario</a>
+        <a href="pantalla_clientes"    class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
+        <a href="pantalla_repartidores" class="nav-link"><i class="fa-solid fa-dolly"></i> Repartidores</a>
+        <a href="pantalla_productos"   class="nav-link activo"><i class="fa-solid fa-apple-whole"></i> Productos</a>
+    </div>
+</nav>
+
+<!-- BOTÓN FLOTANTE -->
+<a href="<?= base_url('alta_producto') ?>" class="btn-nuevo-producto">
+    <i class="fas fa-plus-circle"></i> Nuevo Producto
+</a>
+
+<!-- ALERTAS -->
+<div class="alert">
+    <?php if(session()->getFlashdata('mensaje')): ?>
+        <div class="alert-msg alert-success">
+            <i class="fas fa-check-circle"></i>
+            <?= session()->getFlashdata('mensaje') ?>
         </div>
-    </nav>
+    <?php endif; ?>
+    <?php if(session()->getFlashdata('error')): ?>
+        <div class="alert-msg alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <?= session()->getFlashdata('error') ?>
+        </div>
+    <?php endif; ?>
+</div>
 
-    <div class="catalogo-container">
-        <h2>Catálogo de Productos</h2>
+<!-- CATÁLOGO -->
+<div class="catalogo-container">
+    <h4>Nuestros Productos</h4>
 
-        <!-- CARDS DESDE BD -->
-        <div class="cards-grid">
+    <div class="cards-grid">
+        <?php if(!empty($productos)): ?>
             <?php foreach($productos as $prod): ?>
-                <div class="product-card">
-                    <div class="card-img">
-                        <img src="<?= $prod['imagen'] 
-                            ? base_url('uploads/productos/'.$prod['imagen']) 
-                            : 'https://placehold.co/200x150?text=FRUVER' ?>">
+            <div class="product-card">
+                <div class="card-img">
+                    <img src="<?= $prod['imagen']
+                        ? base_url('uploads/productos/'.$prod['imagen'])
+                        : 'https://placehold.co/400x300/DFF0E6/2C6E49?text=🍎+FRUVER' ?>"
+                        alt="<?= esc($prod['nombre']) ?>"
+                        loading="lazy">
+                </div>
+                <div class="card-info">
+                    <div class="product-name">
+                        <?= esc($prod['nombre']) ?>
+                        
                     </div>
-                    <div class="card-info">
-                        <div class="product-name">
-                            <?= esc($prod['nombre']) ?>
-                        </div>
-                        <div class="product-desc">
-                            <?= esc($prod['descripcion']) ?>
-                        </div>
+                    <div class="product-desc">
+                        <?= esc($prod['descripcion']) ?>
                     </div>
                 </div>
+                <div class="card-actions">
+                    <!-- Botón Editar -->
+                    <button class="btn-card btn-edit"
+                        onclick="abrirEditar(<?= $prod['id'] ?>, '<?= esc($prod['nombre'], 'js') ?>', '<?= esc($prod['descripcion'], 'js') ?>')">
+                        <i class="fas fa-pen"></i> Editar
+                    </button>
+                    <!-- Botón Eliminar -->
+                    <button class="btn-card btn-delete"
+                        onclick="abrirEliminar(<?= $prod['id'] ?>, '<?= esc($prod['nombre'], 'js') ?>')">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            </div>
             <?php endforeach; ?>
-        </div>
+        <?php else: ?>
+            <div class="empty-state" style="grid-column: 1/-1;">
+               
+                <p>No hay productos disponibles</p>
+            </div>
+        <?php endif; ?>
+    </div>
 
-        <div style="margin-top:30px; text-align:center;">
-            <?= $pager->links() ?>
+    <!-- PAGINACIÓN con template personalizado -->
+    <div class="pagination-wrapper">
+        <?php if(isset($pager)): ?>
+            <?= $pager->links('default', 'mi_paginacion') ?>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- ===== MODAL EDITAR ===== -->
+<div class="modal-overlay" id="modalEditar">
+    <div class="modal-box">
+        <div class="modal-title"><i class="fas fa-pen" style="color:var(--primary-orange)"></i> Editar Producto</div>
+        <form method="POST" id="formEditar">
+            <?= csrf_field() ?>
+            <div class="form-group">
+                <label>Nombre del producto</label>
+                <input type="text" name="nombre" id="edit_nombre" required>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea name="descripcion" id="edit_descripcion"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-cancel" onclick="cerrarEditar()">Cancelar</button>
+                <button type="submit" class="btn-modal btn-save"><i class="fas fa-save"></i> Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ===== MODAL CONFIRMAR ELIMINAR ===== -->
+<div class="confirm-overlay" id="modalEliminar">
+    <div class="confirm-box">
+        <div class="confirm-icon"><i class="fas fa-trash-alt"></i></div>
+        <div class="confirm-title">¿Eliminar producto?</div>
+        <div class="confirm-text" id="confirmText">Esta acción no se puede deshacer.</div>
+        <div class="confirm-footer">
+            <button class="btn-modal btn-cancel" onclick="cerrarEliminar()">Cancelar</button>
+            <form method="POST" id="formEliminar" style="display:inline;">
+                <?= csrf_field() ?>
+                <button type="submit" class="btn-confirm-delete"><i class="fas fa-trash"></i> Sí, eliminar</button>
+            </form>
         </div>
     </div>
+</div>
+
+<script>
+    const BASE = '<?= base_url() ?>';
+
+    // ===== EDITAR =====
+    function abrirEditar(id, nombre, descripcion) {
+        document.getElementById('edit_nombre').value      = nombre;
+        document.getElementById('edit_descripcion').value = descripcion;
+        document.getElementById('formEditar').action      = BASE + 'producto/editar/' + id;
+        document.getElementById('modalEditar').classList.add('open');
+    }
+    function cerrarEditar() {
+        document.getElementById('modalEditar').classList.remove('open');
+    }
+
+    // ===== ELIMINAR =====
+    function abrirEliminar(id, nombre) {
+        document.getElementById('confirmText').textContent = '¿Seguro que deseas eliminar "' + nombre + '"? Esta acción no se puede deshacer.';
+        document.getElementById('formEliminar').action     = BASE + 'producto/eliminar/' + id;
+        document.getElementById('modalEliminar').classList.add('open');
+    }
+    function cerrarEliminar() {
+        document.getElementById('modalEliminar').classList.remove('open');
+    }
+
+    // Cerrar modales al hacer clic fuera
+    document.getElementById('modalEditar').addEventListener('click', function(e) {
+        if(e.target === this) cerrarEditar();
+    });
+    document.getElementById('modalEliminar').addEventListener('click', function(e) {
+        if(e.target === this) cerrarEliminar();
+    });
+</script>
 
 </body>
 </html>

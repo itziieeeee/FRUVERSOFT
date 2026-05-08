@@ -38,7 +38,7 @@
         </nav>
     </header>
 
-    <!-- Mensajes Flash con estilo -->
+    <!-- Mensajes Flash c-->
     <?php if (session()->getFlashdata('mensaje')): ?>
         <div class="alert alert-success alert-custom shadow-sm d-flex align-items-center justify-content-between">
             <span><i class="fas fa-check-circle me-2"></i> <?= session()->getFlashdata('mensaje') ?></span>
