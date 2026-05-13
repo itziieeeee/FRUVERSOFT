@@ -50,7 +50,7 @@ class GestionEntradas extends BaseController
             $db->table('existencias')
                ->where('id_producto', $id_producto)
                ->update([
-                   'e_total' => $existencia['e_total'] + $cantidad_venta
+                   'e_total' => $existencia['e_total'] + $cantidades_venta[$index]
                ]);
             $db->table('existencias')->where('id_producto', $id_producto)->update([
                 'e_total' => $existencia['e_total'] + $cantidades_venta[$index]
