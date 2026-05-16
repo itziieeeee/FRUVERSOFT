@@ -23,7 +23,7 @@
         </div>
     </div>
 </header>
-
+<div id="zona-alertas" style="position:fixed;top:70px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
 <nav class="menu-navegacion">
     <div class="nav-links">
         <a href="pantalla_ventas" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
@@ -240,6 +240,15 @@
 </div>
 
 <script>
+    function mostrarAlerta(mensaje, tipo = 'success') {
+    const zona = document.getElementById('zona-alertas');
+    const div = document.createElement('div');
+    div.className = 'alert-msg alert-' + tipo;
+    div.innerHTML = `<i class="fas fa-${tipo === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${mensaje}`;
+    zona.appendChild(div);
+    setTimeout(() => div.remove(), 3500);
+}
+
     const modal = document.getElementById('modalRepartidor');
 
     function abrirModal() { modal.style.display = 'flex'; }
@@ -252,10 +261,11 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    alert("¡Repartidor guardado con éxito!");
-                    window.location.href = "<?= base_url('pantalla_repartidores') ?>";
+                    cerrarModal();
+                    mostrarAlerta('¡Repartidor guardado con éxito!', 'success');
+                    setTimeout(() => window.location.href = "<?= base_url('pantalla_repartidores') ?>", 1500);
                 } else {
-                    alert("Error al guardar");
+                    mostrarAlerta('Error al guardar el repartidor.', 'error');
                 }
             });
     });
@@ -293,38 +303,38 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    alert('¡Repartidor actualizado con éxito!');
-                    window.location.reload();
+                    cerrarEditar();
+                    mostrarAlerta('¡Repartidor actualizado con éxito!', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
                 } else {
-                    alert('Error al actualizar.');
+                    mostrarAlerta('Error al actualizar el repartidor.', 'error');
                 }
             });
     });
 
     function eliminarRepartidor(id, nombre) {
-    // Verificar si tiene pedidos asignados
-    const pedidos = pedidosPorRepartidor[id] || [];
-    
-    if (pedidos.length > 0) {
-        alert(`No puedes eliminar a ${nombre} porque tiene ${pedidos.length} pedido(s) asignado(s).\n\nPrimero reasigna o finaliza sus pedidos.`);
-        return;
+        const pedidos = pedidosPorRepartidor[id] || [];
+        
+        if (pedidos.length > 0) {
+            mostrarAlerta(`No puedes eliminar a ${nombre}: tiene ${pedidos.length} pedido(s) asignado(s). Primero reasígnalos.`, 'error');
+            return;
+        }
+
+        if (!confirm(`¿Seguro que deseas eliminar a ${nombre}?`)) return;
+
+        const formData = new FormData();
+        formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+        fetch(`<?= base_url('FRUVER/eliminarrepartidor') ?>/${id}`, { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarAlerta('Repartidor eliminado correctamente.', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    mostrarAlerta('Error al eliminar el repartidor.', 'error');
+                }
+            });
     }
-
-    if (!confirm(`¿Seguro que deseas eliminar a ${nombre}?`)) return;
-
-    const formData = new FormData();
-    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
-    fetch(`<?= base_url('FRUVER/eliminarrepartidor') ?>/${id}`, { method: 'POST', body: formData })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert('Repartidor eliminado.');
-                window.location.reload();
-            } else {
-                alert('Error al eliminar.');
-            }
-        });
-}
 
     function previsualizarFoto(input, previewId) {
         const preview = document.getElementById(previewId);
