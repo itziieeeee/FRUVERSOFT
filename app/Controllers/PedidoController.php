@@ -170,4 +170,63 @@ class PedidoController extends BaseController {
             ]
         ]);
     }
+    public function eliminarPedido($id) {
+    $db = \Config\Database::connect();
+
+    try {
+        $db->transStart();
+
+        // Eliminar productos del pedido
+        $db->table('producto_pedido')->where('id_pedido', $id)->delete();
+
+        // Eliminar historial de status
+        $db->table('status')->where('id_pedido', $id)->delete();
+
+        // Eliminar el pedido
+        $db->table('pedido')->where('id', $id)->delete();
+
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al eliminar el pedido'
+            ]);
+        }
+
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => 'Pedido eliminado correctamente'
+        ]);
+
+    } catch (\Exception $e) {
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+}
+
+public function cambiarEstado() {
+    $id     = $this->request->getPost('id');
+    $estado = $this->request->getPost('estado');
+
+    if (!$id || !$estado) {
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Datos incompletos'
+        ]);
+    }
+
+    $db = \Config\Database::connect();
+
+    $db->table('pedido')->where('id', $id)->update(['estado_actual' => $estado]);
+    $db->table('status')->insert([
+        'id_pedido' => $id,
+        'estado'    => $estado,
+        'fecha'     => date('Y-m-d H:i:s'),
+    ]);
+
+    return $this->response->setJSON(['success' => true]);
+}
 }

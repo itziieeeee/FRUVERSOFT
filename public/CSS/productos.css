@@ -55,7 +55,7 @@
         }
         .buscador input::placeholder { color: #194a29; }
         .buscador button {
-            background: var(--primary-orange);
+            background: white;
             border: none;
             color: white;
             padding: 0.5rem 1.2rem;

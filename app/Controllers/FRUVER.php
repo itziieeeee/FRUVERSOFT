@@ -210,11 +210,6 @@ class FRUVER extends BaseController//controador principal
         return view('pantalla_ventas');
     }
 
-    public function pantalla_repartidores()
-    {
-        return view('pantalla_repartidores');
-    }
-
     public function pantalla_pedidos()
     {
         $model = new StatusModel();
@@ -233,47 +228,18 @@ class FRUVER extends BaseController//controador principal
 
     return view('pantalla_productos', $data);
 }
-
-public function guardarrepartidor() {
-    error_reporting(0);
-    
-    header('Content-Type: application/json');
-    
-    $model = new \App\Models\RepartidorModel();
-
-    $foto = $this->request->getFile('foto');
-    $nombreFoto = null;
-
-    if ($foto && $foto->isValid() && !$foto->hasMoved()) {
-        $nombreFoto = $foto->getRandomName();
-        $foto->move(FCPATH . 'uploads/repartidores/', $nombreFoto);
-    }
-
-    $data = [
-        'nombre'    => $this->request->getPost('nombre'),
-        'ap_p'      => $this->request->getPost('ap_p'),
-        'ap_m'      => $this->request->getPost('ap_m'),
-        'tel'       => $this->request->getPost('tel'),
-        'direccion' => $this->request->getPost('direccion'),
-        'notas'     => $this->request->getPost('notas'),
-        'foto'      => $nombreFoto,
-    ];
-
-    if ($model->insert($data)) {
-        echo json_encode(['success' => true]);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Error al insertar en la base de datos']);
-    }
-    exit;
-}
-//para mostrar al repartidor 
 public function mostrar_repartidores() 
 {
-    $db = \Config\Database::connect();
+    $db    = \Config\Database::connect();
+    $model = new \App\Models\RepartidorModel(); 
 
-    $repartidores = $db->query("SELECT * FROM repartidor")->getResultArray();
+    // Paginación
+    $repartidores = $model->paginate(6); 
+    $paginaActual = $model->pager->getCurrentPage();
+    $totalPaginas = $model->pager->getPageCount();
+    $baseUrl      = base_url('pantalla_repartidores') . '?page=';
 
-    // Pedidos con nombre del cliente y su dirección
+    // Query de pedidos
     $pedidosRaw = $db->query("
         SELECT 
             p.id_repartidor,
@@ -295,51 +261,27 @@ public function mostrar_repartidores()
         ORDER BY p.id_repartidor, p.id DESC
     ")->getResultArray();
 
-    $pedidosPorRepartidor = [];
+    // Separar activos y entregados
+    $pedidosPorRepartidor    = [];
+    $entregadosPorRepartidor = [];
+    $estadosEntregado        = ['Venta confirmada', 'Pedido pagado'];
+
     foreach ($pedidosRaw as $p) {
-        $pedidosPorRepartidor[$p['id_repartidor']][] = $p;
+        $idRep = $p['id_repartidor'];
+        if (in_array($p['estado_actual'], $estadosEntregado)) {
+            $entregadosPorRepartidor[$idRep][] = $p;
+        } else {
+            $pedidosPorRepartidor[$idRep][] = $p;
+        }
     }
 
     return view('pantalla_repartidores', [
-        'repartidores'         => $repartidores,
-        'pedidosPorRepartidor' => $pedidosPorRepartidor,
+        'repartidores'            => $repartidores,
+        'pedidosPorRepartidor'    => $pedidosPorRepartidor,
+        'entregadosPorRepartidor' => $entregadosPorRepartidor,
+        'paginaActual'            => $paginaActual,
+        'totalPaginas'            => $totalPaginas,
+        'baseUrl'                 => $baseUrl,
     ]);
-}
-
-public function editarrepartidor($id) {
-    $model = new RepartidorModel();
-
-    $data = [
-        'nombre'    => $this->request->getPost('nombre'),
-        'ap_p'      => $this->request->getPost('ap_p'),
-        'ap_m'      => $this->request->getPost('ap_m'),
-        'tel'       => $this->request->getPost('tel'),
-        'direccion' => $this->request->getPost('direccion'),
-        'notas'     => $this->request->getPost('notas'),
-    ];
-
-    $foto = $this->request->getFile('foto');
-    if ($foto && $foto->isValid() && !$foto->hasMoved()) {
-        $nombreFoto = $foto->getRandomName();
-        $foto->move(FCPATH . 'uploads/repartidores/', $nombreFoto);
-        $data['foto'] = $nombreFoto;
-    }
-
-    if ($model->update($id, $data)) {
-        return $this->response->setJSON(['success' => true]);
-    } else {
-        return $this->response->setJSON(['success' => false]);
-    }
-}
-
-public function eliminarrepartidor($id){
-    $model= new RepartidorModel();
-   
-   if($model->delete($id)){
-     return $this->response->setJSON(['success' => true]); 
-    } else  {
-      return $this->response->setJSON(['success' => false]);
-    }
-}
-
+} 
 }
