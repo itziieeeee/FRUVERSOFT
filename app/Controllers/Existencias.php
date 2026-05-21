@@ -46,6 +46,7 @@ class Existencias extends BaseController
             'nombre'                 => $this->request->getPost('nombre'),
             'descripcion'            => $this->request->getPost('descripcion'),
             'unidad_medida'          => $this->request->getPost('unidad_medida'),
+            'unidad_venta'          => $this->request->getPost('unidad_venta'),
             'existencias_totales'    => $this->request->getPost('existencias_totales'),
             'existencias_bloqueadas' => $this->request->getPost('existencias_bloqueadas'),
         ];
@@ -58,22 +59,53 @@ class Existencias extends BaseController
 }
 
     
-    public function eliminar($id)
-    {
-        header('Content-Type: application/json');
-        try {
-            $db = \Config\Database::connect();
+  public function eliminar($id)
+{
+    header('Content-Type: application/json');
 
-            // Eliminar en tabla existencias
-            $db->table('existencias')->where('id_producto', $id)->delete();
+    try {
 
-            // Eliminar en tabla entrada
-            $db->table('entrada')->where('id_producto', $id)->delete();
+        $db = \Config\Database::connect();
 
-            echo json_encode(['success' => true, 'message' => 'Producto eliminado correctamente']);
-        } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        // Verificar si el producto está en pedidos
+        $pedido = $db->table('producto_pedido')
+            ->where('id_producto', $id)
+            ->countAllResults();
+
+        // Si existe en pedidos
+        if ($pedido > 0) {
+
+            echo json_encode([
+                'success' => false,
+                'message' => 'No se puede eliminar porque el producto está en un pedido.'
+            ]);
+
+            die();
         }
-        die();
+
+        // Eliminar existencias
+        $db->table('existencias')
+            ->where('id_producto', $id)
+            ->delete();
+
+        // Eliminar entradas
+        $db->table('entrada')
+            ->where('id_producto', $id)
+            ->delete();
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Producto eliminado correctamente'
+        ]);
+
+    } catch (\Exception $e) {
+
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
     }
+
+    die();
+}
 }

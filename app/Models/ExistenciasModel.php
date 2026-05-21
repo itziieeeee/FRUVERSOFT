@@ -15,22 +15,28 @@ class ExistenciasModel extends Model
                 e.id_producto,
                 p.nombre,
                 p.descripcion,
-                MAX(ent.precio_sugerido) AS precio_venta,
-                MAX(ent.unidad_venta) AS unidad_medida,
-                SUM(e.e_total) AS existencias_totales,
+                (SELECT ent2.precio_sugerido FROM entrada ent2
+                 WHERE ent2.id_producto = e.id_producto
+                 ORDER BY ent2.id DESC LIMIT 1) AS precio_venta,
+                (SELECT ent2.unidad_venta FROM entrada ent2
+                 WHERE ent2.id_producto = e.id_producto
+                 ORDER BY ent2.id DESC LIMIT 1) AS unidad_venta,
+                (SELECT ent2.categoria FROM entrada ent2
+                 WHERE ent2.id_producto = e.id_producto
+                 ORDER BY ent2.id DESC LIMIT 1) AS categoria,
+                SUM(e.e_total)   AS existencias_totales,
                 SUM(e.e_bloqueo) AS existencias_bloqueadas
             ')
             ->join('producto p', 'p.id = e.id_producto')
-            ->join('entrada ent', 'ent.id_producto = e.id_producto', 'left')
             ->groupBy('e.id_producto, p.nombre, p.descripcion')
             ->orderBy('p.nombre', 'ASC');
 
         $this->pager = \Config\Services::pager();
-        $page = (int)($_GET['page'] ?? 1);
+        $page   = (int)($_GET['page'] ?? 1);
         $offset = ($page - 1) * $perPage;
-        $total = $builder->countAllResults(false);
+        $total  = $builder->countAllResults(false);
         $this->pager->makeLinks($page, $perPage, $total);
-        
+
         return $builder->limit($perPage, $offset)->get()->getResultArray();
     }
 
@@ -41,13 +47,19 @@ class ExistenciasModel extends Model
                 e.id_producto,
                 p.nombre,
                 p.descripcion,
-                MAX(ent.precio_sugerido) AS precio_venta,
-                MAX(ent.unidad_venta) AS unidad_medida,
-                SUM(e.e_total) AS existencias_totales,
+                (SELECT ent2.precio_sugerido FROM entrada ent2
+                 WHERE ent2.id_producto = e.id_producto
+                 ORDER BY ent2.id DESC LIMIT 1) AS precio_venta,
+                (SELECT ent2.unidad_venta FROM entrada ent2
+                 WHERE ent2.id_producto = e.id_producto
+                 ORDER BY ent2.id DESC LIMIT 1) AS unidad_venta,
+                (SELECT ent2.categoria FROM entrada ent2
+                 WHERE ent2.id_producto = e.id_producto
+                 ORDER BY ent2.id DESC LIMIT 1) AS categoria,
+                SUM(e.e_total)   AS existencias_totales,
                 SUM(e.e_bloqueo) AS existencias_bloqueadas
             ')
             ->join('producto p', 'p.id = e.id_producto')
-            ->join('entrada ent', 'ent.id_producto = e.id_producto', 'left')
             ->groupBy('e.id_producto, p.nombre, p.descripcion')
             ->where('e.id_producto', $id)
             ->get()
@@ -55,52 +67,35 @@ class ExistenciasModel extends Model
     }
 
     public function actualizarExistencia($id, $datos)
-{
-    $productoData = [];
+    {
+        $productoData = [];
+        if (isset($datos['nombre']))      $productoData['nombre']      = $datos['nombre'];
+        if (isset($datos['descripcion'])) $productoData['descripcion'] = $datos['descripcion'];
 
-    if (isset($datos['nombre'])) {
-        $productoData['nombre'] = $datos['nombre'];
-    }
-    if (isset($datos['descripcion'])) {
-        $productoData['descripcion'] = $datos['descripcion'];
-    }
+        if (!empty($productoData)) {
+            $this->db->table('producto')->where('id', $id)->update($productoData);
+        }
 
-    // Actualizar nombre y/o descripción en tabla producto
-    if (!empty($productoData)) {
-        $this->db->table('producto')
-            ->where('id', $id)
-            ->update($productoData);
-    }
+        if (isset($datos['unidad_medida'])) {
+            $this->db->table('entrada')
+                ->where('id_producto', $id)
+                ->update(['unidad_venta' => $datos['unidad_medida']]);
+        }
 
-    // Actualizar unidad de medida en tabla entradas
-    if (isset($datos['unidad_medida'])) {
-        $this->db->table('entrada')
-            ->where('id_producto', $id)
-            ->update(['unidad_venta' => $datos['unidad_medida']]);
-    }
+        $updateData = [];
+        if (isset($datos['existencias_totales']))    $updateData['e_total']   = $datos['existencias_totales'];
+        if (isset($datos['existencias_bloqueadas'])) $updateData['e_bloqueo'] = $datos['existencias_bloqueadas'];
 
-    // Actualizar stock en tabla existencias
-    $updateData = [];
-    if (isset($datos['existencias_totales'])) {
-        $updateData['e_total'] = $datos['existencias_totales'];
-    }
-    if (isset($datos['existencias_bloqueadas'])) {
-        $updateData['e_bloqueo'] = $datos['existencias_bloqueadas'];
-    }
+        if (!empty($updateData)) {
+            $this->db->table('existencias')->where('id_producto', $id)->update($updateData);
+        }
 
-    if (!empty($updateData)) {
-        $this->db->table('existencias')
-            ->where('id_producto', $id)
-            ->update($updateData);
+        return true;
     }
-
-    return true;
-}
 
     public function validarStockPedido($productos)
     {
         $faltantes = [];
-
         foreach ($productos as $prod) {
             $id_producto = (int) $prod['id_producto'];
             $cantidad    = (float) $prod['cantidad'];
@@ -120,7 +115,6 @@ class ExistenciasModel extends Model
                 ];
             }
         }
-
         return $faltantes;
     }
 

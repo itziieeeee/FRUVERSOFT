@@ -40,12 +40,12 @@
         .buscador form {
             display: flex;
             align-items: center;
-            background: #f5f9f0;
+            background: white;
             border-radius: 60px;
             padding: 0.1rem 0.1rem 0.1rem 1rem;
         }
         .buscador input {
-            background: #f5f9f0;
+            background: white;
             border: none;
             padding: 0.6rem 0.8rem;
             color: #194a29;

@@ -205,26 +205,39 @@
         <td>
             <!-- UNIDAD DE COMPRA -->
             <select name="unidad_compra[]" class="form-control form-control-sm mb-1" required>
-                <option value="" disabled selected hidden>Compra...</option>
-                <option value="Caja">Caja</option>
-                <option value="Kilo">Kilo</option>
-                <option value="Domo">Domo</option>
-                <option value="Mazo">Mazo</option>
-                <option value="Arpilla">Arpilla</option>
-                <option value="Ramo">Ramo</option>
-            </select>
+    <option value="" disabled selected hidden>Compra...</option>
+
+    <option value="caja">Caja</option>
+
+    <option value="kilo">Kilo</option>
+
+    <option value="domos">Domos</option>
+
+    <option value="mazo">Mazo</option>
+
+    <option value="arpilla">Arpilla</option>
+
+    <option value="ramos">Ramos</option>
+</select>
             
             <!-- UNIDAD DE VENTA -->
-            <select name="unidad_venta[]" class="form-control form-control-sm" required>
-                <option value="" disabled selected hidden>Venta...</option>
-                <option value="Caja">Caja</option>
-                <option value="Kilo">Kilo</option>
-                <option value="Domo">Domo</option>
-                <option value="Mazo">Mazo</option>
-                <option value="Arpilla">Arpilla</option>
-                <option value="Ramo">Ramo</option>
-                <option value="Pieza">Pieza</option>
-            </select>
+          <select name="unidad_venta[]" class="form-control form-control-sm" required>
+    <option value="" disabled selected hidden>Venta...</option>
+
+    <option value="caja">Caja</option>
+
+    <option value="kilo">Kilo</option>
+
+    <option value="domos">Domos</option>
+
+    <option value="mazo">Mazo</option>
+
+    <option value="arpilla">Arpilla</option>
+
+    <option value="ramos">Ramos</option>
+
+    <option value="pieza">Pieza</option>
+</select>
         </td>
         <td><input type="number" step="0.01" min="0.01" name="precio_sugerido[]" class="form-control form-control-sm" required></td>
         <td><input type="number" step="0.1" min="0.1" name="valor_conversion[]" class="form-control form-control-sm valor-conv" required></td>
