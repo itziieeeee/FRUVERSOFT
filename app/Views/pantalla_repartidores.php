@@ -148,7 +148,7 @@
     </div>
 </div>
 
-<!-- Modal: Nuevo Repartidor -->
+<!-- modal Nuevo Repartidor -->
 <div id="modalRepartidor" class="modal">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--primary-green)">Registrar Repartidor</h3>
@@ -193,7 +193,7 @@
     </div>
 </div>
 
-<!-- Modal: Editar Repartidor -->
+<!-- modal Editar Repartidor -->
 <div id="modalEditar" class="modal">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--primary-green)">Editar Repartidor</h3>
@@ -365,7 +365,7 @@
 </div>
 
 <script>
-const pedidosPorRepartidor = <?= json_encode($pedidosPorRepartidor) ?>;
+const pedidosPorRepartidor = <?= json_encode($pedidosPorRepartidor ?? []) ?>;
 
 function verPedidos(idRepartidor) {
     const pedidos = pedidosPorRepartidor[idRepartidor] || [];
