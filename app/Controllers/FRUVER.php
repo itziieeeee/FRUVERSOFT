@@ -284,4 +284,88 @@ public function mostrar_repartidores()
         'baseUrl'                 => $baseUrl,
     ]);
 } 
+public function guardarrepartidor()
+{
+    $model = new \App\Models\RepartidorModel();
+
+    // Manejo de foto
+    $foto = $this->request->getFile('foto');
+    $nombreFoto = null;
+
+    if ($foto && $foto->isValid() && !$foto->hasMoved()) {
+        $nombreFoto = $foto->getRandomName();
+        $foto->move(FCPATH . 'uploads/repartidores/', $nombreFoto);
+    }
+
+    $data = [
+        'nombre'    => $this->request->getPost('nombre'),
+        'ap_p'      => $this->request->getPost('ap_p'),
+        'ap_m'      => $this->request->getPost('ap_m'),
+        'tel'       => $this->request->getPost('tel'),
+        'direccion' => $this->request->getPost('direccion'),
+        'notas'     => $this->request->getPost('notas'),
+    ];
+
+    if ($nombreFoto) {
+        $data['foto'] = $nombreFoto;
+    }
+
+    if ($model->insert($data)) {
+        return $this->response->setJSON(['success' => true]);
+    } else {
+        return $this->response->setJSON(['success' => false, 'error' => $model->errors()]);
+    }
+}
+public function editarrepartidor($id)
+{
+    $model = new \App\Models\RepartidorModel();
+
+    $foto = $this->request->getFile('foto');
+    $data = [
+        'nombre'    => $this->request->getPost('nombre'),
+        'ap_p'      => $this->request->getPost('ap_p'),
+        'ap_m'      => $this->request->getPost('ap_m'),
+        'tel'       => $this->request->getPost('tel'),
+        'direccion' => $this->request->getPost('direccion'),
+        'notas'     => $this->request->getPost('notas'),
+    ];
+
+    if ($foto && $foto->isValid() && !$foto->hasMoved()) {
+        $nombreFoto = $foto->getRandomName();
+        $foto->move(FCPATH . 'uploads/repartidores/', $nombreFoto);
+        $data['foto'] = $nombreFoto;
+    }
+
+    if ($model->update($id, $data)) {
+        return $this->response->setJSON(['success' => true]);
+    } else {
+        return $this->response->setJSON(['success' => false, 'error' => $model->errors()]);
+    }
+}
+
+public function eliminarrepartidor($id)
+{
+    $model = new \App\Models\RepartidorModel();
+    $db    = \Config\Database::connect();
+
+    try {
+        $repartidor = $model->find($id);
+        if (!$repartidor) {
+            return $this->response->setJSON(['success' => false, 'error' => 'No encontrado']);
+        }
+
+        
+        $db->table('pedido')
+           ->where('id_repartidor', $id)
+           ->update(['id_repartidor' => null]);
+
+        if ($model->delete($id)) {
+            return $this->response->setJSON(['success' => true]);
+        } else {
+            return $this->response->setJSON(['success' => false, 'error' => $model->errors()]);
+        }
+    } catch (\Exception $e) {
+        return $this->response->setJSON(['success' => false, 'error' => $e->getMessage()]);
+    }
+}
 }

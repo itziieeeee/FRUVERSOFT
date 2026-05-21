@@ -259,12 +259,19 @@ function ejecutarEliminacion(id, nombre) {
     const formData = new FormData();
     formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
     fetch(`<?= base_url('FRUVER/eliminarrepartidor') ?>/${id}`, { method: 'POST', body: formData })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) { mostrarAlerta(`Repartidor ${nombre} eliminado`, 'success'); setTimeout(() => location.reload(), 1500); }
-        else mostrarAlerta('Error al eliminar', 'error');
+    .then(r => {
+        console.log('Status HTTP:', r.status); 
+        return r.json();
     })
-    .catch(() => mostrarAlerta('Error de conexión', 'error'));
+    .then(data => {
+        console.log('Respuesta:', JSON.stringify(data)); 
+        if (data.success) { mostrarAlerta(`Repartidor ${nombre} eliminado`, 'success'); setTimeout(() => location.reload(), 1500); }
+        else mostrarAlerta('Error: ' + JSON.stringify(data.error), 'error');
+    })
+    .catch(err => {
+        console.error('Error fetch:', err);
+        mostrarAlerta('Error de conexión: ' + err, 'error');
+    });
 }
 
 function filtrarYOrdenar() {
@@ -351,8 +358,59 @@ function previsualizarFoto(input, previewId) {
     const preview = document.getElementById(previewId);
     if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; }; reader.readAsDataURL(input.files[0]); }
 }
-document.getElementById('formRepartidor')?.addEventListener('submit', function(e) { e.preventDefault(); fetch("<?= base_url('FRUVER/guardarrepartidor') ?>", { method: 'POST', body: new FormData(this) }).then(r => r.json()).then(data => { if (data.success) { cerrarModal(); mostrarAlerta('¡Repartidor guardado!', 'success'); setTimeout(() => location.reload(), 1500); } else mostrarAlerta('Error al guardar', 'error'); }); });
-document.getElementById('formEditar')?.addEventListener('submit', function(e) { e.preventDefault(); const id = document.getElementById('edit-id').value; const formData = new FormData(); formData.append('nombre', document.getElementById('edit-nombre').value); formData.append('ap_p', document.getElementById('edit-ap_p').value); formData.append('ap_m', document.getElementById('edit-ap_m').value); formData.append('tel', document.getElementById('edit-tel').value); formData.append('direccion', document.getElementById('edit-direccion').value); formData.append('notas', document.getElementById('edit-notas').value); const fotoInput = document.getElementById('edit-foto'); if (fotoInput.files[0]) formData.append('foto', fotoInput.files[0]); fetch(`<?= base_url('FRUVER/editarrepartidor') ?>/${id}`, { method: 'POST', body: formData }).then(r => r.json()).then(data => { if (data.success) { cerrarEditar(); mostrarAlerta('¡Actualizado!', 'success'); setTimeout(() => location.reload(), 1500); } else mostrarAlerta('Error al actualizar', 'error'); }); });
+document.getElementById('formRepartidor')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>'); 
+    fetch("<?= base_url('FRUVER/guardarrepartidor') ?>", {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            cerrarModal();
+            mostrarAlerta('¡Repartidor guardado!', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            mostrarAlerta('Error al guardar', 'error');
+        }
+    })
+    .catch(() => mostrarAlerta('Error de conexión', 'error')); 
+});
+document.getElementById('formEditar')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-id').value;
+    const formData = new FormData();
+
+    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>'); // ← CSRF agregado
+
+    formData.append('nombre',    document.getElementById('edit-nombre').value);
+    formData.append('ap_p',      document.getElementById('edit-ap_p').value);
+    formData.append('ap_m',      document.getElementById('edit-ap_m').value);
+    formData.append('tel',       document.getElementById('edit-tel').value);
+    formData.append('direccion', document.getElementById('edit-direccion').value);
+    formData.append('notas',     document.getElementById('edit-notas').value);
+
+    const fotoInput = document.getElementById('edit-foto');
+    if (fotoInput.files[0]) formData.append('foto', fotoInput.files[0]);
+
+    fetch(`<?= base_url('FRUVER/editarrepartidor') ?>/${id}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            cerrarEditar();
+            mostrarAlerta('¡Actualizado!', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            mostrarAlerta('Error al actualizar', 'error');
+        }
+    })
+    .catch(() => mostrarAlerta('Error de conexión', 'error')); 
+});
 </script>
 </body>
 </html>
