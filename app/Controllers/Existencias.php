@@ -38,74 +38,57 @@ class Existencias extends BaseController
     }
 
     public function actualizar($id)
-{
-    header('Content-Type: application/json');
-    try {
-        $model = new ExistenciasModel();
-        $datos = [
-            'nombre'                 => $this->request->getPost('nombre'),
-            'descripcion'            => $this->request->getPost('descripcion'),
-            'unidad_medida'          => $this->request->getPost('unidad_medida'),
-            'unidad_venta'          => $this->request->getPost('unidad_venta'),
-            'existencias_totales'    => $this->request->getPost('existencias_totales'),
-            'existencias_bloqueadas' => $this->request->getPost('existencias_bloqueadas'),
-        ];
-        $model->actualizarExistencia($id, $datos);
-        echo json_encode(['success' => true, 'message' => 'Actualizado correctamente']);
-    } catch (\Exception $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    {
+        header('Content-Type: application/json');
+        try {
+            $model = new ExistenciasModel();
+            $datos = [
+                'nombre'                 => $this->request->getPost('nombre'),
+                'descripcion'            => $this->request->getPost('descripcion'),
+                'unidad_medida'          => $this->request->getPost('unidad_medida'),
+                'unidad_venta'           => $this->request->getPost('unidad_venta'),
+                'existencias_totales'    => $this->request->getPost('existencias_totales'),
+                'existencias_bloqueadas' => $this->request->getPost('existencias_bloqueadas'),
+            ];
+            $model->actualizarExistencia($id, $datos);
+            echo json_encode(['success' => true, 'message' => 'Actualizado correctamente']);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        die();
     }
-    die();
-}
 
-    
-  public function eliminar($id)
-{
-    header('Content-Type: application/json');
+    public function eliminar($id)
+    {
+        header('Content-Type: application/json');
 
-    try {
+        try {
+            $model = new ExistenciasModel();
 
-        $db = \Config\Database::connect();
+            $tienePedido = $model->contarProductoEnPedidos($id);
 
-        // Verificar si el producto está en pedidos
-        $pedido = $db->table('producto_pedido')
-            ->where('id_producto', $id)
-            ->countAllResults();
+            if ($tienePedido > 0) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No se puede eliminar porque el producto está en un pedido.'
+                ]);
+                die();
+            }
 
-        // Si existe en pedidos
-        if ($pedido > 0) {
+            $model->eliminarProductoCompleto($id);
 
             echo json_encode([
-                'success' => false,
-                'message' => 'No se puede eliminar porque el producto está en un pedido.'
+                'success' => true,
+                'message' => 'Producto eliminado correctamente'
             ]);
 
-            die();
+        } catch (\Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
         }
 
-        // Eliminar existencias
-        $db->table('existencias')
-            ->where('id_producto', $id)
-            ->delete();
-
-        // Eliminar entradas
-        $db->table('entrada')
-            ->where('id_producto', $id)
-            ->delete();
-
-        echo json_encode([
-            'success' => true,
-            'message' => 'Producto eliminado correctamente'
-        ]);
-
-    } catch (\Exception $e) {
-
-        echo json_encode([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
+        die();
     }
-
-    die();
-}
 }

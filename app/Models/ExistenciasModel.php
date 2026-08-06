@@ -129,4 +129,111 @@ class ExistenciasModel extends Model
         }
         return true;
     }
+    public function contarProductoEnPedidos($id)
+    {
+        return $this->db->table('producto_pedido')
+            ->where('id_producto', $id)
+            ->countAllResults();
+    }
+
+    public function eliminarProductoCompleto($id)
+    {
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        $db->table('existencias')->where('id_producto', $id)->delete();
+        $db->table('entrada')->where('id_producto', $id)->delete();
+
+        $db->transComplete();
+
+        return $db->transStatus();
+    }
+    // Revisa entradas caducadas, las manda a merma y ajusta existencias
+    public function procesarCaducados()
+    {
+        $hoy = date('Y-m-d');
+
+        $caducados = $this->db->table('entrada')
+            ->where('fecha_cad <=', $hoy)
+            ->where('cantidad_venta >', 0)
+            ->get()
+            ->getResultArray();
+
+        foreach ($caducados as $fila) {
+            $cantidad_mermar = $fila['cantidad_venta'];
+
+            $this->db->table('merma')->insert([
+                'id_entrada' => $fila['id'],
+                'cantidad'   => $cantidad_mermar,
+                'motivo'     => 'SISTEMA: CADUCIDAD AUTOMÁTICA (5 DÍAS)',
+                'fecha'      => $hoy
+            ]);
+
+            $existencia = $this->db->table('existencias')
+                ->where('id_producto', $fila['id_producto'])
+                ->get()
+                ->getRowArray();
+
+            if ($existencia) {
+                $this->db->table('existencias')
+                    ->where('id_producto', $fila['id_producto'])
+                    ->update([
+                        'e_total' => $existencia['e_total'] - $cantidad_mermar,
+                        'e_merma' => $existencia['e_merma'] + $cantidad_mermar
+                    ]);
+            }
+
+            $this->db->table('entrada')
+                ->where('id', $fila['id'])
+                ->update(['cantidad_venta' => 0]);
+        }
+
+        return true;
+    }
+
+    // Stock consolidado (nombre, total, merma) para la tabla principal de inventario
+    public function getStockConsolidado()
+    {
+        return $this->db->table('existencias e')
+            ->select('p.nombre, e.e_total, e.e_merma')
+            ->join('producto p', 'p.id = e.id_producto')
+            ->get()
+            ->getResultArray();
+    }
+
+    // Productos con stock real disponible (para poder hacerles merma manual)
+    public function getProductosConStock()
+    {
+        return $this->db->table('existencias e')
+            ->select('p.id as id_p, p.nombre, e.e_total')
+            ->join('producto p', 'p.id = e.id_producto')
+            ->where('e.e_total >', 0)
+            ->get()
+            ->getResultArray();
+    }
+    // Si el producto ya tiene existencias, suma; si no, crea el registro
+    public function agregarOActualizarStock($id_producto, $cantidad)
+    {
+        $existencia = $this->db->table('existencias')
+            ->where('id_producto', $id_producto)
+            ->get()
+            ->getRowArray();
+
+        if ($existencia) {
+            $nuevoTotal = $existencia['e_total'] + $cantidad;
+
+            $this->db->table('existencias')
+                ->where('id_producto', $id_producto)
+                ->update(['e_total' => $nuevoTotal]);
+        } else {
+            $this->db->table('existencias')->insert([
+                'id_producto' => $id_producto,
+                'e_total'     => $cantidad,
+                'e_bloqueo'   => 0,
+                'e_merma'     => 0,
+            ]);
+        }
+
+        return true;
+    }
 }
