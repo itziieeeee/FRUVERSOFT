@@ -22,6 +22,46 @@ class StatusModel extends Model
         return true;
     }
 
+
+
+    public function getPedidoConDetalle($id)
+    {
+        return $this->db->table('pedido')
+            ->select('
+                pedido.id,
+                pedido.fecha,
+                pedido.total,
+                pedido.estado_actual,
+                pedido.tipo_pago,
+                pedido.monto_pagado,
+                pedido.tipo_entrega,
+                CONCAT(clientes.nombre, " ", clientes.apellido_paterno, " ", clientes.apellido_materno) AS nombre_cliente,
+                CONCAT(repartidor.nombre, " ", repartidor.ap_p) AS nombre_repartidor
+            ')
+            ->join('clientes', 'clientes.id_cliente = pedido.id_cliente', 'left')
+            ->join('repartidor', 'repartidor.id = pedido.id_repartidor', 'left')
+            ->where('pedido.id', $id)
+            ->get()->getRowArray();
+    }
+
+    public function getProductosDePedido($id)
+    {
+        return $this->db->table('producto_pedido pp')
+            ->select('
+                p.nombre,
+                pp.cantidad,
+                pp.unidad_venta,
+                pp.precio_venta,
+                pp.subtotal,
+                pp.tipo_venta
+            ')
+            ->join('producto p', 'p.id = pp.id_producto')
+            ->where('pp.id_pedido', $id)
+            ->get()->getResultArray();
+    }
+
+    
+
     public function actualizarPago($id, $montoPagado, $total)
     {
         $tipoPago    = ($montoPagado >= $total) ? 'contado' : 'credito';
@@ -43,8 +83,9 @@ class StatusModel extends Model
     }
 
     public function validarYConfirmar($idPedido)
-    {$productos = $this->db->table('producto_pedido')
-    ->select('id_producto, cantidad, unidad_venta')
+    {
+        $productos = $this->db->table('producto_pedido')
+            ->select('id_producto, cantidad, unidad_venta')
             ->where('id_pedido', $idPedido)
             ->get()->getResultArray();
 
@@ -63,7 +104,6 @@ class StatusModel extends Model
             ];
         }
 
-        // Hay stock: descontar e_total y sumar e_bloqueo
         $existenciasModel->descontarStock($productos);
 
         $this->update($idPedido, ['estado_actual' => 'Pedido confirmado']);
