@@ -158,7 +158,7 @@
                 <div class="d-flex justify-content-between align-items-center mt-4">
                     <span class="badge badge-info p-2" id="contadorProductos">Productos en lista: 0</span>
                     <button type="submit" id="btnGuardarTodo" class="btn btn-success px-5 rounded-pill shadow" style="display:none; background: var(--verde-fruta); border: none; font-weight: bold;">
-                        <i class="fas fa-save me-2"></i> Guardar Todo el Inventario
+                        <i class="fas fa-save me-2"></i> Guardar
                     </button>
                 </div>
             </form>

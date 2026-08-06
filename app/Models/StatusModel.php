@@ -43,9 +43,8 @@ class StatusModel extends Model
     }
 
     public function validarYConfirmar($idPedido)
-    {
-        $productos = $this->db->table('producto_pedido')
-            ->select('id_producto, cantidad')
+    {$productos = $this->db->table('producto_pedido')
+    ->select('id_producto, cantidad, unidad_venta')
             ->where('id_pedido', $idPedido)
             ->get()->getResultArray();
 

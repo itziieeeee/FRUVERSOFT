@@ -142,8 +142,7 @@ class PedidoController extends BaseController {
         if ($db->transStatus() === false) {
             $error = $db->error();
             return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => 'Error de Base de Datos: ' . ($error['message'] ?? 'Error desconocido'),
+                'status'  => 'error','message' => json_encode($error),
                 'debug'   => $error
             ]);
         }

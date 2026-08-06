@@ -239,14 +239,14 @@
         <div class="form-group" style="margin-bottom: 24px;">
             <label> Cliente</label>
             <select id="selectCliente" name="id_cliente" required style="max-width: 320px;">
-                <option value="">Seleccione...</option>
-                <option value="0">Público general</option>
-                <?php foreach($clientes as $cliente): ?>
-                    <option value="<?= $cliente['id_cliente']; ?>">
-                        <?= $cliente['nombre'] . ' ' . ($cliente['apellido_paterno'] ?? '') . ' ' . ($cliente['apellido_materno'] ?? ''); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+    <option value="">Seleccione...</option>
+
+    <?php foreach($clientes as $cliente): ?>
+        <option value="<?= $cliente['id_cliente']; ?>">
+            <?= $cliente['nombre'] . ' ' . ($cliente['apellido_paterno'] ?? '') . ' ' . ($cliente['apellido_materno'] ?? ''); ?>
+        </option>
+    <?php endforeach; ?>
+</select>
         </div>
 
         <div class="grid-2-columnas">
