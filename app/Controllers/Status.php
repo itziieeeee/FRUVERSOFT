@@ -26,58 +26,31 @@ class Status extends BaseController
         $result = $model->actualizarEstado($id, $estado);
         return $this->response->setJSON(['success' => (bool)$result]);
     }
-public function detalle_pedido()
-{
-    $id = (int) $this->request->getPost('id');
 
-    if (!$id) {
-        return $this->response->setJSON(['success' => false, 'message' => 'ID inválido']);
+    public function detalle_pedido()
+    {
+        $id = (int) $this->request->getPost('id');
+
+        if (!$id) {
+            return $this->response->setJSON(['success' => false, 'message' => 'ID inválido']);
+        }
+
+        $model  = new StatusModel();
+        $pedido = $model->getPedidoConDetalle($id);
+
+        if (!$pedido) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Pedido no encontrado']);
+        }
+
+        $productos = $model->getProductosDePedido($id);
+
+        return $this->response->setJSON([
+            'success'   => true,
+            'pedido'    => $pedido,
+            'productos' => $productos,
+        ]);
     }
 
-    $db = \Config\Database::connect();
-
-    // Datos del pedido + cliente
-    $pedido = $db->table('pedido')
-        ->select('
-            pedido.id,
-            pedido.fecha,
-            pedido.total,
-            pedido.estado_actual,
-            pedido.tipo_pago,
-            pedido.monto_pagado,
-            pedido.tipo_entrega,
-            CONCAT(clientes.nombre, " ", clientes.apellido_paterno, " ", clientes.apellido_materno) AS nombre_cliente,
-            CONCAT(repartidor.nombre, " ", repartidor.ap_p) AS nombre_repartidor
-        ')
-        ->join('clientes', 'clientes.id_cliente = pedido.id_cliente', 'left')
-        ->join('repartidor', 'repartidor.id = pedido.id_repartidor', 'left')
-        ->where('pedido.id', $id)
-        ->get()->getRowArray();
-
-    if (!$pedido) {
-        return $this->response->setJSON(['success' => false, 'message' => 'Pedido no encontrado']);
-    }
-
-    // Productos del pedido
-    $productos = $db->table('producto_pedido pp')
-        ->select('
-            p.nombre,
-            pp.cantidad,
-            pp.unidad_venta,
-            pp.precio_venta,
-            pp.subtotal,
-            pp.tipo_venta
-        ')
-        ->join('producto p', 'p.id = pp.id_producto')
-        ->where('pp.id_pedido', $id)
-        ->get()->getResultArray();
-
-    return $this->response->setJSON([
-        'success'   => true,
-        'pedido'    => $pedido,
-        'productos' => $productos,
-    ]);
-}
     public function actualizar_pago()
     {
         $model       = new StatusModel();
@@ -101,18 +74,20 @@ public function detalle_pedido()
         $result = $model->actualizarPago($id, $montoPagado, $total);
         return $this->response->setJSON(['success' => (bool)$result]);
     }
-public function validar_pedido()
-{
-    $model    = new StatusModel();
-    $idPedido = (int) $this->request->getPost('id');
 
-    if (!$idPedido) {
-        return $this->response->setJSON(['success' => false, 'message' => 'ID inválido']);
+    public function validar_pedido()
+    {
+        $model    = new StatusModel();
+        $idPedido = (int) $this->request->getPost('id');
+
+        if (!$idPedido) {
+            return $this->response->setJSON(['success' => false, 'message' => 'ID inválido']);
+        }
+
+        $resultado = $model->validarYConfirmar($idPedido);
+        return $this->response->setJSON($resultado);
     }
 
-    $resultado = $model->validarYConfirmar($idPedido);
-    return $this->response->setJSON($resultado);
-}
     public function pantalla_pedidos()
     {
         $model      = new StatusModel();

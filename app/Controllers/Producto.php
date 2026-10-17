@@ -39,7 +39,7 @@ class Producto extends BaseController
         $nombreRaw        = trim($this->request->getPost('nombre'));
         $nombreNormalizado = ucfirst(strtolower($nombreRaw));
 
-        $existe = $model->where('LOWER(nombre)', strtolower($nombreRaw))->first();
+        $existe = $model->existeNombre($nombreRaw);
         if ($existe) {
             return redirect()->back()
                              ->with('error', "El producto \"$nombreNormalizado\" ya está registrado.")
@@ -66,19 +66,8 @@ class Producto extends BaseController
         $q     = $this->request->getGet('q');
         $orden = $this->request->getGet('orden');
 
-        if (!empty($q)) {
-            $model->groupStart()
-                  ->like('nombre', $q)
-                  ->orLike('descripcion', $q)
-                  ->groupEnd();
-        }
-
-        if ($orden == 'stock_mayor') {
-            $model->orderBy('e_total', 'DESC');
-        }
-
         $data = [
-            'productos' => $model->paginate(8),   // 8 productos por página 
+            'productos' => $model->getProductosFiltrados($q, $orden),
             'pager'     => $model->pager,
             'q'         => $q,
         ];
@@ -106,9 +95,7 @@ class Producto extends BaseController
         $descripcion = trim($this->request->getPost('descripcion'));
 
         // Verificar nombre duplicado en OTRO producto
-        $duplicado = $model->where('LOWER(nombre)', strtolower($nombre))
-                           ->where('id !=', $id)
-                           ->first();
+        $duplicado = $model->existeNombreEnOtro($nombre, $id);
         if ($duplicado) {
             return redirect()->to(base_url('pantalla_productos'))
                              ->with('error', "Ya existe otro producto con el nombre \"$nombre\".");
@@ -140,12 +127,7 @@ class Producto extends BaseController
         }
 
         // Verificar si el producto está dentro de algún pedido 
-    
-        $db = \Config\Database::connect();
-
-        $enPedido = $db->table('producto_pedido')
-                       ->where('id_producto', $id)
-                       ->countAllResults();
+        $enPedido = $model->estaEnPedido($id);
 
         if ($enPedido > 0) {
             return redirect()->to(base_url('pantalla_productos'))

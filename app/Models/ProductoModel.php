@@ -16,4 +16,47 @@ class ProductoModel extends Model
 
     // 4. Timestamps
     protected $useTimestamps = false; 
+
+    // ------- Consultas para guardar() -------
+
+    public function existeNombre($nombreRaw)
+    {
+        return $this->where('LOWER(nombre)', strtolower($nombreRaw))->first();
+    }
+
+    // ------- Consultas para pantalla_productos() -------
+
+    public function getProductosFiltrados($q = null, $orden = null)
+    {
+        if (!empty($q)) {
+            $this->groupStart()
+                 ->like('nombre', $q)
+                 ->orLike('descripcion', $q)
+                 ->groupEnd();
+        }
+
+        if ($orden == 'stock_mayor') {
+            $this->orderBy('e_total', 'DESC');
+        }
+
+        return $this->paginate(8);
+    }
+
+    // ------- Consultas para editar() -------
+
+    public function existeNombreEnOtro($nombre, $id)
+    {
+        return $this->where('LOWER(nombre)', strtolower($nombre))
+                    ->where('id !=', $id)
+                    ->first();
+    }
+
+    // ------- Consultas para eliminar() -------
+
+    public function estaEnPedido($id)
+    {
+        return $this->db->table('producto_pedido')
+                        ->where('id_producto', $id)
+                        ->countAllResults();
+    }
 }
