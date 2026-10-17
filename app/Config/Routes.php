@@ -132,3 +132,14 @@ $routes->post('producto/editar/(:num)',   'Producto::editar/$1');
  
 $routes->post('producto/eliminar/(:num)', 'Producto::eliminar/$1');
  
+
+// ==========================
+// Catálogo y carrito (cliente / vendedor)
+// ==========================
+$routes->get('catalogo',                  'Catalogo::index');
+$routes->post('carrito/agregar',          'Catalogo::agregar');
+$routes->get('carrito',                   'Catalogo::ver');
+$routes->post('carrito/actualizar/(:num)','Catalogo::actualizar/$1');
+$routes->post('carrito/quitar/(:num)',    'Catalogo::quitar/$1');
+$routes->post('carrito/vaciar',           'Catalogo::vaciar');
+// $routes->post('carrito/confirmar',     'Catalogo::confirmar');   // siguiente paso

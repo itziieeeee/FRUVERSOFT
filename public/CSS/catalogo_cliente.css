@@ -1,0 +1,27 @@
+/* Complementa productos.css (solo lo nuevo del catálogo de pedidos) */
+.btn-carrito { position: relative; }
+.badge-carrito {
+    background: #e76f51; color: #fff; border-radius: 999px;
+    padding: 1px 8px; font-size: .75rem; margin-left: 4px;
+}
+.product-price { font-size: 1.2rem; font-weight: 800; color: #2C6E49; margin-top: 6px; }
+.product-stock { font-size: .8rem; color: #5b7a68; }
+.product-stock.agotado { color: #c0392b; font-weight: 700; }
+
+.form-agregar { display: flex; gap: 8px; align-items: center; }
+.form-agregar input[type=number] {
+    width: 80px; padding: 6px; border: 1px solid #cfe3d6; border-radius: 6px;
+}
+.btn-add { background: #2C6E49; color: #fff; flex: 1; }
+.btn-add:disabled { background: #b8c7be; cursor: not-allowed; }
+
+.tabla-scroll { overflow-x: auto; }
+.tabla-carrito { width: 100%; border-collapse: collapse; background: #fff; }
+.tabla-carrito th, .tabla-carrito td { padding: 10px 12px; border-bottom: 1px solid #e3efe7; text-align: left; vertical-align: middle; }
+.tabla-carrito thead th { background: #2C6E49; color: #fff; }
+.tabla-carrito .texto-der { text-align: right; }
+.celda-producto { display: flex; align-items: center; gap: 10px; }
+.celda-producto img { width: 56px; height: 44px; object-fit: cover; border-radius: 6px; }
+.form-cant { display: flex; gap: 6px; align-items: center; }
+.form-cant input { width: 70px; padding: 6px; border: 1px solid #cfe3d6; border-radius: 6px; }
+.carrito-acciones { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; flex-wrap: wrap; }

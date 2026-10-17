@@ -36,11 +36,16 @@ class ClienteModel extends Model
     }
 
     public function contarPedidos($id)
-    {
-        return $this->db->table('pedido')
-            ->where('id_cliente', $id)
-            ->countAllResults();
-    }
+{
+    return $this->db->table('pedido')
+        ->where('id_cliente', $id)
+        ->whereNotIn('estado_actual', [
+            'Venta confirmada',
+            'Pedido pagado',
+            'Pedido cancelado'
+        ])
+        ->countAllResults();
+}
 
     public function eliminarClienteCompleto($id)
     {
