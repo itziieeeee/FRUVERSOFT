@@ -143,3 +143,8 @@ $routes->post('carrito/actualizar/(:num)','Catalogo::actualizar/$1');
 $routes->post('carrito/quitar/(:num)',    'Catalogo::quitar/$1');
 $routes->post('carrito/vaciar',           'Catalogo::vaciar');
 // $routes->post('carrito/confirmar',     'Catalogo::confirmar');   // siguiente paso
+$routes->get('pedidos', 'ClientePedidoController::index');
+$routes->get('cliente/historial', 'ClientePedidoController::historial');
+$routes->get('cliente/creditos', 'ClientePedidoController::creditos');
+$routes->get('cliente/estado', 'ClientePedidoController::estado');
+$routes->get('cliente/menu', 'ClientePedidoController::menu');

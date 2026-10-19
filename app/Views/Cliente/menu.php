@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FRUVERSOFT | Menú del cliente</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <!-- CSS propio de FRUVERSOFT -->
+    <link href="<?= base_url('CSS/Cliente/menu.css') ?>"
+          rel="stylesheet">
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-fruver">
+        <div class="container-fluid px-lg-5">
+
+            <a class="navbar-brand fw-bold"
+               href="<?= base_url('cliente/menu') ?>">
+                🥬 FRUVERSOFT
+            </a>
+
+            <button class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#menuPrincipal"
+                    aria-controls="menuPrincipal"
+                    aria-expanded="false"
+                    aria-label="Abrir navegación">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="menuPrincipal">
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+
+                    <li class="nav-item">
+                        <a class="nav-link active"
+                           href="<?= base_url('cliente/menu') ?>">
+                            Inicio
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="<?= base_url('pedidos') ?>">
+                            Mis pedidos
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="<?= base_url('cliente/historial') ?>">
+                            Historial
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="<?= base_url('cliente/creditos') ?>">
+                            Créditos y pagos
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="<?= base_url('cliente/estado') ?>">
+                            Estado
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="<?= base_url('catalogo') ?>">
+                            Catálogo
+                        </a>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    
+<main class="container py-4 py-lg-5">
+
+    <!-- Bienvenida principal -->
+    <section class="fruver-encabezado p-4 p-lg-5">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <span class="badge text-bg-success mb-3">
+                    PORTAL DEL CLIENTE
+                </span>
+
+                <h1 class="display-5 fw-bold">
+                    ¡Bienvenido a FRUVERSOFT!
+                </h1>
+
+                <p class="fs-5 mt-3">
+                    Consulta tus pedidos, revisa tus pagos
+                    y mantente al tanto de tus compras desde
+                    un solo lugar.
+                </p>
+
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <a href="<?= base_url('pedidos') ?>"
+                       class="btn btn-fruver">
+                        <i class="bi bi-box-seam"></i>
+                        Mis pedidos
+                    </a>
+
+                    <a href="<?= base_url('catalogo') ?>"
+                       class="btn btn-fruver-naranja">
+                        Explorar catálogo
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-lg-4 text-center">
+                <div style="font-size: 100px; line-height: 1.2;">
+                    🥬
+                </div>
+                <h4 class="mt-2">Frescura y confianza</h4>
+                <p class="text-muted mb-0">
+                    Todo lo que necesitas para consultar tus compras.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Accesos rápidos -->
+    <div class="d-flex align-items-center justify-content-between
+                flex-wrap gap-2 mt-5 mb-3">
+        <div>
+            <h2 class="h3 fw-bold mb-1">¿Qué deseas consultar?</h2>
+            <p class="text-muted mb-0">
+                Accede rápidamente a tus módulos.
+            </p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-6 col-lg-3">
+            <div class="fruver-card">
+                <div class="fs-1 mb-3">📦</div>
+                <h4>Mis pedidos</h4>
+                <p class="text-muted">
+                    Consulta tus pedidos y sus detalles.
+                </p>
+                <a href="<?= base_url('pedidos') ?>"
+                   class="btn btn-fruver w-100 mt-2">
+                    Consultar pedidos
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="fruver-card">
+                <div class="fs-1 mb-3">💳</div>
+                <h4>Créditos y pagos</h4>
+                <p class="text-muted">
+                    Revisa tus pagos, saldos y liquidaciones.
+                </p>
+                <a href="<?= base_url('cliente/creditos') ?>"
+                   class="btn btn-fruver w-100 mt-2">
+                    Revisar pagos
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="fruver-card">
+                <div class="fs-1 mb-3">🧾</div>
+                <h4>Historial</h4>
+                <p class="text-muted">
+                    Consulta tus compras anteriores.
+                </p>
+                <a href="<?= base_url('cliente/historial') ?>"
+                   class="btn btn-fruver w-100 mt-2">
+                    Ver historial
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="fruver-card">
+                <div class="fs-1 mb-3">🚚</div>
+                <h4>Estado de pedidos</h4>
+                <p class="text-muted">
+                    Consulta el avance de tus pedidos.
+                </p>
+                <a href="<?= base_url('cliente/estado') ?>"
+                   class="btn btn-fruver w-100 mt-2">
+                    Ver estado
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Pie de página -->
+    <footer class="fruver-footer">
+        <strong>FRUVERSOFT</strong>
+        <p class="mb-0">
+            Tu información de compras, organizada en un solo lugar.
+        </p>
+    </footer>
+
+</main>
+
+
+    <!-- Bootstrap JS para el menú móvil -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
