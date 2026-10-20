@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?= base_url('css/inicio.css') ?>">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
 </head>
 <body>
 
@@ -17,8 +16,9 @@
              <img src="<?= base_url('IMG/LOGO1.png') ?>" alt="FRUVER">
         </div>
         <div class="nav-buttons">
-            <a href="#" class="btn-registro"><i class="fas fa-leaf"></i> Registrarse</a>
-            <a href="#" class="btn-admin"><i class="fas fa-user-shield"></i> Admin</a>
+            <!-- Redirección directa al registro de clientes -->
+            <a href="<?= base_url('registro') ?>" class="btn-registro"><i class="fas fa-leaf"></i> Registrarse</a>
+            <!-- El botón Admin fue removido por seguridad -->
         </div>
     </nav>
 
@@ -32,7 +32,8 @@
                 <div class="slide-content">
                     <h1>FRUVER</h1>
                     <p>Del huerto a tu mesa</p>
-                    <a href="<?= base_url('menusolo') ?>" class="btn-ingresar">
+                    <!-- Redirección controlada al portal o al login -->
+                    <a href="<?= base_url('ingresar_portal') ?>" class="btn-ingresar">
                         <i class="fas fa-sign-in-alt"></i> INGRESAR
                     </a>
                 </div>
@@ -44,9 +45,6 @@
                 <div class="slide-overlay"></div>
                 <div class="slide-content">
                     <h1>Garantía de frescura y calidad en cada envío</h1>
-                   <!-- <a href="#" class="btn-ingresar">
-                       <i class="fa-solid fa-store"></i> SUCURSALES
-                    </a>-->
                 </div>
             </div>
         </div>
@@ -83,7 +81,6 @@
         let autoPlayInterval;
         let isPlaying = true;
 
-        // Crear dots dinámicamente
         function createDots() {
             const dotsContainer = document.getElementById('carouselDots');
             if (!dotsContainer) return;
@@ -145,7 +142,6 @@
             }
         }
 
-        // Inicializar carrusel
         function initCarousel() {
             createDots();
             resetAutoPlay();
@@ -157,7 +153,6 @@
             }
         }
 
-        // Exponer funciones globalmente
         window.changeSlide = changeSlide;
 
         // === Navbar Scroll Effect ===
@@ -170,7 +165,6 @@
             }
         });
 
-        // Inicializar todo cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', () => {
             initCarousel();
         });

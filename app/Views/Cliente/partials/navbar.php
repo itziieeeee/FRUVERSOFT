@@ -1,4 +1,3 @@
-
 <?php
 $paginaActual = trim(uri_string(), '/');
 
@@ -42,6 +41,13 @@ $modulos = [
                     </li>
                 <?php endforeach; ?>
             </ul>
+
+            <!-- Botón de Cerrar Sesión a la derecha -->
+            <div class="d-flex align-items-center mt-3 mt-lg-0">
+                <a href="<?= base_url('logout') ?>" class="btn btn-outline-light btn-sm px-3 rounded-pill">
+                    <i class="fas fa-sign-out-alt me-1"></i> Cerrar sesión
+                </a>
+            </div>
         </div>
 
     </div>

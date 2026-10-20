@@ -351,7 +351,7 @@ h1 {
             <a href="#" class="action-btn">
                 <i class="fas fa-bell"></i> Notificaciones
             </a>
-            <a href="<?= base_url('pantalla_inicio') ?>" class="action-btn logout-btn">
+            <a href="<?= base_url('logout') ?>" class="action-btn logout-btn">
                 <i class="fas fa-sign-out-alt"></i> Cerrar sesión
             </a>
         </div>
