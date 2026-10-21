@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -17,75 +16,8 @@
 
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-fruver">
-        <div class="container-fluid px-lg-5">
+<?= $this->include('Cliente/partials/navbar') ?>
 
-            <a class="navbar-brand fw-bold"
-               href="<?= base_url('cliente/menu') ?>">
-                🥬 FRUVERSOFT
-            </a>
-
-            <button class="navbar-toggler"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#menuPrincipal"
-                    aria-controls="menuPrincipal"
-                    aria-expanded="false"
-                    aria-label="Abrir navegación">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="menuPrincipal">
-                <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
-
-                    <li class="nav-item">
-                        <a class="nav-link active"
-                           href="<?= base_url('cliente/menu') ?>">
-                            Inicio
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link"
-                           href="<?= base_url('pedidos') ?>">
-                            Mis pedidos
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link"
-                           href="<?= base_url('cliente/historial') ?>">
-                            Historial
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link"
-                           href="<?= base_url('cliente/creditos') ?>">
-                            Créditos y pagos
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link"
-                           href="<?= base_url('cliente/estado') ?>">
-                            Estado
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link"
-                           href="<?= base_url('catalogo') ?>">
-                            Catálogo
-                        </a>
-                    </li>
-
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    
 <main class="container py-4 py-lg-5">
 
     <!-- Bienvenida principal -->
@@ -109,7 +41,7 @@
                 <div class="d-flex flex-wrap gap-2 mt-4">
                     <a href="<?= base_url('pedidos') ?>"
                        class="btn btn-fruver">
-                        <i class="bi bi-box-seam"></i>
+                        <i class="fas fa-box"></i>
                         Mis pedidos
                     </a>
 
@@ -213,9 +145,8 @@
 
 </main>
 
-
-    <!-- Bootstrap JS para el menú móvil -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

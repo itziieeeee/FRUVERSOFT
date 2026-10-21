@@ -36,7 +36,6 @@
         </div>
     </nav>
 
-    <!-- ✅ UN SOLO main -->
     <main class="contenedor-principal">
         <div class="card-form">
 
@@ -45,7 +44,6 @@
                 <h2>Nuevo Producto</h2>
             </div>
 
-            <!-- ✅ MENSAJES ARRIBA DEL FORM -->
             <?php if (session()->getFlashdata('error')): ?>
                 <div style="background:#fff0f0; border-left:4px solid #e53e3e; color:#c53030;
                             padding:0.9rem 1.2rem; border-radius:8px; margin-bottom:1rem; font-weight:500;">
@@ -62,7 +60,6 @@
                 </div>
             <?php endif; ?>
 
-            <!-- ✅ UN SOLO form completo -->
             <form action="<?= base_url('producto/guardar') ?>" method="POST"
                   enctype="multipart/form-data" id="formProducto" novalidate>
                 <?= csrf_field() ?>

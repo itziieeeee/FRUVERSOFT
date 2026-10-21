@@ -1,54 +1,39 @@
 <?php
-$paginaActual = trim(uri_string(), '/');
+    // Detecta la página actual para marcar el enlace activo
+    $rutaActual = trim(uri_string(), '/');
 
-$modulos = [
-    ['ruta' => 'cliente/menu', 'texto' => 'Inicio'],
-    ['ruta' => 'pedidos', 'texto' => 'Mis pedidos'],
-    ['ruta' => 'cliente/historial', 'texto' => 'Historial'],
-    ['ruta' => 'cliente/creditos', 'texto' => 'Créditos y pagos'],
-    ['ruta' => 'cliente/estado', 'texto' => 'Estado'],
-    ['ruta' => 'catalogo', 'texto' => 'Catálogo'],
-];
+    $enlaces = [
+        ['ruta' => 'cliente/menu',      'icono' => 'fas fa-house',            'texto' => 'Inicio'],
+        ['ruta' => 'pedidos',           'icono' => 'fas fa-box',              'texto' => 'Mis pedidos'],
+        ['ruta' => 'cliente/historial', 'icono' => 'fas fa-receipt',          'texto' => 'Historial'],
+        ['ruta' => 'cliente/creditos',  'icono' => 'fas fa-credit-card',      'texto' => 'Créditos y pagos'],
+        ['ruta' => 'cliente/estado',    'icono' => 'fas fa-truck',            'texto' => 'Estado'],
+        ['ruta' => 'catalogo',          'icono' => 'fa-solid fa-apple-whole', 'texto' => 'Catálogo'],
+    ];
 ?>
+<!-- Font Awesome (íconos de la barra y el menú) -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-<nav class="navbar navbar-expand-lg navbar-dark navbar-fruver">
-    <div class="container-fluid px-lg-5">
-
-        <a class="navbar-brand" href="<?= base_url('cliente/menu') ?>">
-            🥬 FRUVERSOFT
-        </a>
-
-        <button class="navbar-toggler" type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#menuPrincipal"
-                aria-controls="menuPrincipal"
-                aria-expanded="false"
-                aria-label="Abrir navegación">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="menuPrincipal">
-            <ul class="navbar-nav mx-auto">
-                <?php foreach ($modulos as $modulo): ?>
-                    <?php $activo = $paginaActual === $modulo['ruta']; ?>
-
-                    <li class="nav-item">
-                        <a class="nav-link <?= $activo ? 'active' : '' ?>"
-                           href="<?= base_url($modulo['ruta']) ?>"
-                           <?= $activo ? 'aria-current="page"' : '' ?>>
-                            <?= esc($modulo['texto']) ?>
-                        </a>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-
-            <!-- Botón de Cerrar Sesión a la derecha -->
-            <div class="d-flex align-items-center mt-3 mt-lg-0">
-                <a href="<?= base_url('logout') ?>" class="btn btn-outline-light btn-sm px-3 rounded-pill">
-                    <i class="fas fa-sign-out-alt me-1"></i> Cerrar sesión
-                </a>
-            </div>
+<header>
+    <div class="barra-superior">
+        <div class="logo-area">
+            <img src="<?= base_url('img/LOGO1.png') ?>" alt="Logo FRUVERSOFT">
         </div>
+        <div class="user-actions">
+            <a href="#" class="btn-user"><i class="fas fa-user"></i> Cliente</a>
+            <a href="<?= base_url('logout') ?>" class="btn-user"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </div>
+</header>
 
+<nav class="menu-navegacion">
+    <div class="nav-links">
+        <?php foreach ($enlaces as $e): ?>
+            <a href="<?= base_url($e['ruta']) ?>"
+               class="nav-link <?= ($rutaActual === $e['ruta']) ? 'activo' : '' ?>">
+                <i class="<?= $e['icono'] ?>"></i> <?= $e['texto'] ?>
+            </a>
+        <?php endforeach; ?>
     </div>
 </nav>

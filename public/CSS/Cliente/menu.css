@@ -19,63 +19,96 @@ body {
     margin: 0;
     background-color: var(--fruver-fondo);
     color: var(--fruver-texto);
-    font-family: "Segoe UI", Arial, sans-serif;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
     font-size: 15px;
 }
 
 /* =====================================
-   BARRA DE NAVEGACIÓN
+   BARRA SUPERIOR
    ===================================== */
 
-.navbar-fruver {
-    background-color: var(--fruver-verde);
-    padding: 12px 0;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+.barra-superior {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 2rem;
+    background: linear-gradient(90deg, var(--fruver-verde) 0%, #2a5e35 100%);
+    gap: 1.5rem;
+    flex-wrap: wrap;
 }
 
-.navbar-fruver .navbar-brand {
-    color: var(--fruver-blanco);
-    font-size: 1.35rem;
-    font-weight: 800;
-    letter-spacing: 0.4px;
-    white-space: nowrap;
+.logo-area img {
+    height: 80px;
+    object-fit: contain;
 }
 
-.navbar-fruver .navbar-brand:hover {
-    color: #f4f4f4;
+.user-actions {
+    display: flex;
+    gap: 0.8rem;
 }
 
-.navbar-fruver .navbar-nav {
-    gap: 5px;
+.btn-user {
+    color: white;
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 0.5rem 1.2rem;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.navbar-fruver .nav-link {
-    position: relative;
-    color: rgba(255, 255, 255, 0.88);
+.btn-user:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+/* =====================================
+   MENÚ DE NAVEGACIÓN
+   ===================================== */
+
+.menu-navegacion {
+    background: white;
+    padding: 0.5rem 1.5rem;
+    display: flex;
+    justify-content: center;
+    border-bottom: 1px solid var(--fruver-borde);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.menu-navegacion .nav-links {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.menu-navegacion .nav-link {
+    padding: 0.9rem 1.2rem;
+    color: #333;
+    text-decoration: none;
+    font-size: 0.85rem;
     font-weight: 600;
-    padding: 10px 12px !important;
-    border-radius: 7px;
-    transition: background-color 0.2s, color 0.2s;
+    transition: all 0.3s ease;
+    border-radius: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 3px solid transparent;
 }
 
-.navbar-fruver .nav-link:hover,
-.navbar-fruver .nav-link:focus {
-    color: var(--fruver-blanco);
-    background-color: rgba(255, 255, 255, 0.12);
+.menu-navegacion .nav-link:hover {
+    background: #fef3ed;
+    color: #333;
 }
 
-.navbar-fruver .nav-link.active {
-    color: var(--fruver-blanco);
-    background-color: var(--fruver-naranja);
-}
-
-.navbar-fruver .navbar-toggler {
-    border-color: rgba(255, 255, 255, 0.5);
-    box-shadow: none;
-}
-
-.navbar-fruver .navbar-toggler:focus {
-    box-shadow: 0 0 0 3px rgba(241, 107, 26, 0.35);
+.menu-navegacion .nav-link.activo {
+    color: var(--fruver-naranja);
+    background: rgba(243, 156, 18, 0.08);
+    border-bottom: 3px solid var(--fruver-naranja);
 }
 
 /* =====================================
@@ -260,22 +293,20 @@ body {
    RESPONSIVE
    ===================================== */
 
-@media (max-width: 991.98px) {
-    .navbar-fruver .navbar-collapse {
-        padding-top: 14px;
-    }
-
-    .navbar-fruver .navbar-nav {
-        align-items: stretch !important;
-    }
-
-    .navbar-fruver .nav-link {
-        padding: 11px 14px !important;
-    }
-}
-
-
 @media (max-width: 575.98px) {
+    .barra-superior {
+        padding: 0.6rem 1rem;
+        justify-content: center;
+    }
+
+    .logo-area img {
+        height: 60px;
+    }
+
+    .menu-navegacion .nav-link {
+        padding: 0.7rem 0.9rem;
+    }
+
     .fruver-encabezado {
         padding: 18px;
     }
@@ -294,31 +325,3 @@ body {
         font-size: 0.85rem;
     }
 }
-
-/* Centrar los módulos del menú en computadora */
-@media (min-width: 992px) {
-    .navbar-fruver .navbar-collapse {
-        justify-content: center;
-    }
-
-    .navbar-fruver .navbar-nav {
-        margin-left: auto !important;
-        margin-right: auto !important;
-        gap: 5px;
-    }
-}
-
-
-/* Centrar los módulos del menú */
-@media (min-width: 992px) {
-    .navbar-fruver .navbar-collapse {
-        justify-content: center;
-    }
-
-    .navbar-fruver .navbar-nav {
-        margin-left: auto !important;
-        margin-right: auto !important;
-        gap: 5px;
-    }
-}
-
