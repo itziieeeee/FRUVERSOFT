@@ -25,20 +25,24 @@ class AuthController extends BaseController
         $usuario = $db->table('usuarios')->where('correo', $correo)->get()->getRowArray();
 
         if ($usuario && password_verify($password, $usuario['password'])) {
-            session()->set([
-                'id_usuario' => $usuario['id'],
-                'nombre'     => $usuario['nombre'],
-                'correo'     => $usuario['correo'],
-                'rol'        => $usuario['rol'],
-                'isLoggedIn' => true
-            ]);
+    session()->set([
+        'id_usuario'    => $usuario['id'],
+        'id_repartidor' => $usuario['id_repartidor'], 
+        'nombre'        => $usuario['nombre'],
+        'correo'        => $usuario['correo'],
+        'rol'           => $usuario['rol'],
+        'isLoggedIn'    => true
+    ]);
 
-            if ($usuario['rol'] === 'admin') {
-                return redirect()->to(base_url('menusolo'));
-            } else {
-                return redirect()->to(base_url('cliente/menu'));
-            }
-        }
+    
+    if ($usuario['rol'] === 'admin') {
+        return redirect()->to(base_url('menusolo'));
+    } elseif ($usuario['rol'] === 'repartidor') {
+        return redirect()->to(base_url('repartidor/panel'));
+    } else {
+        return redirect()->to(base_url('cliente/menu'));
+    }
+}
 
         return redirect()->back()->with('error', 'Correo o contraseña incorrectos.');
     }

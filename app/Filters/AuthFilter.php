@@ -21,11 +21,10 @@ class AuthFilter implements FilterInterface
             $rolUsuario   = session()->get('rol');
 
             if ($rolUsuario !== $rolRequerido) {
-                // Redirigir según el rol que realmente tiene
-                return $rolUsuario === 'admin'
-                    ? redirect()->to(base_url('menusolo'))
-                    : redirect()->to(base_url('cliente/menu'));
-            }
+    if ($rolUsuario === 'admin') return redirect()->to(base_url('menusolo'));
+    if ($rolUsuario === 'repartidor') return redirect()->to(base_url('repartidor/panel'));
+    return redirect()->to(base_url('cliente/menu'));
+}
         }
     }
 
