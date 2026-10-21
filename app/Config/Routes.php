@@ -114,3 +114,13 @@ $routes->post('carrito/actualizar/(:num)', 'Catalogo::actualizar/$1');
 $routes->post('carrito/quitar/(:num)', 'Catalogo::quitar/$1');
 $routes->post('carrito/vaciar', 'Catalogo::vaciar');
 $routes->get('pedidos', 'ClientePedidoController::index');
+
+// RUTAS DEL REPARTIDOR
+
+$routes->group('repartidor', ['filter' => 'authFilter:repartidor'], function($routes) {
+    $routes->get('panel', 'PanelRepartidorController::index');
+    $routes->get('inventario', 'PanelRepartidorController::inventario');
+    $routes->get('pedidos', 'PanelRepartidorController::mis_pedidos');
+    // marquen como entregado
+    $routes->post('marcar_entregado', 'PanelRepartidorController::marcar_entregado');
+});
