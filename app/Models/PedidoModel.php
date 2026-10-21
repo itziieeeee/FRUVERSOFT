@@ -4,6 +4,15 @@ namespace App\Models;
 use CodeIgniter\Model;
 
 class PedidoModel extends Model {
+    // Estados que cuentan como venta real (se excluye 'Pedido' sin confirmar y 'Pedido cancelado')
+    public const ESTADOS_VENTA = [
+        'Pedido confirmado',
+        'Pedido en tránsito',
+        'Venta confirmada',
+        'Pedido a crédito',
+        'Pedido pagado',
+    ];
+
     protected $table      = 'pedido';
     protected $primaryKey = 'id';
 
@@ -150,5 +159,35 @@ class PedidoModel extends Model {
     {
         $this->db->table('pedido')->where('id', $id)->update(['estado_actual' => $estado]);
         $this->insertarStatus($id, $estado);
+    }
+
+    // ------- Rotación de productos (para el catálogo de entradas) -------
+
+    /**
+     * Ventas por producto en los últimos $dias días.
+     * Devuelve [id_producto => ['ventas' => nº de pedidos, 'ingreso' => importe vendido]].
+     * Se cuenta por pedidos y no por cantidad, porque las unidades cambian (kilo, domos, caja).
+     */
+    public function getRotacionPorProducto(int $dias = 30): array
+    {
+        $desde = date('Y-m-d H:i:s', strtotime('-' . max(1, $dias) . ' days'));
+
+        $filas = $this->db->table('producto_pedido pp')
+            ->select('pp.id_producto, COUNT(DISTINCT pp.id_pedido) AS ventas, SUM(pp.cantidad * pp.precio_venta) AS ingreso')
+            ->join('pedido pd', 'pd.id = pp.id_pedido')
+            ->where('pd.fecha >=', $desde)
+            ->whereIn('pd.estado_actual', self::ESTADOS_VENTA)
+            ->groupBy('pp.id_producto')
+            ->get()
+            ->getResultArray();
+
+        $rotacion = [];
+        foreach ($filas as $f) {
+            $rotacion[(int) $f['id_producto']] = [
+                'ventas'  => (int) $f['ventas'],
+                'ingreso' => (float) $f['ingreso'],
+            ];
+        }
+        return $rotacion;
     }
 }

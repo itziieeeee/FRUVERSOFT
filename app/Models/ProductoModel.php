@@ -59,4 +59,18 @@ class ProductoModel extends Model
                         ->where('id_producto', $id)
                         ->countAllResults();
     }
+
+    // ------- Consultas para entradas de inventario -------
+
+    // De una lista de ids, devuelve solo los que existen en la tabla producto
+    public function getIdsExistentes(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if (empty($ids)) {
+            return [];
+        }
+
+        $filas = $this->select('id')->whereIn('id', $ids)->findAll();
+        return array_map('intval', array_column($filas, 'id'));
+    }
 }

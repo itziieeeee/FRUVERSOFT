@@ -8,6 +8,7 @@ use App\Models\StatusModel;
 use App\Models\RepartidorModel;
 use App\Models\ProductoModel;
 use App\Models\ExistenciasModel;
+use App\Models\EntradaModel;
 
 class FRUVER extends BaseController
 {
@@ -102,12 +103,14 @@ class FRUVER extends BaseController
     {
         $existenciasModel = new ExistenciasModel();
         $productoModel    = new ProductoModel();
+        $entradaModel     = new EntradaModel();
 
         // Limpiamos caducados antes de mostrar la tabla
         $existenciasModel->procesarCaducados();
 
         $data = [
             'productos'       => $productoModel->findAll(),
+            'catalogo'        => $entradaModel->getCatalogoEntrada(),
             'productos_merma' => $existenciasModel->getProductosConStock(),
             'existencias'     => $existenciasModel->getStockConsolidado(),
         ];
