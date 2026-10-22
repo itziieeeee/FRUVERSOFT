@@ -9,7 +9,7 @@ class ProductoModel extends Model
     protected $primaryKey = 'id';
 
     // 2. Campos que permiten que se guarden desde formularios
-    protected $allowedFields = ['nombre', 'descripcion', 'imagen', 'e_total', 'precio']; 
+     protected $allowedFields = ['codigo', 'nombre', 'descripcion', 'imagen', 'e_total', 'precio']; 
 
     // 3. Retorno de datos
     protected $returnType = 'array';

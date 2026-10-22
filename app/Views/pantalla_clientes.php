@@ -47,11 +47,19 @@
                  data-id="<?= $c['id_cliente'] ?>">
                 <span class="badge-tipo <?= $c['tipo_cliente'] ?>"><?= $c['tipo_cliente'] ?></span>
                 <div class="card-info">
-                    <h3><?= htmlspecialchars($c['nombre']) ?> <?= htmlspecialchars($c['apellido_paterno'] ?? '') ?></h3>
-                    <p><i class="fas fa-phone-alt"></i> <?= $c['tel'] ?? '—' ?></p>
-                    <p><i class="fas fa-id-card"></i> <?= $c['rfc'] ?? 'S/N RFC' ?></p>
-                    <p><i class="fas fa-map-marker-alt"></i> <?= $c['estado'] ?? 'No registrado' ?></p>
-                </div>
+    <h3 style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <?= htmlspecialchars($c['nombre']) ?> <?= htmlspecialchars($c['apellido_paterno'] ?? '') ?>
+        
+        <?php if(isset($c['total_pedidos']) && $c['total_pedidos'] > 5): ?>
+            <span class="badge-preferencial" title="<?= $c['total_pedidos'] ?> pedidos realizados">
+                <i class="fas fa-star"></i>
+            </span>
+        <?php endif; ?>
+    </h3>
+    <p><i class="fas fa-phone-alt"></i> <?= $c['tel'] ?? '—' ?></p>
+    <p><i class="fas fa-id-card"></i> <?= $c['rfc'] ?? 'S/N RFC' ?></p>
+    <p><i class="fas fa-map-marker-alt"></i> <?= $c['estado'] ?? 'No registrado' ?></p>
+</div>
                 <div class="card-btns">
                     <button class="btn btn-edit" onclick="abrirEditar(<?= $c['id_cliente'] ?>)">
                         <i class="fas fa-pen"></i> Editar

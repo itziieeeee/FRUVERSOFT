@@ -36,21 +36,27 @@ class Producto extends BaseController
             $file->move(FCPATH . 'uploads/productos/', $nombreImagen);
         }
 
+        // Busca esta parte dentro de tu public function guardar()
         $nombreRaw        = trim($this->request->getPost('nombre'));
         $nombreNormalizado = ucfirst(strtolower($nombreRaw));
 
         $existe = $model->existeNombre($nombreRaw);
         if ($existe) {
             return redirect()->back()
-                             ->with('error', "El producto \"$nombreNormalizado\" ya está registrado.")
-                             ->withInput();
-        }
+                     ->with('error', "El producto \"$nombreNormalizado\" ya está registrado.")
+                     ->withInput();
+}
 
-        $data = [
+// 1. GENERAR CÓDIGO ÚNICO (Ejemplo: PRD-A1B2C3)
+            $codigoUnico = 'PRD-' . strtoupper(bin2hex(random_bytes(3)));
+
+// 2. AGREGARLO AL ARREGLO DE DATOS
+            $data = [
+            'codigo'      => $codigoUnico,
             'nombre'      => $nombreNormalizado,
             'descripcion' => $this->request->getPost('descripcion'),
             'imagen'      => $nombreImagen
-        ];
+];
 
         $model->insert($data);
 

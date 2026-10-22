@@ -13,6 +13,7 @@ class ExistenciasModel extends Model
         $builder = $this->db->table('existencias e')
             ->select('
                 e.id_producto,
+                p.codigo,
                 p.nombre,
                 p.descripcion,
                 (SELECT ent2.precio_sugerido FROM entrada ent2

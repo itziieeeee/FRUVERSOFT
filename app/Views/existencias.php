@@ -549,6 +549,10 @@
              data-total="<?= $existencias_totales ?>"
              data-bloqueadas="<?= $existencias_bloqueadas ?>">
 
+             <div style="color: #f16b1a; font-size: 0.8rem; font-weight: 800; margin-bottom: 5px; text-transform: uppercase;">
+        <i class="fas fa-barcode"></i> <?= esc($p['codigo'] ?? 'S/N') ?>
+    </div>
+
             <div class="producto-nombre"><?= htmlspecialchars($p['nombre']) ?></div>
             <div class="producto-descripcion"><?= htmlspecialchars($p['descripcion']) ?></div>
 

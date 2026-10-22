@@ -21,11 +21,11 @@ class ClienteModel extends Model
     ];
 
     public function getListaClientes()
-    {
-        return $this->select('clientes.*, direccion.estado')
-            ->join('direccion', 'direccion.id_cliente = clientes.id_cliente', 'left')
-            ->findAll();
-    }
+{
+    return $this->select('clientes.*, direccion.estado, (SELECT COUNT(id) FROM pedido WHERE pedido.id_cliente = clientes.id_cliente) as total_pedidos')
+        ->join('direccion', 'direccion.id_cliente = clientes.id_cliente', 'left')
+        ->findAll();
+}
 
     public function getDetalleCliente($id)
     {

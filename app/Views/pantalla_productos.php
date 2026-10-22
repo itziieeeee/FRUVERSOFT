@@ -75,35 +75,41 @@
         <?php if(!empty($productos)): ?>
             <?php foreach($productos as $prod): ?>
             <div class="product-card">
-                <div class="card-img">
-                    <img src="<?= $prod['imagen']
-                        ? base_url('uploads/productos/'.$prod['imagen'])
-                        : 'https://placehold.co/400x300/DFF0E6/2C6E49?text=🍎+FRUVER' ?>"
-                        alt="<?= esc($prod['nombre']) ?>"
-                        loading="lazy">
-                </div>
-                <div class="card-info">
-                    <div class="product-name">
-                        <?= esc($prod['nombre']) ?>
-                        
-                    </div>
-                    <div class="product-desc">
-                        <?= esc($prod['descripcion']) ?>
-                    </div>
-                </div>
-                <div class="card-actions">
-                    <!-- Botón Editar -->
-                    <button class="btn-card btn-edit"
-                        onclick="abrirEditar(<?= $prod['id'] ?>, '<?= esc($prod['nombre'], 'js') ?>', '<?= esc($prod['descripcion'], 'js') ?>')">
-                        <i class="fas fa-pen"></i> Editar
-                    </button>
-                    <!-- Botón Eliminar -->
-                    <button class="btn-card btn-delete"
-                        onclick="abrirEliminar(<?= $prod['id'] ?>, '<?= esc($prod['nombre'], 'js') ?>')">
-                        <i class="fas fa-trash"></i> Eliminar
-                    </button>
-                </div>
-            </div>
+    <div class="card-img">
+        <img src="<?= $prod['imagen']
+            ? base_url('uploads/productos/'.$prod['imagen'])
+            : 'https://placehold.co/400x300/DFF0E6/2C6E49?text=🍎+FRUVER' ?>"
+            alt="<?= esc($prod['nombre']) ?>"
+            loading="lazy">
+    </div>
+    
+    <div class="card-info">
+        <!-- Código del producto (Separado del nombre para no romper el CSS) -->
+        <div style="color: #f16b1a; font-size: 0.8rem; font-weight: 800; margin-bottom: 5px; text-transform: uppercase;">
+            <i class="fas fa-barcode"></i> <?= esc($prod['codigo'] ?? 'S/N') ?>
+        </div>
+        
+        <div class="product-name">
+            <?= esc($prod['nombre']) ?>
+        </div>
+        <div class="product-desc">
+            <?= esc($prod['descripcion']) ?>
+        </div>
+    </div>
+    
+    <div class="card-actions">
+        <!-- Botón Editar -->
+        <button class="btn-card btn-edit"
+            onclick="abrirEditar(<?= $prod['id'] ?>, '<?= esc($prod['nombre'], 'js') ?>', '<?= esc($prod['descripcion'], 'js') ?>')">
+            <i class="fas fa-pen"></i> Editar
+        </button>
+        <!-- Botón Eliminar -->
+        <button class="btn-card btn-delete"
+            onclick="abrirEliminar(<?= $prod['id'] ?>, '<?= esc($prod['nombre'], 'js') ?>')">
+            <i class="fas fa-trash"></i> Eliminar
+        </button>
+    </div>
+</div>
             <?php endforeach; ?>
         <?php else: ?>
             <div class="empty-state" style="grid-column: 1/-1;">
