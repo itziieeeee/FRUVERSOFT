@@ -107,4 +107,47 @@ class Clientes extends BaseController
             return redirect()->back()->with('flash_error', 'Error al registrar: ' . $e->getMessage());
         }
     }
+
+    
+public function obtener_ultimo_pedido($idCliente = null)
+{
+    if (!$idCliente) {
+        return $this->response->setJSON([
+            'status' => 'error',
+            'msg' => 'ID no proporcionado'
+        ]);
+    }
+
+    $db = \Config\Database::connect();
+
+    // 1. Obtener el pedido más reciente del cliente.
+    // La clave primaria real de pedido es "id".
+    $pedido = $db->table('pedido')
+        ->where('id_cliente', $idCliente)
+        ->orderBy('id', 'DESC')
+        ->get()
+        ->getRowArray();
+
+    $items = [];
+
+    if ($pedido) {
+        // 2. Obtener los productos asociados al pedido.
+        $items = $db->table('producto_pedido')
+            ->select('producto_pedido.*, producto.nombre AS nombre_producto, producto.precio AS precio_catalogo')
+            ->join(
+                'producto',
+                'producto.id_producto = producto_pedido.id_producto'
+            )
+            ->where('producto_pedido.id_pedido', $pedido['id'])
+            ->get()
+            ->getResultArray();
+    }
+
+    return $this->response->setJSON([
+        'status' => 'success',
+        'pedido' => $pedido,
+        'items' => $items
+    ]);
+}
+
 }

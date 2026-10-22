@@ -81,6 +81,7 @@ $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
     $routes->post('pedido/actualizar_pago', 'Status::actualizar_pago');
     $routes->post('pedido/validar', 'Status::validar_pedido');
     $routes->post('pedido/detalle', 'Status::detalle_pedido');
+    $routes->post('pedido/actualizar_precios', 'Status::actualizar_precios');
 
     // Merma y Entradas
     $routes->get('merma', 'Merma::index');
@@ -124,3 +125,4 @@ $routes->group('repartidor', ['filter' => 'authFilter:repartidor'], function($ro
     // marquen como entregado
     $routes->post('marcar_entregado', 'PanelRepartidorController::marcar_entregado');
 });
+$routes->get('clientes/obtener_ultimo_pedido/(:num)', 'Clientes::obtener_ultimo_pedido/$1'); //ruta ticket ws

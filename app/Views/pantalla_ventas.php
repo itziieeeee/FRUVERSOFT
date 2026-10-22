@@ -572,6 +572,25 @@ async function enviarPedido() {
                 ${d.repartidor ? `<p><i class="fas fa-motorcycle" style="color:#1d4a27;"></i> <strong>Repartidor:</strong> ${d.repartidor}</p>` : ''}
                 <p><i class="fas fa-dollar-sign" style="color:#1d4a27;"></i> <strong>Total:</strong> $${parseFloat(d.total).toFixed(2)}</p>
                 ${lineaStock}
+
+${d.whatsapp_url ? `
+    <div style="margin-top:16px; text-align:center;">
+        <a href="${d.whatsapp_url}"
+           target="_blank"
+           rel="noopener noreferrer"
+           style="display:inline-block; background:#25D366; color:white;
+                  padding:12px 18px; border-radius:8px;
+                  text-decoration:none; font-weight:bold;">
+            <i class="fab fa-whatsapp"></i>
+            Enviar ticket por WhatsApp
+        </a>
+    </div>
+` : `
+    <p style="margin-top:12px; color:#b45309;">
+        No se pudo generar el ticket. Verifica el teléfono del cliente.
+    </p>
+`}
+
             </div>
         `,
         confirmButtonText: 'Aceptar',

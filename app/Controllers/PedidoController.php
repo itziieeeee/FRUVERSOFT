@@ -88,19 +88,63 @@ class PedidoController extends BaseController {
 
         $folio = 'PED-' . str_pad($idPedido, 5, '0', STR_PAD_LEFT);
 
-        return $this->response->setJSON([
-            'status' => 'success',
-            'data'   => [
-                'folio'           => $folio,
-                'cliente'         => $nombreCliente,
-                'tipo_venta'      => $tipoVenta,
-                'tipo_entrega'    => $tipoEntrega,
-                'repartidor'      => $nombreRepartidor,
-                'total'           => number_format($totalGeneral, 2),
-                'auto_confirmado' => $autoConfirmado,
-                'faltantes'       => $faltantes,
-            ]
-        ]);
+$whatsappUrl = null;
+
+// No enviar ticket al público general (id_cliente = 0)
+if ($idCliente > 0) {
+    helper('whatsapp');
+
+    $db = \Config\Database::connect();
+
+    // Obtener el teléfono del cliente
+    $cliente = $db->table('clientes')
+        ->select('tel')
+        ->where('id_cliente', $idCliente)
+        ->get()
+        ->getRowArray();
+
+    // Obtener los productos de ESTE pedido con sus precios vendidos
+    
+$items = $db->table('producto_pedido')
+    ->select('producto_pedido.cantidad,
+              producto_pedido.precio_venta AS precio_unitario,
+              producto.nombre AS nombre_producto')
+    ->join(
+        'producto',
+        'producto.id = producto_pedido.id_producto'
+    )
+    ->where('producto_pedido.id_pedido', $idPedido)
+    ->get()
+    ->getResultArray();
+
+
+    if (!empty($cliente['tel']) && !empty($items)) {
+        $whatsappUrl = generar_link_ticket_wa(
+            $cliente['tel'],
+            $idPedido,
+            $items,
+            $totalGeneral
+        );
+    }
+}
+
+
+        
+return $this->response->setJSON([
+    'status' => 'success',
+    'data'   => [
+        'folio'           => $folio,
+        'cliente'         => $nombreCliente,
+        'tipo_venta'      => $tipoVenta,
+        'tipo_entrega'    => $tipoEntrega,
+        'repartidor'      => $nombreRepartidor,
+        'total'           => number_format($totalGeneral, 2),
+        'auto_confirmado' => $autoConfirmado,
+        'faltantes'       => $faltantes,
+        'whatsapp_url'    => $whatsappUrl,
+    ]
+]);
+
     }
 
     public function eliminarPedido($id) {
