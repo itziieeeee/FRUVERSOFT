@@ -75,6 +75,134 @@ class Status extends BaseController
         return $this->response->setJSON(['success' => (bool)$result]);
     }
 
+public function actualizar_precios()
+{
+    $idPedido = (int) $this->request->getPost('id');
+
+    $preciosJson = $this->request->getPost('precios');
+    $precios = json_decode($preciosJson ?? '', true);
+
+
+    if (!$idPedido || !is_array($precios) || empty($precios)) {
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Datos del pedido inválidos.'
+        ]);
+    }
+
+    $db = \Config\Database::connect();
+
+    $db->transBegin();
+
+    try {
+        // Obtener el pedido y bloquearlo durante la actualización.
+        $pedido = $db->table('pedido')
+            ->where('id', $idPedido)
+            ->get()
+            ->getRowArray();
+
+        if (!$pedido) {
+            throw new \RuntimeException('Pedido no encontrado.');
+        }
+
+        $productos = $db->table('producto_pedido')
+            ->where('id_pedido', $idPedido)
+            ->get()
+            ->getResultArray();
+
+        if (empty($productos)) {
+            throw new \RuntimeException('El pedido no tiene productos.');
+        }
+
+        $totalNuevo = 0;
+
+        foreach ($productos as $producto) {
+            $idDetalle = (int) $producto['id'];
+
+            // No permitir modificar líneas que no pertenecen al pedido.
+            if (!array_key_exists((string) $idDetalle, $precios)
+                && !array_key_exists($idDetalle, $precios)) {
+                throw new \RuntimeException(
+                    'Falta el precio de un producto del pedido.'
+                );
+            }
+
+            $precio = $precios[$idDetalle] ?? $precios[(string) $idDetalle];
+
+            if (!is_numeric($precio) || (float) $precio < 0) {
+                throw new \RuntimeException(
+                    'Todos los precios deben ser números no negativos.'
+                );
+            }
+
+            $precio = round((float) $precio, 2);
+            $cantidad = (float) $producto['cantidad'];
+            $subtotal = round($cantidad * $precio, 2);
+
+            $actualizado = $db->table('producto_pedido')
+                ->where('id', $idDetalle)
+                ->where('id_pedido', $idPedido)
+                ->update([
+                    'precio_venta' => $precio,
+                    'subtotal' => $subtotal,
+                    'total' => $subtotal
+                ]);
+
+            if ($actualizado === false) {
+                throw new \RuntimeException(
+                    'No se pudo actualizar el precio del producto.'
+                );
+            }
+
+            $totalNuevo += $subtotal;
+        }
+
+        $totalNuevo = round($totalNuevo, 2);
+        $montoPagado = (float) $pedido['monto_pagado'];
+
+        if ($totalNuevo < $montoPagado) {
+            throw new \RuntimeException(
+                'El nuevo total no puede ser menor que el monto ya pagado.'
+            );
+        }
+
+        $actualizadoPedido = $db->table('pedido')
+            ->where('id', $idPedido)
+            ->update(['total' => $totalNuevo]);
+
+        if ($actualizadoPedido === false) {
+            throw new \RuntimeException(
+                'No se pudo actualizar el total del pedido.'
+            );
+        }
+
+        if ($db->transStatus() === false) {
+            throw new \RuntimeException(
+                'No se pudieron guardar todos los cambios.'
+            );
+        }
+
+        $db->transCommit();
+
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => 'Precios actualizados correctamente.',
+            'total' => $totalNuevo,
+            'monto_pagado' => $montoPagado,
+            'saldo_pendiente' => round($totalNuevo - $montoPagado, 2)
+        ]);
+
+    } catch (\Throwable $e) {
+        $db->transRollback();
+
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+}
+
+
     public function validar_pedido()
     {
         $model    = new StatusModel();
