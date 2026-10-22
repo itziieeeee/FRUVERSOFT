@@ -347,8 +347,15 @@
             </table>
         </div>
         
-        <div class="btn-guardar-pedido">
-            <button onclick="enviarPedido()" class="btn-primary" style="background: linear-gradient(105deg, #f16b1a, #e05a0c);">
+        <!-- Botones de acción del pedido y plantillas frecuentes -->
+        <div class="btn-guardar-pedido" style="display: flex; justify-content: flex-end; gap: 10px; align-items: center;">
+            <button type="button" onclick="abrirModalCargarConfig()" class="btn-primary" style="background: linear-gradient(105deg, #2d572c, #1e3c1e);">
+                <i class="fa-solid fa-folder-open"></i> Cargar Configuración
+            </button>
+            <button type="button" onclick="abrirModalGuardarConfig()" class="btn-primary" style="background: linear-gradient(105deg, #1d4a27, #0f3317);">
+                <i class="fa-solid fa-bookmark"></i> Guardar Configuración
+            </button>
+            <button type="button" onclick="enviarPedido()" class="btn-primary" style="background: linear-gradient(105deg, #f16b1a, #e05a0c);">
                 <i class="fa-regular fa-floppy-disk"></i> Guardar Pedido
             </button>
         </div>
@@ -636,6 +643,215 @@ document.getElementById('inputBuscarPedido')?.addEventListener('keyup', function
         document.getElementById('btnBuscarPedido')?.click();
     }
 });
+
+// ==========================================
+// FUNCIONES DE CONFIGURACIONES FRECUENTES
+// ==========================================
+
+// 1. Guardar la configuración actual como plantilla
+async function abrirModalGuardarConfig() {
+    const filas = document.querySelectorAll('#tbodyProductos tr');
+    if (filas.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sin productos',
+            text: 'Agrega productos a la tabla antes de guardar la configuración.',
+            confirmButtonColor: '#f16b1a'
+        });
+        return;
+    }
+
+    const idCliente = document.getElementById('selectCliente').value;
+    if (!idCliente) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Cliente requerido',
+            text: 'Selecciona un cliente para asociar esta configuración.',
+            confirmButtonColor: '#f16b1a'
+        });
+        return;
+    }
+
+    // Pedir el nombre de la configuración con SweetAlert2
+    const { value: nombreConfig } = await Swal.fire({
+        title: 'Guardar configuración frecuente',
+        input: 'text',
+        inputLabel: 'Nombre de la plantilla (ej.Cliente - Fruteria Don Pepe)',
+        inputPlaceholder: 'Escribe un nombre...',
+        showCancelButton: true,
+        confirmButtonText: 'Guardar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#f16b1a',
+        inputValidator: (value) => {
+            if (!value) {
+                return '¡Debes escribir un nombre para la configuración!';
+            }
+        }
+    });
+
+    if (nombreConfig) {
+        const tipoVenta = document.getElementById('selectTipoVenta').value;
+        const tipoEntrega = document.getElementById('selectEntrega').value;
+        const idRepartidor = document.getElementById('selectRepartidor').value || null;
+
+        const productos = [];
+        filas.forEach(fila => {
+            productos.push({
+                id_producto: fila.getAttribute('data-id'),
+                unidad: fila.cells[1]?.innerText || "",
+                cantidad: parseFloat(fila.querySelector('.cantidad-valor')?.innerText) || 0,
+                precio_venta: parseFloat(fila.querySelector('.precio-unitario')?.value) || 0
+            });
+        });
+
+        const datosConfig = {
+            nombre_configuracion: nombreConfig,
+            id_cliente: idCliente,
+            tipo_venta: tipoVenta,
+            tipo_entrega: tipoEntrega,
+            id_repartidor: idRepartidor,
+            productos: productos
+        };
+
+        try {
+            const respuesta = await fetch('<?= base_url("pedido/guardar_configuracion") ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datosConfig)
+            });
+            const resultado = await respuesta.json();
+
+            if (resultado.status === 'success') {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Guardado!',
+                    text: resultado.message,
+                    confirmButtonColor: '#f16b1a'
+                });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: resultado.message, confirmButtonColor: '#f16b1a' });
+            }
+        } catch (error) {
+            console.error(error);
+            Swal.fire({ icon: 'error', title: 'Error de red', text: 'No se pudo guardar la configuración.', confirmButtonColor: '#f16b1a' });
+        }
+    }
+}
+
+// 2. Abrir lista de configuraciones para cargar una
+async function abrirModalCargarConfig() {
+    try {
+        const respuesta = await fetch('<?= base_url("pedido/listar_configuraciones") ?>');
+        const resultado = await respuesta.json();
+
+        if (resultado.status !== 'success' || resultado.data.length === 0) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Sin configuraciones',
+                text: 'No hay configuraciones o plantillas guardadas todavía.',
+                confirmButtonColor: '#f16b1a'
+            });
+            return;
+        }
+
+        // Crear opciones para el selector de SweetAlert2
+        let opcionesHtml = '<select id="swlSelectConfig" class="swal2-select" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #d9d9d9;">';
+        resultado.data.forEach(c => {
+            opcionesHtml += `<option value="${c.id}">${c.nombre_configuracion} (${c.cliente_nombre || 'Público'})</option>`;
+        });
+        opcionesHtml += '</select>';
+
+        const { value: idConfigSeleccionada } = await Swal.fire({
+            title: 'Cargar Configuración Frecuente',
+            html: opcionesHtml,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Cargar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#f16b1a',
+            preConfirm: () => {
+                return document.getElementById('swlSelectConfig').value;
+            }
+        });
+
+        if (idConfigSeleccionada) {
+            cargarDatosConfiguracion(idConfigSeleccionada);
+        }
+
+    } catch (error) {
+        console.error(error);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudieron cargar las plantillas.', confirmButtonColor: '#f16b1a' });
+    }
+}
+
+// 3. Obtener los detalles de la configuración seleccionada y rellenar el formulario
+async function cargarDatosConfiguracion(idConfig) {
+    try {
+        const respuesta = await fetch(`<?= base_url("pedido/obtener_detalle_configuracion/") ?>/${idConfig}`);
+        const resultado = await respuesta.json();
+
+        if (resultado.status === 'success') {
+            const config = resultado.config;
+            const productos = resultado.productos;
+
+            // Rellenar datos generales del pedido
+            document.getElementById('selectCliente').value = config.id_cliente;
+            document.getElementById('selectTipoVenta').value = config.tipo_venta;
+            document.getElementById('selectEntrega').value = config.tipo_entrega;
+
+            if (config.tipo_entrega === 'domicilio' && config.id_repartidor) {
+                document.getElementById('grupoRepartidor').style.display = 'block';
+                document.getElementById('selectRepartidor').value = config.id_repartidor;
+            } else {
+                document.getElementById('grupoRepartidor').style.display = 'none';
+            }
+
+            // Limpiar tabla actual e insertar los productos de la plantilla
+            const tbody = document.getElementById('tbodyProductos');
+            tbody.innerHTML = '';
+
+            productos.forEach(prod => {
+                const total = parseFloat(prod.cantidad) * parseFloat(prod.precio_unitario);
+
+                const nuevaFila = document.createElement('tr');
+                nuevaFila.setAttribute('data-id', prod.id_producto);
+
+                nuevaFila.innerHTML = `
+                    <td style="font-weight:500;">${prod.nombre_producto}</td>
+                    <td>${prod.unidad}</td>
+                    <td class="cantidad-valor">${prod.cantidad}</td>
+                    <td>
+                        <input type="number" step="0.01" value="${parseFloat(prod.precio_unitario).toFixed(2)}" class="input-precio-editable precio-unitario">
+                    </td>
+                    <td>
+                        <input type="number" step="0.01" value="${total.toFixed(2)}" class="input-subtotal-editable subtotal-editable">
+                    </td>
+                    <td class="total-texto total-fila">$${total.toFixed(2)}</td>
+                    <td class="accion-botones">
+                        <button type="button" class="btn-danger-icon" onclick="eliminarFila(this)"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(nuevaFila);
+            });
+
+            recalcularTotalesFilas();
+
+            Swal.fire({
+                icon: 'success',
+                title: '¡Plantilla cargada!',
+                text: `Se cargó la configuración "${config.nombre_configuracion}" correctamente.`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: resultado.message, confirmButtonColor: '#f16b1a' });
+        }
+    } catch (error) {
+        console.error(error);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Error al procesar la configuración.', confirmButtonColor: '#f16b1a' });
+    }
+}
 </script>
 </body>
 </html>

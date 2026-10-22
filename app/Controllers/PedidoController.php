@@ -189,4 +189,121 @@ return $this->response->setJSON([
 
         return $this->response->setJSON(['success' => true]);
     }
+    /**
+     * Guarda la configuración actual del pedido como plantilla frecuente
+     */
+    public function guardar_configuracion()
+    {
+        $json = $this->request->getJSON(true);
+
+        if (empty($json['nombre_configuracion']) || empty($json['productos']) || !isset($json['id_cliente'])) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Faltan datos (nombre de la configuración o productos).'
+            ]);
+        }
+
+        $db = \Config\Database::connect();
+        
+        try {
+            $db->transStart();
+
+            // 1. Guardar la cabecera de la configuración
+            $db->table('configuraciones_pedidos')->insert([
+                'nombre_configuracion' => $json['nombre_configuracion'],
+                'id_cliente'           => (int) $json['id_cliente'],
+                'tipo_venta'           => $json['tipo_venta'] ?? 'contado',
+                'tipo_entrega'         => $json['tipo_entrega'] ?? 'tienda',
+                'id_repartidor'        => !empty($json['id_repartidor']) ? (int) $json['id_repartidor'] : null,
+                'created_at'           => date('Y-m-d H:i:s')
+            ]);
+
+            $idConfiguracion = $db->insertID();
+
+            // 2. Guardar los productos de la configuración
+            foreach ($json['productos'] as $prod) {
+                $db->table('detalle_configuracion_pedidos')->insert([
+                    'id_configuracion' => $idConfiguracion,
+                    'id_producto'      => (int) $prod['id_producto'],
+                    'unidad'           => $prod['unidad'],
+                    'cantidad'         => (float) $prod['cantidad'],
+                    'precio_unitario'  => (float) $prod['precio_venta']
+                ]);
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setJSON([
+                    'status'  => 'error',
+                    'message' => 'Error al guardar la configuración en la base de datos.'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'status'  => 'success',
+                'message' => '¡Configuración guardada con éxito!'
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtiene la lista de todas las configuraciones guardadas para mostrarlas al administrador
+     */
+    public function listar_configuraciones()
+    {
+        $db = \Config\Database::connect();
+        
+        $configuraciones = $db->table('configuraciones_pedidos')
+            ->select('configuraciones_pedidos.*, clientes.nombre as cliente_nombre, clientes.apellido_paterno')
+            ->join('clientes', 'clientes.id_cliente = configuraciones_pedidos.id_cliente', 'left')
+            ->orderBy('configuraciones_pedidos.id', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => $configuraciones
+        ]);
+    }
+
+    /**
+     * Carga los detalles (productos) de una configuración específica
+     */
+    public function obtener_detalle_configuracion($idConfig)
+    {
+        $db = \Config\Database::connect();
+
+        $config = $db->table('configuraciones_pedidos')
+            ->where('id', $idConfig)
+            ->get()
+            ->getRowArray();
+
+        if (!$config) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Configuración no encontrada.'
+            ]);
+        }
+
+        // Corregido: ya no solicitamos producto.precio_sugerido porque usamos el precio guardado en el detalle
+        $productos = $db->table('detalle_configuracion_pedidos')
+            ->select('detalle_configuracion_pedidos.*, producto.nombre as nombre_producto')
+            ->join('producto', 'producto.id = detalle_configuracion_pedidos.id_producto')
+            ->where('id_configuracion', $idConfig)
+            ->get()
+            ->getResultArray();
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'config' => $config,
+            'productos' => $productos
+        ]);
+    }
 }

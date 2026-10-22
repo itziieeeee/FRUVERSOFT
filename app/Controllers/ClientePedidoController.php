@@ -50,10 +50,15 @@ public function index()
     ]);
 }
 
+    
     public function menu()
-{
-    return view('Cliente/menu');
-}
+    {
+        $avisoModel = new \App\Models\AvisoModel();
+        $data['avisos'] = $avisoModel->getAvisosCliente();
+
+        return view('Cliente/menu', $data);
+    }
+
     public function historial()
     {
         $pedidoModel = new PedidoModel();
