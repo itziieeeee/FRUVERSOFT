@@ -178,14 +178,41 @@
                     </td>
 
                     <td>
-                        <div class="acciones-fila">
-                            <button class="btn-actualizar" onclick="cambiarEstado(<?= $pedido['id'] ?>)">
-                                <i class="fas fa-sync-alt"></i> Actualizar
-                            </button>
-                            <button class="btn-eliminar" onclick="eliminarPedido(<?= $pedido['id'] ?>)">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
+
+<div class="acciones-fila">
+    <button
+        type="button"
+        class="btn-actualizar"
+        onclick="cambiarEstado(<?= $pedido['id'] ?>)">
+        <i class="fas fa-sync-alt"></i> Actualizar
+    </button>
+
+    <?php if (in_array($estadoActual, [
+        'Pedido confirmado',
+        'Pedido en tránsito',
+        'Venta confirmada'
+    ], true)): ?>
+        <button
+            type="button"
+            class="btn-actualizar"
+            onclick="abrirModalCredito(
+                <?= (int) $pedido['id'] ?>,
+                <?= (float) $totalPedido ?>,
+                <?= (float) $montoPagado ?>,
+                '<?= esc($tipoPago) ?>'
+            )">
+            <i class="fas fa-edit"></i> Editar precios
+        </button>
+    <?php endif; ?>
+
+    <button
+        type="button"
+        class="btn-eliminar"
+        onclick="eliminarPedido(<?= $pedido['id'] ?>)">
+        <i class="fas fa-trash-alt"></i>
+    </button>
+</div>
+
                     </td>
                 </tr>
 
@@ -230,6 +257,16 @@
                     </thead>
                     <tbody id="modalProductosBody"></tbody>
                 </table>
+
+<div style="text-align: right; margin: 12px 0;">
+    <button
+        type="button"
+        class="btn-fruver"
+        onclick="guardarPrecios()">
+        Guardar precios
+    </button>
+</div>
+
             </div>
 
             <div id="seccionPago" style="display:none;">
@@ -533,41 +570,164 @@ function abrirModalCredito(id, total, pagado, tipoPago) {
                     <div class="info-label">Restante</div>
                     <div class="info-value" style="color:#ef4444;">$${restante.toFixed(2)}</div>
                 </div>` : ''}
-            </div>`;
+            
+        </div>`;
 
         const tbody = document.getElementById('modalProductosBody');
         tbody.innerHTML = '';
-        if (data.productos && data.productos.length > 0) {
-            data.productos.forEach((prod, i) => {
-                const tr = document.createElement('tr');
-                tr.style.background = i % 2 === 0 ? '#ffffff' : '#fcfef9';
-                tr.innerHTML = `
-                    <td style="padding:10px 8px;">${prod.nombre}</td>
-                    <td style="padding:10px 8px; text-align:center;">${parseFloat(prod.cantidad)}</td>
-                    <td style="padding:10px 8px; text-align:center;">${prod.unidad_venta || '-'}</td>
-                    <td style="padding:10px 8px; text-align:right;">$${parseFloat(prod.precio_venta).toFixed(2)}</td>
-                    <td style="padding:10px 8px; text-align:right; font-weight:600;">$${parseFloat(prod.subtotal).toFixed(2)}</td>`;
-                tbody.appendChild(tr);
-            });
-        } else {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay productos registrados</td></tr>';
-        }
 
-        if (esCred) {
-            document.getElementById('modalTotal').value  = `$${totalPedido.toFixed(2)}`;
-            document.getElementById('modalPagado').value = montoPagado.toFixed(2);
-            actualizarRestanteModal();
-            document.getElementById('seccionPago').style.display = 'block';
-        }
+        data.productos.forEach((prod) => {
+            const tr = document.createElement('tr');
+
+            tr.innerHTML = `
+                <td style="padding:10px 8px;">${prod.nombre}</td>
+
+                <td style="padding:10px 8px; text-align:center;">
+                    ${parseFloat(prod.cantidad)}
+                </td>
+
+                <td style="padding:10px 8px; text-align:center;">
+                    ${prod.unidad_venta || '-'}
+                </td>
+
+                <td style="padding:10px 8px; text-align:right;">
+                    <input
+                        type="number"
+                        class="precio-editable"
+                        data-id="${prod.id_producto_pedido}"
+                        value="${parseFloat(prod.precio_venta).toFixed(2)}"
+                        min="0"
+                        step="0.01"
+                        style="width:100px; padding:6px; text-align:right;"
+                    >
+                </td>
+
+                <td
+                    class="subtotal-editable"
+                    style="padding:10px 8px; text-align:right; font-weight:600;"
+                >
+                    $${parseFloat(prod.subtotal).toFixed(2)}
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+
     })
     .catch(() => toast('Error de conexión', 'error'));
 }
+
 
 function formatearFecha(fechaStr) {
     const d = new Date(fechaStr);
     return d.toLocaleDateString('es-MX', { day:'2-digit', month:'2-digit', year:'numeric' })
         + ' ' + d.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
 }
+function guardarPrecios() {
+    const inputs = document.querySelectorAll('.precio-editable');
+
+    if (inputs.length === 0) {
+        toast('No hay precios para actualizar', 'error');
+        return;
+    }
+
+    const precios = {};
+
+    for (const input of inputs) {
+        const precio = Number(input.value);
+        const idDetalle = input.dataset.id;
+
+        if (
+            !idDetalle ||
+            input.value.trim() === '' ||
+            !Number.isFinite(precio) ||
+            precio < 0
+        ) {
+            toast('Revisa los precios ingresados', 'error');
+            input.focus();
+            return;
+        }
+
+        precios[idDetalle] = precio;
+    }
+
+    const idPedido = currentPedidoId;
+    if (!idPedido) {
+        toast('No se identificó el pedido', 'error');
+        return;
+    }
+
+    fetch('<?= base_url('pedido/actualizar_precios') ?>', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: new URLSearchParams({
+    id: idPedido,
+    precios: JSON.stringify(precios)
+})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            toast(data.message || 'No se pudieron guardar los precios', 'error');
+            return;
+        }
+
+        toast('Precios actualizados correctamente', 'success');
+
+        // Actualizar el total mostrado en el modal.
+        const total = Number(data.total);
+        const modalTotal = document.getElementById('modalTotal');
+
+        if (modalTotal) {
+            modalTotal.value = total.toFixed(2);
+        }
+
+        const totalInfo = document.querySelector(
+            '#modalInfoGeneral .info-label'
+        );
+
+        if (totalInfo) {
+            const items = document.querySelectorAll(
+                '#modalInfoGeneral .info-item'
+            );
+
+            items.forEach(item => {
+                const label = item.querySelector('.info-label');
+
+                if (label && label.textContent.trim() === 'Total') {
+                    item.querySelector('.info-value').textContent =
+                        '$' + total.toFixed(2);
+                }
+
+                if (label && label.textContent.trim() === 'Restante') {
+                    item.querySelector('.info-value').textContent =
+                        '$' + Number(data.saldo_pendiente).toFixed(2);
+                }
+            });
+        }
+
+        // Recalcular los subtotales visibles.
+        document.querySelectorAll('.precio-editable').forEach(input => {
+            const fila = input.closest('tr');
+            const cantidad = Number(
+                fila.children[1].textContent.trim()
+            );
+            const precio = Number(input.value);
+            const subtotal = cantidad * precio;
+
+            fila.querySelector('.subtotal-editable').textContent =
+                '$' + subtotal.toFixed(2);
+        });
+
+    })
+    .catch(() => {
+        toast('Error de conexión al guardar los precios', 'error');
+    });
+}
+
 
 function actualizarRestanteModal() {
     let pagado = parseFloat(document.getElementById('modalPagado').value) || 0;

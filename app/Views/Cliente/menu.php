@@ -19,7 +19,22 @@
 <?= $this->include('Cliente/partials/navbar') ?>
 
 <main class="container py-4 py-lg-5">
-
+    
+    <?php if (!empty($avisos)): ?>
+        <div class="mb-4">
+            <?php foreach ($avisos as $aviso): ?>
+                <div class="alert alert-warning border-0 shadow-sm rounded-4 p-4 mb-3 position-relative" style="background-color: #fff3cd; border-left: 5px solid #f16b1a !important;">
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="badge bg-warning text-dark me-2"><i class="fas fa-bullhorn"></i> Aviso Importante</span>
+                        <small class="text-muted"><?= date('d/m/Y', strtotime($aviso['created_at'])) ?></small>
+                    </div>
+                    <h5 class="fw-bold text-dark mt-2 mb-1"><?= esc($aviso['titulo']) ?></h5>
+                    <p class="mb-0 text-secondary"><?= nl2br(esc($aviso['mensaje'])) ?></p>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+     
     <!-- Bienvenida principal -->
     <section class="fruver-encabezado p-4 p-lg-5">
         <div class="row align-items-center g-4">

@@ -52,6 +52,7 @@ body {
 
 
 
+
 .admin-badge {
     display: flex;
     align-items: center;
@@ -61,6 +62,7 @@ body {
     border-radius: 60px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transition: transform 0.2s ease;
+    text-decoration: none; /* Elimina el subrayado */
 }
 
 .admin-badge:hover {
@@ -341,7 +343,10 @@ h1 {
                 <span>Administrador</span>
             </div>
         </div>
-
+            <a href="<?= base_url('admin/avisos') ?>" class="admin-badge">
+            <i class="fas fa-bullhorn"></i> <span>Avisos</span>
+        </a>
+   
         <div class="search-wrapper">
             <input type="text" placeholder="Buscar módulo, producto o cliente...">
             <button aria-label="Buscar"><i class="fas fa-search"></i></button>

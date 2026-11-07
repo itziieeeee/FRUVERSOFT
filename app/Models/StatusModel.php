@@ -44,21 +44,25 @@ class StatusModel extends Model
             ->get()->getRowArray();
     }
 
-    public function getProductosDePedido($id)
-    {
-        return $this->db->table('producto_pedido pp')
-            ->select('
-                p.nombre,
-                pp.cantidad,
-                pp.unidad_venta,
-                pp.precio_venta,
-                pp.subtotal,
-                pp.tipo_venta
-            ')
-            ->join('producto p', 'p.id = pp.id_producto')
-            ->where('pp.id_pedido', $id)
-            ->get()->getResultArray();
-    }
+    
+    
+public function getProductosDePedido($id)
+{
+    return $this->db->table('producto_pedido pp')
+        ->select('
+            pp.id AS id_producto_pedido,
+            pp.id_producto,
+            p.nombre,
+            pp.cantidad,
+            pp.unidad_venta,
+            pp.precio_venta,
+            pp.subtotal,
+            pp.tipo_venta
+        ')
+        ->join('producto p', 'p.id = pp.id_producto')
+        ->where('pp.id_pedido', $id)
+        ->get()->getResultArray();
+}
 
     
 

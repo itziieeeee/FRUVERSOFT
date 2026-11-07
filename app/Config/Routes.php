@@ -81,6 +81,7 @@ $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
     $routes->post('pedido/actualizar_pago', 'Status::actualizar_pago');
     $routes->post('pedido/validar', 'Status::validar_pedido');
     $routes->post('pedido/detalle', 'Status::detalle_pedido');
+    $routes->post('pedido/actualizar_precios', 'Status::actualizar_precios');
 
     // Merma y Entradas
     $routes->get('merma', 'Merma::index');
@@ -124,3 +125,17 @@ $routes->group('repartidor', ['filter' => 'authFilter:repartidor'], function($ro
     // marquen como entregado
     $routes->post('cambiar_estado', 'PanelRepartidorController::cambiar_estado');
 });
+    $routes->post('marcar_entregado', 'PanelRepartidorController::marcar_entregado');
+
+$routes->get('clientes/obtener_ultimo_pedido/(:num)', 'Clientes::obtener_ultimo_pedido/$1'); //ruta ticket ws
+
+// Rutas para configuraciones / plantillas de pedidos frecuentes
+    $routes->post('pedido/guardar_configuracion', 'PedidoController::guardar_configuracion');
+    $routes->get('pedido/listar_configuraciones', 'PedidoController::listar_configuraciones');
+    $routes->get('pedido/obtener_detalle_configuracion/(:num)', 'PedidoController::obtener_detalle_configuracion/$1');
+
+
+// Gestión de Avisos (Admin)
+    $routes->get('admin/avisos', 'AvisoController::index');
+    $routes->post('admin/avisos/guardar', 'AvisoController::guardar');
+    $routes->get('admin/avisos/eliminar/(:num)', 'AvisoController::eliminar/$1');    
