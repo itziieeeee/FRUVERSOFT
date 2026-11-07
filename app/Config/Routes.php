@@ -122,5 +122,5 @@ $routes->group('repartidor', ['filter' => 'authFilter:repartidor'], function($ro
     $routes->get('inventario', 'PanelRepartidorController::inventario');
     $routes->get('pedidos', 'PanelRepartidorController::mis_pedidos');
     // marquen como entregado
-    $routes->post('marcar_entregado', 'PanelRepartidorController::marcar_entregado');
+    $routes->post('cambiar_estado', 'PanelRepartidorController::cambiar_estado');
 });

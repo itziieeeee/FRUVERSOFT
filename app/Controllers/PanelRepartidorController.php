@@ -40,13 +40,17 @@ class PanelRepartidorController extends BaseController
         return view('Repartidor/vista_mis_pedidos', $data);
     }
     
-    // Permitir al repartidor marcar como entregado
-    public function marcar_entregado()
+    
+    public function cambiar_estado()
     {
         $id_pedido = $this->request->getPost('id_pedido');
-        $statusModel = new StatusModel();
+        $estado    = $this->request->getPost('estado');
         
-        $statusModel->actualizarEstado($id_pedido, 'Venta confirmada');
-        return redirect()->back()->with('mensaje', 'Pedido marcado como entregado con éxito.');
+        $statusModel = new \App\Models\StatusModel();
+        
+        // Actualizamos el pedido con el nuevo estado que el repartidor seleccionó
+        $statusModel->actualizarEstado($id_pedido, $estado);
+        
+        return redirect()->back()->with('mensaje', 'Estado del pedido #'.$id_pedido.' actualizado a: ' . $estado);
     }
 }

@@ -8,10 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        .tabla-pedidos-exitentes th { background: #1d4a27; color: white; padding: 12px; }
-        .btn-entregar { background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.3s; }
-        .btn-entregar:hover { background: #059669; transform: scale(1.05); }
+        .tabla-pedidos-exitentes th { background: #1d4a27; color: white; padding: 12px; text-align: left; }
         .direccion-text { font-size: 0.85rem; color: #555; background: #f3f4f6; padding: 6px; border-radius: 6px; margin-top: 4px; }
+        .select-estado { padding: 8px; border-radius: 6px; border: 1px solid #ccc; font-family: 'Inter', sans-serif; font-size: 0.9rem; flex: 1; }
+        .btn-actualizar-estado { background: #f16b1a; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .btn-actualizar-estado:hover { background: #d95a12; transform: scale(1.05); }
     </style>
 </head>
 <body>
@@ -21,14 +22,16 @@
         <img src="<?= base_url('img/LOGO1.png') ?>" alt="FRUVER" style="height: 60px;">
     </div>
     <div class="user-actions">
-        <a href="<?= base_url('repartidor/panel') ?>" class="btn-user"><i class="fas fa-arrow-left"></i> Volver al Panel</a>
+        <a href="<?= base_url('repartidor/panel') ?>" class="btn-user" style="color: white; text-decoration: none; padding: 0.5rem 1.2rem; background: rgba(255,255,255,0.15); border-radius: 50px; font-weight: 500;">
+            <i class="fas fa-arrow-left"></i> Volver al Panel
+        </a>
     </div>
 </div>
 
 <nav class="menu-navegacion" style="background: white; padding: 0.8rem; display: flex; justify-content: center; gap: 1rem; border-bottom: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-    <a href="<?= base_url('repartidor/panel') ?>" class="nav-link" style="text-decoration: none; color: #333; font-weight:600;"><i class="fas fa-home"></i> Inicio</a>
-    <a href="<?= base_url('repartidor/pedidos') ?>" class="nav-link" style="text-decoration: none; color: #f16b1a; font-weight:600;"><i class="fas fa-truck"></i> Mis Pedidos</a>
-    <a href="<?= base_url('repartidor/inventario') ?>" class="nav-link" style="text-decoration: none; color: #333; font-weight:600;"><i class="fas fa-boxes"></i> Inventario</a>
+    <a href="<?= base_url('repartidor/panel') ?>" class="nav-link" style="text-decoration: none; color: #333; font-weight:600; padding: 0.6rem 1.2rem;"><i class="fas fa-home"></i> Inicio</a>
+    <a href="<?= base_url('repartidor/pedidos') ?>" class="nav-link" style="text-decoration: none; color: #f16b1a; font-weight:600; background: rgba(241, 107, 26, 0.08); padding: 0.6rem 1.2rem; border-radius: 40px;"><i class="fas fa-truck"></i> Mis Pedidos</a>
+    <a href="<?= base_url('repartidor/inventario') ?>" class="nav-link" style="text-decoration: none; color: #333; font-weight:600; padding: 0.6rem 1.2rem;"><i class="fas fa-boxes"></i> Inventario</a>
 </nav>
 
 <div class="pedido-header-card" style="margin: 2rem auto; max-width: 1200px; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
@@ -49,7 +52,7 @@
                     <th>Cliente y Dirección</th>
                     <th>Total a Cobrar</th>
                     <th>Estado de Pago</th>
-                    <th>Acción</th>
+                    <th>Actualizar Estado</th>
                 </tr>
             </thead>
             <tbody>
@@ -72,17 +75,29 @@
                         <?php endif; ?>
                     </td>
                     <td style="padding: 12px;">
-                        <form action="<?= base_url('repartidor/marcar_entregado') ?>" method="POST" onsubmit="return confirm('¿Confirmas que este pedido ya fue entregado al cliente?');">
+                        <!-- Formulario para cambiar a CUALQUIER estado -->
+                        <form action="<?= base_url('repartidor/cambiar_estado') ?>" method="POST" style="display: flex; gap: 8px; align-items: center;">
                             <input type="hidden" name="id_pedido" value="<?= $pedido['id'] ?>">
-                            <button type="submit" class="btn-entregar">
-                                <i class="fas fa-check-double"></i> Entregado
+                            
+                            <select name="estado" class="select-estado">
+                                <option value="Pedido" <?= $pedido['estado_actual'] == 'Pedido' ? 'selected' : '' ?>>Pedido</option>
+                                <option value="Pedido confirmado" <?= $pedido['estado_actual'] == 'Pedido confirmado' ? 'selected' : '' ?>>Confirmado</option>
+                                <option value="Pedido en tránsito" <?= $pedido['estado_actual'] == 'Pedido en tránsito' ? 'selected' : '' ?>>En tránsito</option>
+                                <option value="Venta confirmada" <?= $pedido['estado_actual'] == 'Venta confirmada' ? 'selected' : '' ?>>Entregado</option>
+                                <option value="Pedido a crédito" <?= $pedido['estado_actual'] == 'Pedido a crédito' ? 'selected' : '' ?>>A crédito</option>
+                                <option value="Pedido pagado" <?= $pedido['estado_actual'] == 'Pedido pagado' ? 'selected' : '' ?>>Pagado</option>
+                                <option value="Pedido cancelado" <?= $pedido['estado_actual'] == 'Pedido cancelado' ? 'selected' : '' ?>>Cancelado</option>
+                            </select>
+
+                            <button type="submit" class="btn-actualizar-estado" title="Actualizar estado">
+                                <i class="fas fa-sync-alt"></i>
                             </button>
                         </form>
                     </td>
                 </tr>
                 <?php endforeach; ?>
             <?php else: ?>
-                <tr><td colspan="5" style="text-align:center; padding:2rem; color:#666;">No tienes pedidos pendientes de entrega en este momento.</td></tr>
+                <tr><td colspan="5" style="text-align:center; padding:2rem; color:#666;">No tienes pedidos pendientes en este momento.</td></tr>
             <?php endif; ?>
             </tbody>
         </table>
