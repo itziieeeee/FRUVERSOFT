@@ -122,18 +122,26 @@ $routes->group('repartidor', ['filter' => 'authFilter:repartidor'], function($ro
     $routes->get('panel', 'PanelRepartidorController::index');
     $routes->get('inventario', 'PanelRepartidorController::inventario');
     $routes->get('pedidos', 'PanelRepartidorController::mis_pedidos');
+    $routes->get('app', 'RepartidorApp::vista');
+$routes->get('api/pedidos', 'RepartidorApp::pedidos');
+$routes->post('api/estado', 'RepartidorApp::estado');
+$routes->post('api/incidencia', 'RepartidorApp::incidencia');
+$routes->post('api/ubicacion', 'RepartidorApp::ubicacion');
     // marquen como entregado
     $routes->post('cambiar_estado', 'PanelRepartidorController::cambiar_estado');
 });
     $routes->post('marcar_entregado', 'PanelRepartidorController::marcar_entregado');
 
 $routes->get('clientes/obtener_ultimo_pedido/(:num)', 'Clientes::obtener_ultimo_pedido/$1'); //ruta ticket ws
-
+$routes->get('admin_api/cambios', 'AdminCambios::cambios');
+$routes->post('admin_api/incidencia/resolver/(:num)', 'AdminCambios::resolver/$1');
 // Rutas para configuraciones / plantillas de pedidos frecuentes
     $routes->post('pedido/guardar_configuracion', 'PedidoController::guardar_configuracion');
     $routes->get('pedido/listar_configuraciones', 'PedidoController::listar_configuraciones');
     $routes->get('pedido/obtener_detalle_configuracion/(:num)', 'PedidoController::obtener_detalle_configuracion/$1');
-
+$routes->get('ticket/ver/(:num)',     'Ticket::ver/$1');
+$routes->get('ticket/pdf/(:num)',     'Ticket::pdf/$1');
+$routes->get('ticket/ultimo/(:num)',  'Ticket::ultimo/$1');
 
 // Gestión de Avisos (Admin)
     $routes->get('admin/avisos', 'AvisoController::index');

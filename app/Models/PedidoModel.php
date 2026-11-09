@@ -144,6 +144,15 @@ class PedidoModel extends Model {
     {
         $this->db->transStart();
 
+        // Si el pedido ya había descontado stock, la mercancía regresa al inventario
+        $fila = $this->db->table('pedido')->select('stock_descontado')->where('id', $id)->get()->getRowArray();
+        if ($fila && (int) $fila['stock_descontado'] === 1) {
+            $productos = $this->db->table('producto_pedido')
+                ->select('id_producto, cantidad')->where('id_pedido', $id)
+                ->get()->getResultArray();
+            (new \App\Models\ExistenciasModel())->devolverStock($productos);
+        }
+
         $this->db->table('producto_pedido')->where('id_pedido', $id)->delete();
         $this->db->table('status')->where('id_pedido', $id)->delete();
         $this->db->table('pedido')->where('id', $id)->delete();

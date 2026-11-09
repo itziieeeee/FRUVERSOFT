@@ -119,17 +119,34 @@ class ExistenciasModel extends Model
         return $faltantes;
     }
 
+    /**
+     * Confirmar un pedido: el stock sale UNA sola vez de e_total.
+     * (e_bloqueo queda solo para bloqueos manuales desde Inventario; antes
+     * también se sumaba aquí y el disponible bajaba el doble.)
+     */
     public function descontarStock($productos)
     {
         foreach ($productos as $prod) {
             $this->db->table('existencias')
                 ->where('id_producto', (int) $prod['id_producto'])
-                ->set('e_total',   'e_total - '   . (float)$prod['cantidad'], false)
-                ->set('e_bloqueo', 'e_bloqueo + ' . (float)$prod['cantidad'], false)
+                ->set('e_total', 'e_total - ' . (float) $prod['cantidad'], false)
                 ->update();
         }
         return true;
     }
+
+    /** Cancelar un pedido confirmado: la mercancía regresa al inventario. */
+    public function devolverStock($productos)
+    {
+        foreach ($productos as $prod) {
+            $this->db->table('existencias')
+                ->where('id_producto', (int) $prod['id_producto'])
+                ->set('e_total', 'e_total + ' . (float) $prod['cantidad'], false)
+                ->update();
+        }
+        return true;
+    }
+
     public function contarProductoEnPedidos($id)
     {
         return $this->db->table('producto_pedido')

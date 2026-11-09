@@ -90,50 +90,39 @@ class PedidoController extends BaseController {
 
 $whatsappUrl = null;
 
-// No enviar ticket al público general (id_cliente = 0)
-if ($idCliente > 0) {
-    helper('whatsapp');
+        // No enviar ticket al público general (id_cliente = 0)
+        if ($idCliente > 0) {
+            helper('whatsapp');
+            $db = \Config\Database::connect();
 
-    $db = \Config\Database::connect();
+            $cliente = $db->table('clientes')
+                ->select('tel, nombre, apellido_paterno')
+                ->where('id_cliente', $idCliente)
+                ->get()->getRowArray();
 
-    // Obtener el teléfono del cliente
-    $cliente = $db->table('clientes')
-        ->select('tel')
-        ->where('id_cliente', $idCliente)
-        ->get()
-        ->getRowArray();
+            $pedidoRow = $db->table('pedido')->where('id', $idPedido)->get()->getRowArray();
 
-    // Obtener los productos de ESTE pedido con sus precios vendidos
-    
-$items = $db->table('producto_pedido')
-    ->select('producto_pedido.cantidad,
-              producto_pedido.precio_venta AS precio_unitario,
-              producto.nombre AS nombre_producto')
-    ->join(
-        'producto',
-        'producto.id = producto_pedido.id_producto'
-    )
-    ->where('producto_pedido.id_pedido', $idPedido)
-    ->get()
-    ->getResultArray();
+            $items = $db->table('producto_pedido pp')
+                ->select('pp.cantidad, pp.unidad_venta AS unidad, pp.precio_venta AS precio_unitario, pp.subtotal, p.nombre AS nombre_producto')
+                ->join('producto p', 'p.id = pp.id_producto')
+                ->where('pp.id_pedido', $idPedido)
+                ->get()->getResultArray();
 
+            if (!empty($cliente['tel']) && !empty($items) && $pedidoRow) {
+                $whatsappUrl = generar_link_ticket_wa(
+                    $cliente['tel'],
+                    $pedidoRow,
+                    $items,
+                    trim($cliente['nombre'] . ' ' . $cliente['apellido_paterno'])
+                );
+            }
+        }
 
-    if (!empty($cliente['tel']) && !empty($items)) {
-        $whatsappUrl = generar_link_ticket_wa(
-            $cliente['tel'],
-            $idPedido,
-            $items,
-            $totalGeneral
-        );
-    }
-}
-
-
-        
-return $this->response->setJSON([
+        return $this->response->setJSON([
     'status' => 'success',
     'data'   => [
         'folio'           => $folio,
+        'id_pedido'       => (int) $idPedido,
         'cliente'         => $nombreCliente,
         'tipo_venta'      => $tipoVenta,
         'tipo_entrega'    => $tipoEntrega,

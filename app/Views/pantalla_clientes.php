@@ -62,10 +62,17 @@
     <p><i class="fas fa-map-marker-alt"></i> <?= $c['estado'] ?? 'No registrado' ?></p>
 </div>
                 <div class="card-btns" style="display: flex; gap: 6px; align-items: center;">
-    
 
+    <!-- Ticket del último pedido por WhatsApp -->
+    <button class="btn" style="background:#25d366; color:#fff;"
+            onclick="enviarWhatsAppConProductos(<?= $c['id_cliente'] ?>, '<?= addslashes($c['tel'] ?? '') ?>', '<?= addslashes(htmlspecialchars($c['nombre'])) ?>')">
+        <i class="fab fa-whatsapp"></i> Ticket
+    </button>
 
-
+    <a class="btn" style="background:#f16b1a; color:#fff;" target="_blank"
+   href="<?= base_url('ticket/ultimo/' . $c['id_cliente']) ?>">
+    <i class="fas fa-file-pdf"></i> PDF
+</a>
     <button class="btn btn-edit" onclick="abrirEditar(<?= $c['id_cliente'] ?>)">
         <i class="fas fa-pen"></i> Editar
     </button>
@@ -261,81 +268,28 @@ window.addEventListener('DOMContentLoaded', () => {
     <?php endif; ?>
 });
 
+// TICKET POR WHATSAPP (el mensaje ya viene armado desde el servidor)
 function enviarWhatsAppConProductos(idCliente, telefono, nombreCliente) {
     if (!telefono || telefono.trim() === '' || telefono === '—') {
         showToast('El cliente no tiene teléfono registrado', 'error');
         return;
     }
+    const ventana = window.open('', '_blank');   // se abre antes del fetch para que no la bloqueen
 
     fetch(`${BASE}clientes/obtener_ultimo_pedido/${idCliente}`)
-        .then(r => {
-            if (!r.ok) {
-                throw new Error('Error al consultar el pedido');
-            }
-            return r.json();
-        })
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         .then(data => {
             if (data.status !== 'success') {
+                if (ventana) ventana.close();
                 showToast(data.msg || 'No se pudo obtener el pedido', 'error');
                 return;
             }
-
-            let telClean = telefono.replace(/[^0-9]/g, '');
-
-            if (telClean.length === 10) {
-                telClean = '52' + telClean;
-            }
-
-            let lineas = [];
-            lineas.push('🛒 *TICKET DE COMPRA - FRUVERSOFT* 🛒');
-            lineas.push('--------------------------------------');
-            lineas.push(`*Cliente:* ${nombreCliente}`);
-            lineas.push(`*Fecha:* ${new Date().toLocaleDateString('es-MX')}`);
-            lineas.push('');
-
-            let totalGeneral = 0;
-
-            if (Array.isArray(data.items) && data.items.length > 0) {
-                lineas.push('*Detalle del pedido:*');
-
-                data.items.forEach(item => {
-                    let cantidad = Number(item.cantidad) || 0;
-                    let precio = Number(item.precio_venta) || 0;
-
-                    let subtotal = item.subtotal !== null &&
-                                   item.subtotal !== undefined &&
-                                   item.subtotal !== ''
-                        ? Number(item.subtotal)
-                        : cantidad * precio;
-
-                    if (!Number.isFinite(subtotal)) {
-                        subtotal = cantidad * precio;
-                    }
-
-                    totalGeneral += subtotal;
-
-                    lineas.push(
-                        `• ${cantidad}x ${item.nombre_producto} - $${subtotal.toFixed(2)}`
-                    );
-                });
-
-                lineas.push('--------------------------------------');
-                lineas.push(`*TOTAL A PAGAR:* $${totalGeneral.toFixed(2)}`);
-            } else {
-                lineas.push('_Sin productos registrados en el último pedido._');
-            }
-
-            lineas.push('--------------------------------------');
-            lineas.push('¡Gracias por su compra en FRUVER! 🍎🥑');
-
-            const mensajeTexto = lineas.join('\n');
-            const params = new URLSearchParams({ text: mensajeTexto });
-            const urlWhatsApp = `https://wa.me/${telClean}?${params.toString()}`;
-
-            window.open(urlWhatsApp, '_blank');
+            const url = `https://wa.me/${data.telefono}?text=${encodeURIComponent(data.mensaje)}`;
+            if (ventana) ventana.location.href = url; else window.location.href = url;
         })
         .catch(err => {
-            console.error('Error al generar el ticket:', err);
+            if (ventana) ventana.close();
+            console.error(err);
             showToast('Error al consultar el pedido del cliente', 'error');
         });
 }

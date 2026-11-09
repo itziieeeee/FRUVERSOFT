@@ -424,7 +424,7 @@ document.addEventListener('click', function(e) {
             actualizarEstadisticas();
             aplicarFiltroActual();
         } else {
-            toast('Error al actualizar el estado', 'error');
+            toast(data.message || 'Error al actualizar el estado', 'error');
         }
     })
     .catch(() => toast('Error de conexión', 'error'));
@@ -890,6 +890,81 @@ function toast(msg, tipo) {
 //  INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', actualizarEstadisticas);
+</script>
+<script>
+(function(){
+  const URL_CAMBIOS  = "<?= base_url('admin_api/cambios') ?>";
+  const URL_RESOLVER = "<?= base_url('admin_api/incidencia/resolver') ?>";
+  const META = {
+    'Pedido confirmado':  ['confirmado','fa-check-circle','Confirmado'],
+    'Pedido en tránsito': ['transito','fa-truck','En tránsito'],
+    'Venta confirmada':   ['entregado','fa-check-double','Entregado'],
+    'Pedido cancelado':   ['cancelado','fa-ban','Cancelado'],
+    'Pedido':             ['pedido','fa-clock','Pedido']
+  };
+  const TIPOS = {
+    cliente_no_responde:'Cliente no responde', direccion_incorrecta:'Dirección incorrecta',
+    cliente_no_paga:'Cliente no paga', producto_danado:'Producto dañado', problema_vehiculo:'Problema con el vehículo'
+  };
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let desde = null, conocidas = new Set(), primera = true;
+
+  const panel = document.createElement('div');
+  panel.style.cssText = 'position:fixed;top:12px;right:12px;z-index:9999;max-width:320px;display:flex;flex-direction:column;gap:8px';
+  document.body.appendChild(panel);
+
+  function pitido(){
+    try { const a = new AudioContext(), o = a.createOscillator(); o.connect(a.destination); o.frequency.value = 880; o.start(); o.stop(a.currentTime + .25); } catch(e){}
+  }
+
+  function actualizarFila(p){
+    const fila = document.getElementById('fila-' + p.id);
+    if (!fila || fila.dataset.estado === p.estado_actual) return;
+    const [clase, icono, label] = META[p.estado_actual] || META['Pedido'];
+    fila.dataset.estado = p.estado_actual;
+    const badge = fila.querySelector('.estado-badge');
+    if (badge) {
+      badge.className = 'estado-badge ' + clase;
+      badge.innerHTML = `<i class="fas ${icono}"></i> ${label} <i class="fas fa-chevron-down" style="font-size:0.6rem;"></i>`;
+    }
+    if (typeof refreshProgressForPedido === 'function') refreshProgressForPedido(p.id, p.estado_actual);
+    if (typeof actualizarEstadisticas === 'function') actualizarEstadisticas();
+    if (typeof toast === 'function') toast(`Pedido #${p.id}: ${label}${p.repartidor ? ' (' + p.repartidor + ')' : ''}`, 'success');
+  }
+
+  function pintarIncidencias(lista){
+    let hayNueva = false;
+    lista.forEach(i => { if (!conocidas.has(i.id)) { conocidas.add(i.id); if (!primera) hayNueva = true; } });
+    if (hayNueva) pitido();
+    primera = false;
+    panel.innerHTML = lista.map(i => `
+      <div style="background:#dc2626;color:#fff;padding:12px;border-radius:12px;box-shadow:0 4px 14px #0004">
+        <b>🆘 ${esc(i.repartidor)}</b><br>
+        ${esc(TIPOS[i.tipo] || i.tipo)}${i.id_pedido ? ' · Pedido #' + esc(i.id_pedido) : ''}<br>
+        <small>${esc(i.fecha)}</small>
+        <div style="margin-top:6px;display:flex;gap:6px">
+          ${i.lat ? `<a target="_blank" style="color:#fff" href="https://www.google.com/maps?q=${i.lat},${i.lng}">📍 Ver ubicación</a>` : ''}
+          <button data-id="${i.id}" style="margin-left:auto;padding:4px 10px;border:0;border-radius:6px;cursor:pointer">Resolver</button>
+        </div>
+      </div>`).join('');
+    panel.querySelectorAll('button[data-id]').forEach(b => b.onclick = async () => {
+      await fetch(URL_RESOLVER + '/' + b.dataset.id, {method: 'POST'});
+      tick();
+    });
+  }
+
+  async function tick(){
+    try {
+      const r = await fetch(URL_CAMBIOS + (desde ? '?desde=' + encodeURIComponent(desde) : ''));
+      const d = await r.json();
+      desde = d.ahora;
+      d.pedidos.forEach(actualizarFila);
+      pintarIncidencias(d.incidencias);
+    } catch(e) {}
+  }
+  tick();
+  setInterval(tick, 5000);
+})();
 </script>
 </body>
 </html>

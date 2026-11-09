@@ -17,6 +17,15 @@ class App extends BaseConfig
      * E.g., http://example.com/
      */
  public string $baseURL = 'http://localhost/FRUVERSOFT/public/';
+ public function __construct()
+{
+    parent::__construct();
+    if (!empty($_SERVER['HTTP_HOST'])) {
+        $proto = $_SERVER['HTTP_X_FORWARDED_PROTO']
+            ?? ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http');
+        $this->baseURL = $proto . '://' . $_SERVER['HTTP_HOST'] . '/FRUVERSOFT/public/';
+    }
+}
   
 
     /**

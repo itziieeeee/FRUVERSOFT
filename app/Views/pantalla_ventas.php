@@ -580,25 +580,24 @@ async function enviarPedido() {
                 <p><i class="fas fa-dollar-sign" style="color:#1d4a27;"></i> <strong>Total:</strong> $${parseFloat(d.total).toFixed(2)}</p>
                 ${lineaStock}
 
-${d.whatsapp_url ? `
-    <div style="margin-top:16px; text-align:center;">
-        <a href="${d.whatsapp_url}"
-           target="_blank"
-           rel="noopener noreferrer"
-           style="display:inline-block; background:#25D366; color:white;
-                  padding:12px 18px; border-radius:8px;
-                  text-decoration:none; font-weight:bold;">
-            <i class="fab fa-whatsapp"></i>
-            Enviar ticket por WhatsApp
-        </a>
-    </div>
-` : `
-    <p style="margin-top:12px; color:#b45309;">
-        No se pudo generar el ticket. Verifica el teléfono del cliente.
-    </p>
-`}
+<div style="margin-top:16px; text-align:center;">
+    ${d.whatsapp_url ? `
+    <a href="${d.whatsapp_url}" target="_blank" rel="noopener noreferrer"
+       style="display:inline-block; background:#25D366; color:white; padding:11px 16px; border-radius:8px; text-decoration:none; font-weight:bold; margin:4px;">
+        <i class="fab fa-whatsapp"></i> Enviar texto
+    </a>` : ''}
 
-            </div>
+    <a href="<?= base_url('ticket/pdf') ?>/${d.id_pedido}" target="_blank"
+       style="display:inline-block; background:#f16b1a; color:white; padding:11px 16px; border-radius:8px; text-decoration:none; font-weight:bold; margin:4px;">
+        <i class="fas fa-file-pdf"></i> Ticket PDF
+    </a>
+
+    <button type="button" onclick="compartirTicketPDF(${d.id_pedido})"
+       style="background:#1d4a27; color:white; padding:11px 16px; border:0; border-radius:8px; font-weight:bold; margin:4px; cursor:pointer;">
+        <i class="fas fa-share-alt"></i> Compartir
+    </button>
+</div>
+</div>
         `,
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#f16b1a',
@@ -852,6 +851,50 @@ async function cargarDatosConfiguracion(idConfig) {
         Swal.fire({ icon: 'error', title: 'Error', text: 'Error al procesar la configuración.', confirmButtonColor: '#f16b1a' });
     }
 }
+
+
+// ==========================================
+// COMPARTIR TICKET PDF
+// ==========================================
+async function compartirTicketPDF(idPedido) {
+    const url = '<?= base_url("ticket/pdf") ?>/' + idPedido;
+
+    try {
+        const respuesta = await fetch(url);
+
+        if (!respuesta.ok) {
+            throw new Error('No se pudo obtener el ticket PDF.');
+        }
+
+        const blob = await respuesta.blob();
+
+        if (blob.type.includes('application/pdf')) {
+            const archivo = new File(
+                [blob],
+                'Ticket-PED-' + String(idPedido).padStart(5, '0') + '.pdf',
+                { type: 'application/pdf' }
+            );
+
+            if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+                await navigator.share({
+                    files: [archivo],
+                    text: 'Tu ticket de compra - FRUVER'
+                });
+                return;
+            }
+        }
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            return;
+        }
+
+        console.error('Error al compartir el ticket:', error);
+    }
+
+    // Respaldo: abrir el PDF para consultarlo o descargarlo.
+    window.open(url, '_blank');
+}
+
 </script>
 </body>
 </html>

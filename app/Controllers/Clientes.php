@@ -110,44 +110,53 @@ class Clientes extends BaseController
 
     
 public function obtener_ultimo_pedido($idCliente = null)
-{
-    if (!$idCliente) {
+    {
+        if (!$idCliente) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'ID no proporcionado']);
+        }
+
+        helper('whatsapp');
+        $db = \Config\Database::connect();
+
+        $cliente = $db->table('clientes')
+            ->select('nombre, apellido_paterno, tel')
+            ->where('id_cliente', $idCliente)
+            ->get()->getRowArray();
+
+        if (!$cliente) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'Cliente no encontrado']);
+        }
+        if (empty($cliente['tel'])) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'El cliente no tiene teléfono registrado']);
+        }
+
+        // Último pedido que no esté cancelado
+        $pedido = $db->table('pedido')
+            ->where('id_cliente', $idCliente)
+            ->where('estado_actual !=', 'Pedido cancelado')
+            ->orderBy('id', 'DESC')
+            ->get()->getRowArray();
+
+        if (!$pedido) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'El cliente todavía no tiene pedidos']);
+        }
+
+        // La clave de producto es "id" (no "id_producto") y el precio sale del pedido, no del catálogo
+        $items = $db->table('producto_pedido pp')
+            ->select('pp.cantidad, pp.unidad_venta AS unidad, pp.precio_venta AS precio_unitario, pp.subtotal, p.nombre AS nombre_producto')
+            ->join('producto p', 'p.id = pp.id_producto')
+            ->where('pp.id_pedido', $pedido['id'])
+            ->get()->getResultArray();
+
+        $nombre = trim($cliente['nombre'] . ' ' . $cliente['apellido_paterno']);
+
         return $this->response->setJSON([
-            'status' => 'error',
-            'msg' => 'ID no proporcionado'
+            'status'   => 'success',
+            'telefono' => formato_telefono_wa($cliente['tel']),
+            'mensaje'  => armar_mensaje_ticket($pedido, $items, $nombre),
+            'pedido'   => $pedido,
+            'items'    => $items,
         ]);
     }
-
-    $db = \Config\Database::connect();
-
-    // 1. Obtener el pedido más reciente del cliente.
-    // La clave primaria real de pedido es "id".
-    $pedido = $db->table('pedido')
-        ->where('id_cliente', $idCliente)
-        ->orderBy('id', 'DESC')
-        ->get()
-        ->getRowArray();
-
-    $items = [];
-
-    if ($pedido) {
-        // 2. Obtener los productos asociados al pedido.
-        $items = $db->table('producto_pedido')
-            ->select('producto_pedido.*, producto.nombre AS nombre_producto, producto.precio AS precio_catalogo')
-            ->join(
-                'producto',
-                'producto.id_producto = producto_pedido.id_producto'
-            )
-            ->where('producto_pedido.id_pedido', $pedido['id'])
-            ->get()
-            ->getResultArray();
-    }
-
-    return $this->response->setJSON([
-        'status' => 'success',
-        'pedido' => $pedido,
-        'items' => $items
-    ]);
-}
 
 }
