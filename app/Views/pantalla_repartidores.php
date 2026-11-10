@@ -65,6 +65,8 @@
             $pedidos    = $pedidosPorRepartidor[$r['id']] ?? [];
             $entregados = $entregadosPorRepartidor[$r['id']] ?? [];
             $asignado   = count($pedidos) > 0;
+            // Nombre de cada zona por id, para mostrarla en la tarjeta.
+            $zonasPorId = array_column($zonas ?? [], 'nombre', 'id');
             ?>
             <div class="repartidor-card" data-id="<?= $r['id'] ?>" data-nombre="<?= strtolower($r['nombre'] . ' ' . $r['ap_p'] . ' ' . $r['ap_m']) ?>" data-ubicacion="<?= strtolower($r['direccion'] ?? '') ?>" data-estado="<?= $asignado ? 'asignado' : 'libre' ?>" data-pedidos="<?= count($pedidos) ?>" data-entregados="<?= count($entregados) ?>">
                 <div class="card-header">
@@ -81,6 +83,7 @@
                         <h3><?= $r['nombre'] . ' ' . $r['ap_p'] . ' ' . $r['ap_m'] ?></h3>
                         <p><i class="fas fa-phone"></i> <?= $r['tel'] ?></p>
                         <p><i class="fas fa-map-marker-alt"></i> <?= $r['direccion'] ?? 'Sin dirección' ?></p>
+                        <p><i class="fas fa-route"></i> Zona: <?= esc($zonasPorId[(int) ($r['zona_base_id'] ?? 0)] ?? 'Sin zona asignada') ?></p>
                     </div>
                     <div class="card-estado">
                         <?php if($asignado): ?>
@@ -116,7 +119,8 @@
                         '<?= addslashes($r['ap_m']) ?>',
                         '<?= addslashes($r['tel']) ?>',
                         '<?= addslashes($r['direccion'] ?? '') ?>',
-                        '<?= addslashes($r['notas'] ?? '') ?>'
+                        '<?= addslashes($r['notas'] ?? '') ?>',
+                        '<?= (int) ($r['zona_base_id'] ?? 0) ?>'
                     )">
                         <i class="fas fa-edit"></i> Editar
                     </button>
@@ -150,6 +154,15 @@
                     <div class="form-group"><label>Apellido Materno</label><input type="text" name="ap_m"></div>
                     <div class="form-group"><label>Teléfono</label><input type="text" name="tel" required></div>
                     <div class="form-group full"><label>Dirección</label><input type="text" name="direccion"></div>
+                    <div class="form-group full">
+                        <label>Zona de reparto</label>
+                        <select name="zona_base_id">
+                            <option value="">Sin zona asignada</option>
+                            <?php foreach (($zonas ?? []) as $z): ?>
+                                <option value="<?= (int) $z['id'] ?>"><?= esc($z['nombre']) ?> (<?= esc($z['estado']) ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                     <div class="form-group full"><label>Notas</label><input type="text" name="notas"></div>
                     <div class="form-group full"><label>Foto</label><input type="file" name="foto" accept="image/*" onchange="previsualizarFoto(this, 'preview-nuevo')">
                     <img id="preview-nuevo" src="" alt="" class="preview-img"></div>
@@ -171,6 +184,15 @@
                     <div class="form-group"><label>Apellido Materno</label><input type="text" id="edit-ap_m"></div>
                     <div class="form-group"><label>Teléfono</label><input type="text" id="edit-tel" required></div>
                     <div class="form-group full"><label>Dirección</label><input type="text" id="edit-direccion"></div>
+                    <div class="form-group full">
+                        <label>Zona de reparto</label>
+                        <select id="edit-zona">
+                            <option value="">Sin zona asignada</option>
+                            <?php foreach (($zonas ?? []) as $z): ?>
+                                <option value="<?= (int) $z['id'] ?>"><?= esc($z['nombre']) ?> (<?= esc($z['estado']) ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                     <div class="form-group full"><label>Notas</label><input type="text" id="edit-notas"></div>
                     <div class="form-group full"><label>Foto (dejar vacío para no cambiar)</label><input type="file" id="edit-foto" accept="image/*" onchange="previsualizarFoto(this, 'preview-editar')">
                     <img id="preview-editar" src="" alt="" class="preview-img"></div>
@@ -343,7 +365,7 @@ function marcarEntregado(pedidoId, repartidorId) {
 function cerrarModalPedidos() { document.getElementById('modalPedidos').style.display = 'none'; }
 function abrirModal()  { document.getElementById('modalRepartidor').style.display = 'flex'; }
 function cerrarModal() { document.getElementById('modalRepartidor').style.display = 'none'; }
-function abrirEditar(id, nombre, ap_p, ap_m, tel, direccion, notas) {
+function abrirEditar(id, nombre, ap_p, ap_m, tel, direccion, notas, zona) {
     document.getElementById('edit-id').value = id;
     document.getElementById('edit-nombre').value = nombre;
     document.getElementById('edit-ap_p').value = ap_p;
@@ -351,6 +373,7 @@ function abrirEditar(id, nombre, ap_p, ap_m, tel, direccion, notas) {
     document.getElementById('edit-tel').value = tel;
     document.getElementById('edit-direccion').value = direccion;
     document.getElementById('edit-notas').value = notas;
+    document.getElementById('edit-zona').value = (zona && zona !== '0') ? zona : '';
     document.getElementById('modalEditar').style.display = 'flex';
 }
 function cerrarEditar() { document.getElementById('modalEditar').style.display = 'none'; }
@@ -391,6 +414,7 @@ document.getElementById('formEditar')?.addEventListener('submit', function(e) {
     formData.append('tel',       document.getElementById('edit-tel').value);
     formData.append('direccion', document.getElementById('edit-direccion').value);
     formData.append('notas',     document.getElementById('edit-notas').value);
+    formData.append('zona_base_id', document.getElementById('edit-zona').value);
 
     const fotoInput = document.getElementById('edit-foto');
     if (fotoInput.files[0]) formData.append('foto', fotoInput.files[0]);

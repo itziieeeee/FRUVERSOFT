@@ -75,6 +75,49 @@ class RepartidorApp extends BaseController
         return $this->response->setJSON(['success' => true]);
     }
 
+    /**
+     * Respuestas del administrador a las ayudas de este repartidor, con los datos del pedido.
+     */
+    public function respuestas()
+    {
+        $db = \Config\Database::connect();
+        $id = $this->idRep();
+
+        $rows = $db->query("
+            SELECT i.id, i.tipo, i.id_pedido, i.respuesta, i.respondido_at, i.respuesta_leida,
+                   CONCAT(c.nombre, ' ', IFNULL(c.apellido_paterno, '')) AS cliente,
+                   CONCAT_WS(', ', CONCAT('Calle ', d.calle, ' #', d.numero), d.colonia, d.municipio) AS direccion
+            FROM incidencia i
+            LEFT JOIN pedido p ON p.id = i.id_pedido
+            LEFT JOIN clientes c ON c.id_cliente = p.id_cliente
+            LEFT JOIN direccion d ON d.id = (SELECT MAX(id) FROM direccion WHERE id_cliente = c.id_cliente)
+            WHERE i.id_repartidor = ? AND i.respuesta IS NOT NULL
+            ORDER BY i.id DESC
+            LIMIT 30", [$id])->getResultArray();
+
+        $noLeidas = $db->table('incidencia')
+            ->where('id_repartidor', $id)
+            ->where('respuesta IS NOT NULL', null, false)
+            ->where('respuesta_leida', 0)
+            ->countAllResults();
+
+        return $this->response->setJSON(['data' => $rows, 'no_leidas' => $noLeidas]);
+    }
+
+    /**
+     * Marca como leídas todas las respuestas pendientes de este repartidor.
+     */
+    public function respuestasLeer()
+    {
+        \Config\Database::connect()->table('incidencia')
+            ->where('id_repartidor', $this->idRep())
+            ->where('respuesta IS NOT NULL', null, false)
+            ->where('respuesta_leida', 0)
+            ->update(['respuesta_leida' => 1]);
+
+        return $this->response->setJSON(['success' => true]);
+    }
+
     public function ubicacion()
     {
         \Config\Database::connect()->table('repartidor')

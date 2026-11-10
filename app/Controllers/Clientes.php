@@ -71,6 +71,19 @@ class Clientes extends BaseController
         }
     }
 
+    /**
+     * Devuelve la coordenada como float si es numérica y está dentro del rango; si no, null.
+     */
+    private function coordenadaValida($valor, float $min, float $max): ?float
+    {
+        if ($valor === null || $valor === '' || !is_numeric($valor)) {
+            return null;
+        }
+
+        $numero = (float) $valor;
+        return ($numero >= $min && $numero <= $max) ? round($numero, 7) : null;
+    }
+
     public function registrar()
     {
         $clienteModel   = new ClienteModel();
@@ -96,7 +109,15 @@ class Clientes extends BaseController
                 'municipio'  => $this->request->getPost('municipio'),
                 'estado'     => $this->request->getPost('estado'),
                 'id_cliente' => $idCliente,
+                'lat'        => $this->coordenadaValida($this->request->getPost('lat'), -90, 90),
+                'lng'        => $this->coordenadaValida($this->request->getPost('lng'), -180, 180),
             ];
+
+            // Un pin a medias no sirve: o se guardan las dos coordenadas o ninguna.
+            if ($dataDireccion['lat'] === null || $dataDireccion['lng'] === null) {
+                $dataDireccion['lat'] = null;
+                $dataDireccion['lng'] = null;
+            }
 
             $direccionModel->insert($dataDireccion);
 

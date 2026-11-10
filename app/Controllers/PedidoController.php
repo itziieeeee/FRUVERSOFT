@@ -3,6 +3,7 @@ namespace App\Controllers;
 
 use App\Models\PedidoModel;
 use App\Controllers\BaseController;
+use App\Services\RutaRepartidorService;
 
 class PedidoController extends BaseController {
 
@@ -18,6 +19,62 @@ class PedidoController extends BaseController {
         ];
 
         return view('pantalla_ventas', $datos);
+    }
+
+    /**
+     * Calcula una sugerencia de repartidor usando el grafo de rutas persistido.
+     */
+    public function sugerir_repartidor()
+    {
+        $json = $this->request->getJSON(true) ?? [];
+        $idCliente = (int) ($json['id_cliente'] ?? 0);
+
+        if ($idCliente <= 0) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Selecciona un cliente con dirección para calcular la ruta.',
+            ]);
+        }
+
+        try {
+            $datos = (new RutaRepartidorService())->sugerir($idCliente);
+            return $this->response->setJSON([
+                'status' => 'success',
+                'data'   => $datos,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Devuelve el orden recomendado de entregas para la salida de un repartidor.
+     */
+    public function ordenar_ruta($idRepartidor = null)
+    {
+        $idRepartidor = (int) $idRepartidor;
+        if ($idRepartidor <= 0) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Repartidor inválido.',
+            ]);
+        }
+
+        try {
+            $datos = (new RutaRepartidorService())->ordenarEntregas($idRepartidor);
+            return $this->response->setJSON([
+                'status' => 'success',
+                'data'   => $datos,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function guardar_productos_pedido() {
@@ -39,6 +96,46 @@ class PedidoController extends BaseController {
         $idRepartidor = ($tipoEntrega === 'domicilio' && !empty($json['id_repartidor']))
                         ? (int) $json['id_repartidor']
                         : null;
+
+        if (!in_array($tipoEntrega, ['tienda', 'domicilio'], true)) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Tipo de entrega inválido.',
+            ]);
+        }
+
+        if ($tipoEntrega === 'domicilio') {
+            if ($idCliente <= 0) {
+                return $this->response->setJSON([
+                    'status'  => 'error',
+                    'message' => 'Una entrega a domicilio requiere un cliente registrado.',
+                ]);
+            }
+
+            if (!$idRepartidor) {
+                return $this->response->setJSON([
+                    'status'  => 'error',
+                    'message' => 'Selecciona un repartidor para la entrega a domicilio.',
+                ]);
+            }
+
+            try {
+                $asignacion = (new RutaRepartidorService())->validarAsignacion($idRepartidor);
+                if (!$asignacion['ok']) {
+                    return $this->response->setJSON([
+                        'status'  => 'error',
+                        'message' => $asignacion['message'],
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                return $this->response->setJSON([
+                    'status'  => 'error',
+                    'message' => 'No se pudo validar la ruta. Ejecuta la migración de rutas antes de guardar domicilios.',
+                ]);
+            }
+        } else {
+            $idRepartidor = null;
+        }
 
         // 1. Calcular total
         $totalGeneral = 0;

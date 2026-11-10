@@ -208,6 +208,7 @@ class FRUVER extends BaseController
             'paginaActual'            => $paginaActual,
             'totalPaginas'            => $totalPaginas,
             'baseUrl'                 => $baseUrl,
+            'zonas'                   => $model->getZonasDisponibles(),
         ]);
     } 
 
@@ -231,6 +232,7 @@ class FRUVER extends BaseController
             'tel'       => $this->request->getPost('tel'),
             'direccion' => $this->request->getPost('direccion'),
             'notas'     => $this->request->getPost('notas'),
+            'zona_base_id' => $model->zonaValidaOrNull($this->request->getPost('zona_base_id')),
         ];
 
         if ($nombreFoto) {
@@ -256,6 +258,7 @@ class FRUVER extends BaseController
             'tel'       => $this->request->getPost('tel'),
             'direccion' => $this->request->getPost('direccion'),
             'notas'     => $this->request->getPost('notas'),
+            'zona_base_id' => $model->zonaValidaOrNull($this->request->getPost('zona_base_id')),
         ];
 
         if ($foto && $foto->isValid() && !$foto->hasMoved()) {

@@ -893,8 +893,11 @@ document.addEventListener('DOMContentLoaded', actualizarEstadisticas);
 </script>
 <script>
 (function(){
-  const URL_CAMBIOS  = "<?= base_url('admin_api/cambios') ?>";
-  const URL_RESOLVER = "<?= base_url('admin_api/incidencia/resolver') ?>";
+  const URL_CAMBIOS    = "<?= base_url('admin_api/cambios') ?>";
+  const URL_HISTORIAL  = "<?= base_url('admin_api/incidencias/historial') ?>";
+  const URL_RESOLVER   = "<?= base_url('admin_api/incidencia/resolver') ?>";
+  const URL_RESPONDER  = "<?= base_url('admin_api/incidencia/responder') ?>";
+  const URL_DETALLE    = "<?= base_url('pedido/detalle') ?>";
   const META = {
     'Pedido confirmado':  ['confirmado','fa-check-circle','Confirmado'],
     'Pedido en tránsito': ['transito','fa-truck','En tránsito'],
@@ -907,50 +910,344 @@ document.addEventListener('DOMContentLoaded', actualizarEstadisticas);
     cliente_no_paga:'Cliente no paga', producto_danado:'Producto dañado', problema_vehiculo:'Problema con el vehículo'
   };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let desde = null, conocidas = new Set(), primera = true;
+  const folioDe = id => String(id).padStart(6, '0');
+  const dinero = n => (Number(n) || 0).toLocaleString('es-MX', {style:'currency', currency:'MXN'});
 
-  const panel = document.createElement('div');
-  panel.style.cssText = 'position:fixed;top:12px;right:12px;z-index:9999;max-width:320px;display:flex;flex-direction:column;gap:8px';
-  document.body.appendChild(panel);
+  let desde = null, conocidas = new Set(), primera = true;
+  let activas = [], pestana = 'activas', historialCargado = false;
+
+  /* ---------------- Estilos ---------------- */
+  const estilos = document.createElement('style');
+  estilos.textContent = `
+    .ia-bell{position:relative;border:0;cursor:pointer;font-family:inherit}
+    .ia-bell.suena i{animation:iaRing 1s ease 2}
+    @keyframes iaRing{0%,100%{transform:rotate(0)}20%{transform:rotate(-16deg)}40%{transform:rotate(14deg)}60%{transform:rotate(-9deg)}80%{transform:rotate(5deg)}}
+    .ia-badge{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#dc2626;color:#fff;font:700 .7rem 'Inter',sans-serif;display:none;align-items:center;justify-content:center;border:2px solid #fff;box-sizing:content-box}
+    .ia-badge.on{display:inline-flex}
+
+    .ia-toasts{position:fixed;top:14px;right:14px;z-index:10001;display:flex;flex-direction:column;gap:10px;width:340px;max-width:calc(100vw - 28px);font-family:'Inter',system-ui,sans-serif}
+    .ia-toast{background:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 12px 30px rgba(15,23,42,.25);border-left:5px solid #dc2626;display:flex;gap:12px;align-items:center;cursor:pointer;animation:iaEntrar .3s ease}
+    .ia-toast:hover{background:#fff7f7}
+    .ia-toast .ia-icono{width:38px;height:38px;border-radius:11px;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .ia-toast b{display:block;font-size:.9rem;color:#0f172a}
+    .ia-toast small{color:#64748b;font-size:.78rem}
+    @keyframes iaEntrar{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+
+    .ia-fondo{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:10000;display:none}
+    .ia-fondo.on{display:block;animation:iaFade .2s ease}
+    @keyframes iaFade{from{opacity:0}to{opacity:1}}
+    .ia-drawer{position:fixed;top:0;right:0;bottom:0;width:430px;max-width:100vw;background:#f8fafc;z-index:10002;box-shadow:-12px 0 36px rgba(15,23,42,.25);display:flex;flex-direction:column;transform:translateX(105%);transition:transform .28s ease;font-family:'Inter',system-ui,sans-serif;color:#1e293b}
+    .ia-drawer.on{transform:none}
+    .ia-d-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:#1e5631;color:#fff}
+    .ia-d-head h3{margin:0;font-size:1.02rem;display:flex;gap:10px;align-items:center}
+    .ia-x{background:rgba(255,255,255,.15);border:0;color:#fff;width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:1rem}
+    .ia-x:hover{background:rgba(255,255,255,.3)}
+    .ia-tabs{display:flex;background:#fff;border-bottom:1px solid #e2e8f0}
+    .ia-tab{flex:1;padding:12px;border:0;background:transparent;font:600 .86rem 'Inter',sans-serif;color:#64748b;cursor:pointer;border-bottom:3px solid transparent}
+    .ia-tab.on{color:#1e5631;border-bottom-color:#1e5631}
+    .ia-tab .n{display:inline-block;margin-left:6px;background:#dc2626;color:#fff;border-radius:9px;padding:0 7px;font-size:.7rem;line-height:18px}
+    .ia-lista{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+    .ia-vacio{text-align:center;color:#94a3b8;padding:40px 10px;font-size:.9rem}
+    .ia-vacio i{display:block;font-size:2rem;margin-bottom:10px}
+
+    .ia-card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 10px rgba(15,23,42,.08);border-top:4px solid #dc2626}
+    .ia-card.hecha{border-top-color:#16a34a}
+    .ia-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+    .ia-icono{width:40px;height:40px;border-radius:12px;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+    .ia-card.hecha .ia-icono{background:#dcfce7;color:#16a34a}
+    .ia-titulo b{display:block;font-size:.98rem;color:#0f172a}
+    .ia-titulo small{color:#64748b;font-size:.75rem}
+    .ia-datos{display:flex;flex-direction:column;gap:6px;font-size:.86rem;color:#334155}
+    .ia-datos i{color:#f16b1a;width:16px;text-align:center;margin-right:4px}
+    .ia-folio{display:inline-flex;align-items:center;gap:6px;background:#1e5631;color:#fff;border:0;border-radius:7px;padding:2px 10px;font:700 .85rem 'Inter',sans-serif;letter-spacing:.04em;cursor:pointer}
+    .ia-folio:hover{background:#16452a;text-decoration:underline}
+    .ia-ubicacion{margin-top:12px;padding:10px 12px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.84rem}
+    .ia-mapa{display:inline-flex;align-items:center;gap:6px;background:#2563eb;color:#fff;text-decoration:none;padding:7px 12px;border-radius:9px;font-weight:600}
+    .ia-mapa:hover{background:#1d4ed8}
+    .ia-coords{color:#475569;font-family:monospace;font-size:.78rem}
+    .ia-sin-gps{color:#b45309;font-weight:600}
+    .ia-label{display:block;margin-top:12px;font-size:.78rem;font-weight:700;color:#334155}
+    .ia-texto{width:100%;margin-top:4px;padding:9px 10px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;font-size:.88rem;resize:vertical;box-sizing:border-box;color:#0f172a}
+    .ia-texto:focus{outline:2px solid #1e5631;border-color:transparent}
+    .ia-acciones{display:flex;gap:8px;margin-top:10px}
+    .ia-btn{border:0;border-radius:10px;padding:9px 12px;font:600 .85rem 'Inter',system-ui,sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+    .ia-btn:disabled{opacity:.55;cursor:not-allowed}
+    .ia-btn.primario{flex:1;background:#1e5631;color:#fff}
+    .ia-btn.primario:hover:not(:disabled){background:#16452a}
+    .ia-btn.secundario{background:#f1f5f9;color:#475569}
+    .ia-btn.secundario:hover:not(:disabled){background:#e2e8f0}
+    .ia-error{margin-top:6px;font-size:.8rem;font-weight:600;color:#dc2626}
+    .ia-error:empty{display:none}
+    .ia-resp{margin-top:10px;padding:10px 12px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:.86rem;white-space:pre-wrap}
+    .ia-resp.sin{background:#f1f5f9;border-color:#e2e8f0;color:#64748b}
+    .ia-resp small{display:block;color:#64748b;margin-top:4px}
+
+    .ia-modal-fondo{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:10010;display:none;align-items:center;justify-content:center;padding:16px}
+    .ia-modal-fondo.on{display:flex;animation:iaFade .2s ease}
+    .ia-modal{background:#fff;border-radius:18px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.4);font-family:'Inter',system-ui,sans-serif;color:#1e293b}
+    .ia-m-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:#1e5631;color:#fff;border-radius:18px 18px 0 0}
+    .ia-m-head h3{margin:0;font-size:1.05rem}
+    .ia-m-body{padding:18px 20px}
+    .ia-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+    .ia-dato{background:#f8fafc;border-radius:10px;padding:10px 12px}
+    .ia-dato span{display:block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b}
+    .ia-dato b{font-size:.92rem}
+    .ia-tabla{width:100%;border-collapse:collapse;font-size:.85rem}
+    .ia-tabla th{text-align:left;font-size:.7rem;text-transform:uppercase;color:#64748b;padding:6px 4px;border-bottom:2px solid #e2e8f0}
+    .ia-tabla td{padding:8px 4px;border-bottom:1px solid #eef2f6}
+    .ia-tabla td.r,.ia-tabla th.r{text-align:right}
+    .ia-total{display:flex;justify-content:space-between;margin-top:12px;font-weight:700}
+    @media(max-width:520px){.ia-grid{grid-template-columns:1fr}}
+  `;
+  document.head.appendChild(estilos);
+
+  /* ---------------- Campana en la barra superior ---------------- */
+  const bell = document.createElement('button');
+  bell.type = 'button';
+  bell.className = 'btn-user ia-bell';
+  bell.setAttribute('aria-label', 'Alertas de repartidores');
+  bell.innerHTML = '<i class="fas fa-bell"></i> <span>Alertas</span><span class="ia-badge" id="iaBadge">0</span>';
+  const acciones = document.querySelector('.barra-superior .user-actions');
+  if (acciones) acciones.insertBefore(bell, acciones.firstChild); else document.body.appendChild(bell);
+  const badge = bell.querySelector('#iaBadge');
+
+  /* ---------------- Contenedores ---------------- */
+  const toasts = document.createElement('div'); toasts.className = 'ia-toasts';
+  const fondo  = document.createElement('div'); fondo.className = 'ia-fondo';
+  const drawer = document.createElement('aside'); drawer.className = 'ia-drawer';
+  drawer.innerHTML = `
+    <div class="ia-d-head">
+      <h3><i class="fas fa-bell"></i> Alertas de repartidores</h3>
+      <button type="button" class="ia-x" aria-label="Cerrar"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="ia-tabs">
+      <button type="button" class="ia-tab on" data-tab="activas"><i class="fas fa-circle-exclamation"></i> Activas<span class="n" id="iaN" style="display:none">0</span></button>
+      <button type="button" class="ia-tab" data-tab="historial"><i class="fas fa-clock-rotate-left"></i> Historial</button>
+    </div>
+    <div class="ia-lista" id="iaListaActivas"></div>
+    <div class="ia-lista" id="iaListaHistorial" style="display:none"></div>`;
+  const modalFondo = document.createElement('div'); modalFondo.className = 'ia-modal-fondo';
+  document.body.append(toasts, fondo, drawer, modalFondo);
+
+  const listaActivas   = drawer.querySelector('#iaListaActivas');
+  const listaHistorial = drawer.querySelector('#iaListaHistorial');
+  const contadorTab    = drawer.querySelector('#iaN');
+
+  function abrirDrawer(){ drawer.classList.add('on'); fondo.classList.add('on'); if (pestana === 'historial') cargarHistorial(); }
+  function cerrarDrawer(){ drawer.classList.remove('on'); fondo.classList.remove('on'); }
+  bell.onclick = () => drawer.classList.contains('on') ? cerrarDrawer() : abrirDrawer();
+  fondo.onclick = cerrarDrawer;
+  drawer.querySelector('.ia-x').onclick = cerrarDrawer;
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (modalFondo.classList.contains('on')) modalFondo.classList.remove('on'); else cerrarDrawer();
+  });
+
+  drawer.querySelectorAll('.ia-tab').forEach(t => t.onclick = () => {
+    pestana = t.dataset.tab;
+    drawer.querySelectorAll('.ia-tab').forEach(x => x.classList.toggle('on', x === t));
+    listaActivas.style.display   = pestana === 'activas' ? '' : 'none';
+    listaHistorial.style.display = pestana === 'historial' ? '' : 'none';
+    if (pestana === 'historial') cargarHistorial();
+  });
+
+  /* ---------------- Utilidades de tarjeta ---------------- */
+  const htmlMapa = i => (i.lat && i.lng)
+    ? `<a class="ia-mapa" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${encodeURIComponent(i.lat)},${encodeURIComponent(i.lng)}"><i class="fas fa-location-dot"></i> Ver en el mapa</a>`
+    : `<span class="ia-sin-gps"><i class="fas fa-location-crosshairs"></i> Sin ubicación GPS</span>`;
+
+  const htmlDatos = i => `
+    <div class="ia-datos">
+      <div><i class="fas fa-motorcycle"></i> ${esc(i.repartidor)}</div>
+      ${i.id_pedido ? `<div><i class="fas fa-box"></i> Pedido <button type="button" class="ia-folio" data-pedido="${esc(i.id_pedido)}" title="Ver detalle del pedido">${folioDe(i.id_pedido)} <i class="fas fa-arrow-up-right-from-square" style="font-size:.7rem"></i></button></div>` : ''}
+      ${i.cliente && i.cliente.trim() ? `<div><i class="fas fa-user"></i> ${esc(i.cliente)}</div>` : ''}
+      ${i.direccion ? `<div><i class="fas fa-map-location-dot"></i> ${esc(i.direccion)}</div>` : ''}
+    </div>`;
+
+  // Un solo manejador para todos los folios clicables (activas, historial y avisos).
+  drawer.addEventListener('click', e => {
+    const b = e.target.closest('.ia-folio');
+    if (b) abrirDetalle(b.dataset.pedido);
+  });
+
+  /* ---------------- Detalle del pedido ---------------- */
+  function cerrarModal(){ modalFondo.classList.remove('on'); }
+  modalFondo.onclick = e => { if (e.target === modalFondo) cerrarModal(); };
+
+  async function abrirDetalle(id){
+    modalFondo.innerHTML = `<div class="ia-modal"><div class="ia-m-head"><h3>Pedido ${folioDe(id)}</h3><button type="button" class="ia-x" aria-label="Cerrar"><i class="fas fa-xmark"></i></button></div><div class="ia-m-body"><div class="ia-vacio"><i class="fas fa-spinner fa-spin"></i>Cargando detalle...</div></div></div>`;
+    modalFondo.classList.add('on');
+    modalFondo.querySelector('.ia-x').onclick = cerrarModal;
+    const cuerpo = modalFondo.querySelector('.ia-m-body');
+    try {
+      const r = await fetch(URL_DETALLE, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams({id})});
+      const d = await r.json();
+      if (!d.success) throw new Error(d.message || 'No se pudo cargar');
+      const p = d.pedido, total = Number(p.total) || 0, pagado = Number(p.monto_pagado) || 0;
+      const filas = (d.productos || []).map(x => `
+        <tr><td>${esc(x.nombre)}</td><td class="r">${esc(x.cantidad)} ${esc(x.unidad_venta || '')}</td><td class="r">${dinero(x.precio_venta)}</td><td class="r">${dinero(x.subtotal)}</td></tr>`).join('');
+      cuerpo.innerHTML = `
+        <div class="ia-grid">
+          <div class="ia-dato"><span>Estado</span><b>${esc(p.estado_actual)}</b></div>
+          <div class="ia-dato"><span>Fecha</span><b>${esc(p.fecha)}</b></div>
+          <div class="ia-dato"><span>Cliente</span><b>${esc(p.nombre_cliente || 'Sin cliente')}</b></div>
+          <div class="ia-dato"><span>Repartidor</span><b>${esc(p.nombre_repartidor || 'Sin asignar')}</b></div>
+          <div class="ia-dato"><span>Entrega</span><b>${esc(p.tipo_entrega || '-')}</b></div>
+          <div class="ia-dato"><span>Tipo de pago</span><b>${esc(p.tipo_pago || '-')}</b></div>
+        </div>
+        <table class="ia-tabla">
+          <thead><tr><th>Producto</th><th class="r">Cantidad</th><th class="r">Precio</th><th class="r">Subtotal</th></tr></thead>
+          <tbody>${filas || '<tr><td colspan="4" class="ia-vacio">Sin productos</td></tr>'}</tbody>
+        </table>
+        <div class="ia-total"><span>Total</span><span>${dinero(total)}</span></div>
+        <div class="ia-total" style="font-weight:600;color:#475569"><span>Pagado</span><span>${dinero(pagado)}</span></div>
+        <div class="ia-total" style="color:#f16b1a"><span>Por cobrar</span><span>${dinero(Math.max(0, total - pagado))}</span></div>`;
+    } catch (e) {
+      cuerpo.innerHTML = `<div class="ia-vacio"><i class="fas fa-circle-exclamation"></i>No se pudo cargar el detalle: ${esc(e.message)}</div>`;
+    }
+  }
+
+  /* ---------------- Alertas activas ---------------- */
+  const tarjetas = new Map(); // se crean una vez para no perder el texto que se escribe
+
+  function crearTarjeta(i){
+    const card = document.createElement('article');
+    card.className = 'ia-card';
+    card.innerHTML = `
+      <div class="ia-head">
+        <span class="ia-icono"><i class="fas fa-triangle-exclamation"></i></span>
+        <div class="ia-titulo"><b>${esc(TIPOS[i.tipo] || i.tipo)}</b><small>${esc(i.fecha)}</small></div>
+      </div>
+      ${htmlDatos(i)}
+      <div class="ia-ubicacion">${htmlMapa(i)}</div>
+      <label class="ia-label">Respuesta para el repartidor</label>
+      <textarea class="ia-texto" rows="3" maxlength="1000" placeholder="Ej. Llama al cliente, la dirección correcta es..."></textarea>
+      <div class="ia-acciones">
+        <button type="button" class="ia-btn primario btn-enviar"><i class="fas fa-paper-plane"></i> Enviar respuesta</button>
+        <button type="button" class="ia-btn secundario btn-cerrar"><i class="fas fa-xmark"></i> Cerrar</button>
+      </div>
+      <div class="ia-error"></div>`;
+
+    const txt = card.querySelector('textarea');
+    const err = card.querySelector('.ia-error');
+    const botones = card.querySelectorAll('.ia-btn');
+    const bloquear = on => botones.forEach(b => b.disabled = on);
+
+    async function enviar(url, opciones, falla){
+      err.textContent = ''; bloquear(true);
+      try {
+        const r = await fetch(url, opciones);
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d.success) throw new Error(d.message || ('Error ' + r.status));
+        tarjetas.delete(i.id); card.remove();
+        historialCargado = false;
+        tick();
+      } catch (e) {
+        err.textContent = falla + ': ' + e.message; bloquear(false);
+      }
+    }
+
+    card.querySelector('.btn-enviar').onclick = () => {
+      const texto = txt.value.trim();
+      if (!texto) { err.textContent = 'Escribe una respuesta antes de enviar.'; return; }
+      enviar(URL_RESPONDER + '/' + i.id, {
+        method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams({respuesta:texto})
+      }, 'No se envió');
+    };
+    card.querySelector('.btn-cerrar').onclick = () => enviar(URL_RESOLVER + '/' + i.id, {method:'POST'}, 'No se cerró');
+    return card;
+  }
+
+  function actualizarContadores(){
+    const n = activas.length;
+    badge.textContent = n > 99 ? '99+' : n;
+    badge.classList.toggle('on', n > 0);
+    contadorTab.textContent = n;
+    contadorTab.style.display = n > 0 ? '' : 'none';
+    if (!n && !listaActivas.querySelector('.ia-card')) {
+      listaActivas.innerHTML = '<div class="ia-vacio"><i class="fas fa-circle-check"></i>No hay alertas activas.</div>';
+    }
+  }
+
+  function avisoNuevo(i){
+    const t = document.createElement('div');
+    t.className = 'ia-toast';
+    t.innerHTML = `<span class="ia-icono"><i class="fas fa-triangle-exclamation"></i></span>
+      <div><b>${esc(TIPOS[i.tipo] || i.tipo)}</b><small>${esc(i.repartidor)}${i.id_pedido ? ' · Pedido ' + folioDe(i.id_pedido) : ''}</small></div>`;
+    t.onclick = () => { t.remove(); abrirDrawer(); };
+    toasts.appendChild(t);
+    setTimeout(() => t.remove(), 9000);
+  }
 
   function pitido(){
     try { const a = new AudioContext(), o = a.createOscillator(); o.connect(a.destination); o.frequency.value = 880; o.start(); o.stop(a.currentTime + .25); } catch(e){}
   }
 
+  function pintarIncidencias(lista){
+    const nuevas = lista.filter(i => !conocidas.has(i.id));
+    nuevas.forEach(i => conocidas.add(i.id));
+    activas = lista;
+
+    if (nuevas.length && !primera) {
+      pitido();
+      nuevas.forEach(avisoNuevo);
+      bell.classList.add('suena'); setTimeout(() => bell.classList.remove('suena'), 2200);
+    }
+    primera = false;
+
+    const ids = new Set(lista.map(i => i.id));
+    tarjetas.forEach((card, id) => { if (!ids.has(id)) { card.remove(); tarjetas.delete(id); } });
+    if (lista.length) listaActivas.querySelector('.ia-vacio')?.remove();
+    lista.forEach(i => {
+      if (tarjetas.has(i.id)) return;
+      const card = crearTarjeta(i);
+      tarjetas.set(i.id, card);
+      listaActivas.appendChild(card);
+    });
+    actualizarContadores();
+  }
+
+  /* ---------------- Historial ---------------- */
+  async function cargarHistorial(){
+    if (historialCargado) return;
+    listaHistorial.innerHTML = '<div class="ia-vacio"><i class="fas fa-spinner fa-spin"></i>Cargando historial...</div>';
+    try {
+      const r = await fetch(URL_HISTORIAL);
+      const d = await r.json();
+      if (!r.ok || !d.success) throw new Error(d.message || ('Error ' + r.status));
+      historialCargado = true;
+      listaHistorial.innerHTML = d.data.length ? d.data.map(i => `
+        <article class="ia-card hecha">
+          <div class="ia-head">
+            <span class="ia-icono"><i class="fas fa-circle-check"></i></span>
+            <div class="ia-titulo"><b>${esc(TIPOS[i.tipo] || i.tipo)}</b><small>${esc(i.fecha)}</small></div>
+          </div>
+          ${htmlDatos(i)}
+          <div class="ia-ubicacion">${htmlMapa(i)}</div>
+          ${i.respuesta
+            ? `<div class="ia-resp"><b>Tu respuesta</b><br>${esc(i.respuesta)}<small>${esc(i.respondido_at || '')}</small></div>`
+            : `<div class="ia-resp sin">Cerrada sin respuesta</div>`}
+        </article>`).join('')
+        : '<div class="ia-vacio"><i class="fas fa-inbox"></i>Aún no hay alertas atendidas.</div>';
+    } catch (e) {
+      listaHistorial.innerHTML = `<div class="ia-vacio"><i class="fas fa-circle-exclamation"></i>No se pudo cargar: ${esc(e.message)}</div>`;
+    }
+  }
+
+  /* ---------------- Cambios de pedidos ---------------- */
   function actualizarFila(p){
     const fila = document.getElementById('fila-' + p.id);
     if (!fila || fila.dataset.estado === p.estado_actual) return;
     const [clase, icono, label] = META[p.estado_actual] || META['Pedido'];
     fila.dataset.estado = p.estado_actual;
-    const badge = fila.querySelector('.estado-badge');
-    if (badge) {
-      badge.className = 'estado-badge ' + clase;
-      badge.innerHTML = `<i class="fas ${icono}"></i> ${label} <i class="fas fa-chevron-down" style="font-size:0.6rem;"></i>`;
+    const b = fila.querySelector('.estado-badge');
+    if (b) {
+      b.className = 'estado-badge ' + clase;
+      b.innerHTML = `<i class="fas ${icono}"></i> ${label} <i class="fas fa-chevron-down" style="font-size:0.6rem;"></i>`;
     }
     if (typeof refreshProgressForPedido === 'function') refreshProgressForPedido(p.id, p.estado_actual);
     if (typeof actualizarEstadisticas === 'function') actualizarEstadisticas();
     if (typeof toast === 'function') toast(`Pedido #${p.id}: ${label}${p.repartidor ? ' (' + p.repartidor + ')' : ''}`, 'success');
-  }
-
-  function pintarIncidencias(lista){
-    let hayNueva = false;
-    lista.forEach(i => { if (!conocidas.has(i.id)) { conocidas.add(i.id); if (!primera) hayNueva = true; } });
-    if (hayNueva) pitido();
-    primera = false;
-    panel.innerHTML = lista.map(i => `
-      <div style="background:#dc2626;color:#fff;padding:12px;border-radius:12px;box-shadow:0 4px 14px #0004">
-        <b>🆘 ${esc(i.repartidor)}</b><br>
-        ${esc(TIPOS[i.tipo] || i.tipo)}${i.id_pedido ? ' · Pedido #' + esc(i.id_pedido) : ''}<br>
-        <small>${esc(i.fecha)}</small>
-        <div style="margin-top:6px;display:flex;gap:6px">
-          ${i.lat ? `<a target="_blank" style="color:#fff" href="https://www.google.com/maps?q=${i.lat},${i.lng}">📍 Ver ubicación</a>` : ''}
-          <button data-id="${i.id}" style="margin-left:auto;padding:4px 10px;border:0;border-radius:6px;cursor:pointer">Resolver</button>
-        </div>
-      </div>`).join('');
-    panel.querySelectorAll('button[data-id]').forEach(b => b.onclick = async () => {
-      await fetch(URL_RESOLVER + '/' + b.dataset.id, {method: 'POST'});
-      tick();
-    });
   }
 
   async function tick(){
@@ -962,6 +1259,7 @@ document.addEventListener('DOMContentLoaded', actualizarEstadisticas);
       pintarIncidencias(d.incidencias);
     } catch(e) {}
   }
+  actualizarContadores();
   tick();
   setInterval(tick, 5000);
 })();

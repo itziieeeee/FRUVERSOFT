@@ -284,7 +284,7 @@ function filaPedido(p) {
             <div class="acciones-col">
                 <div>${badge}</div>
                 ${boton}
-                <button class="rep-btn ayuda" onclick="abrirAyuda(${p.id})"><i class="fas fa-life-ring"></i> No pude entregar / Ayuda</button>
+                <button class="rep-btn ayuda" onclick="abrirAyuda(${p.id})"><i class="fas fa-triangle-exclamation"></i> Error de entrega</button>
             </div>
         </td>
     </tr>`;

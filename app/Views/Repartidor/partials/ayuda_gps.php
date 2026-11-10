@@ -1,5 +1,6 @@
 <?php /* app/Views/Repartidor/partials/ayuda_gps.php
-   FAB compacto (solo icono en móvil) + chip GPS como círculo de estado. */ ?>
+   FAB compacto (solo icono en móvil), chip GPS como círculo de estado,
+   campana de respuestas del administrador. */ ?>
 <style>
     /* ============ FAB DE AYUDA ============ */
     .rep-fab {
@@ -86,6 +87,66 @@
     }
     .rep-gps:hover .rep-gps-tip { opacity: 1; }
 
+    /* ============ CAMPANA DE RESPUESTAS ============ */
+    /* La campana se inserta por JS junto al botón de tema y hereda sus clases (btn-user / action-btn). */
+    .rep-bell { position: relative; cursor: pointer; font-family: inherit; }
+    .rep-bell.con-nuevas i { animation: repRing 1.2s ease 2; }
+    @keyframes repRing {
+        0%, 100% { transform: rotate(0); }
+        20% { transform: rotate(-14deg); }
+        40% { transform: rotate(12deg); }
+        60% { transform: rotate(-8deg); }
+        80% { transform: rotate(4deg); }
+    }
+    .rep-bell-badge {
+        position: absolute; top: -4px; right: -4px;
+        min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px;
+        background: #dc2626; color: #fff;
+        font: 700 0.72rem 'Inter','Poppins',sans-serif;
+        display: none; align-items: center; justify-content: center;
+        border: 2px solid var(--bg-topbar, #1d4a27);
+        box-sizing: content-box;
+    }
+    .rep-bell-badge.activo { display: inline-flex; }
+
+    #rep-notif {
+        position: fixed; inset: 0; background: rgba(0,0,0,.55);
+        display: none; align-items: flex-end; justify-content: center; z-index: 1000;
+    }
+    #rep-notif.activo { display: flex; animation: repFade 0.2s ease; }
+    #rep-notif .caja {
+        background: var(--bg-card, #fff); width: 100%; max-width: 520px;
+        max-height: 85vh; overflow-y: auto;
+        padding: 18px; border-radius: 20px 20px 0 0;
+        font-family: 'Inter','Poppins',sans-serif;
+        color: var(--texto, #1e293b);
+        animation: repSlide 0.25s ease;
+    }
+    .rep-notif-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .rep-notif-head h3 { margin: 0; color: var(--verde, #1d4a27); font-size: 1.05rem; }
+    html[data-tema="oscuro"] .rep-notif-head h3 { color: #4ade80; }
+    .rep-notif-cerrar { background: transparent; border: 0; font-size: 1.1rem; color: var(--texto-suave, #64748b); cursor: pointer; padding: 6px; }
+    .rep-nota {
+        border: 1px solid var(--borde, #e0e0e0); border-radius: 12px;
+        padding: 12px; margin-top: 10px; background: var(--bg-suave, #f8f9fa);
+    }
+    .rep-nota.nueva { border-left: 5px solid #16a34a; background: #f0fdf4; }
+    html[data-tema="oscuro"] .rep-nota.nueva { background: rgba(22,163,74,0.12); }
+    .rep-nota-top { display: flex; justify-content: space-between; gap: 8px; font-size: 0.78rem; color: var(--texto-suave, #64748b); }
+    .rep-nota-pedido { font-weight: 700; font-size: 0.98rem; margin-top: 4px; }
+    .rep-nota-dato { font-size: 0.88rem; margin-top: 4px; }
+    .rep-nota-dato i { color: var(--naranja, #f16b1a); width: 16px; }
+    .rep-nota-resp {
+        margin-top: 8px; padding: 10px; border-radius: 10px;
+        background: var(--bg-card, #fff); border: 1px solid var(--borde, #e0e0e0);
+        font-size: 0.92rem; white-space: pre-wrap;
+    }
+    .rep-nota-resp-label {
+        font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .04em; color: var(--verde, #1d4a27); margin-bottom: 4px;
+    }
+    .rep-vacio { text-align: center; color: var(--texto-suave, #64748b); padding: 28px 0; font-size: 0.92rem; }
+
     /* ============ SHEET DE AYUDA ============ */
     #rep-sheet {
         position: fixed; inset: 0; background: rgba(0,0,0,.55);
@@ -161,7 +222,7 @@
     <span class="rep-gps-tip" id="rep-gps-tip">Ubicación: iniciando...</span>
 </button>
 
-<!-- Sheet -->
+<!-- Sheet de ayuda -->
 <div id="rep-sheet" onclick="if(event.target===this)cerrarAyuda()">
     <div class="caja">
         <h3>¿Qué pasó?</h3>
@@ -183,6 +244,18 @@
         <button class="opcion cancelar" onclick="cerrarAyuda()">Cancelar</button>
     </div>
 </div>
+
+<!-- Panel de respuestas guardadas -->
+<div id="rep-notif" onclick="if(event.target===this)repCerrarNotif()">
+    <div class="caja">
+        <div class="rep-notif-head">
+            <h3>Respuestas del administrador</h3>
+            <button class="rep-notif-cerrar" type="button" onclick="repCerrarNotif()" aria-label="Cerrar"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div id="rep-notif-lista"></div>
+    </div>
+</div>
+
 <div id="rep-msg"></div>
 
 <script>
@@ -190,6 +263,7 @@ const REP_API = "<?= base_url('repartidor/api') ?>";
 let repPedidoAyuda = null;
 let repUltimoEnvio = 0;
 let repWatchId = null;
+let repUltimaPos = null; // última posición GPS recibida: {lat, lng, t}
 
 const repPost = (url, obj) => fetch(url, {
     method: 'POST',
@@ -235,11 +309,15 @@ function enviarAyuda(tipo) {
     }).then(() => repAviso('Ayuda enviada al administrador'))
       .catch(() => repAviso('No se pudo enviar, intenta de nuevo'));
 
+    // Primero la última ubicación conocida (la del seguimiento GPS), para no depender de una lectura nueva.
+    if (repUltimaPos && Date.now() - repUltimaPos.t < 120000) {
+        return enviar(repUltimaPos.lat, repUltimaPos.lng);
+    }
     if (!navigator.geolocation) return enviar();
     navigator.geolocation.getCurrentPosition(
         p => enviar(p.coords.latitude, p.coords.longitude),
         () => enviar(),
-        {timeout: 5000}
+        {enableHighAccuracy: true, timeout: 8000, maximumAge: 60000}
     );
 }
 
@@ -266,6 +344,7 @@ function iniciarGPS(forzar = false) {
         (p) => {
             const acc = Math.round(p.coords.accuracy);
             repGpsEstado('activo', 'Ubicación activa (±' + acc + ' m)');
+            repUltimaPos = {lat: p.coords.latitude, lng: p.coords.longitude, t: Date.now()};
             if (Date.now() - repUltimoEnvio < 10000) return;
             repUltimoEnvio = Date.now();
             repPost(REP_API + '/ubicacion', {
@@ -285,4 +364,109 @@ function iniciarGPS(forzar = false) {
     );
 }
 iniciarGPS();
+
+/* ---------- Campana en la barra superior, junto al botón de tema ---------- */
+(function () {
+    const bell = document.createElement('button');
+    bell.id = 'rep-bell';
+    bell.type = 'button';
+    bell.setAttribute('aria-label', 'Respuestas del administrador');
+    bell.innerHTML = '<i class="fas fa-bell"></i> <span id="rep-bell-badge" class="rep-bell-badge">0</span>';
+    bell.onclick = () => repAbrirNotif();
+
+    const ref = document.getElementById('btnTema');
+    if (ref && ref.parentNode) {
+        // Hereda el estilo del botón de tema (btn-user en las barras, action-btn en el panel de inicio)
+        const base = ref.classList.contains('action-btn') ? 'action-btn' : 'btn-user';
+        bell.className = 'rep-bell ' + base;
+        ref.parentNode.insertBefore(bell, ref);
+    } else {
+        // Sin barra: botón flotante para no perder las notificaciones
+        bell.className = 'rep-bell';
+        bell.style.cssText = 'position:fixed;top:12px;right:12px;z-index:900;width:46px;height:46px;border-radius:50%;border:0;background:#1d4a27;color:#fff;cursor:pointer';
+        document.body.appendChild(bell);
+    }
+})();
+
+/* ---------- Respuestas del administrador ---------- */
+let repRespuestas = [];
+let repNoLeidas = 0;
+let repPrimeraCarga = true;
+
+const REP_TIPOS = {
+    cliente_no_responde: 'El cliente no responde',
+    direccion_incorrecta: 'Dirección incorrecta',
+    cliente_no_paga: 'El cliente no paga',
+    producto_danado: 'Producto dañado',
+    problema_vehiculo: 'Problema con el vehículo'
+};
+
+function repEsc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function repActualizarBadge() {
+    const b = document.getElementById('rep-bell-badge');
+    b.textContent = repNoLeidas > 99 ? '99+' : repNoLeidas;
+    b.classList.toggle('activo', repNoLeidas > 0);
+}
+
+function repPintarNotif() {
+    const lista = document.getElementById('rep-notif-lista');
+    if (!repRespuestas.length) {
+        lista.innerHTML = '<div class="rep-vacio">Aún no tienes respuestas del administrador.</div>';
+        return;
+    }
+    lista.innerHTML = repRespuestas.map(r => `
+        <div class="rep-nota ${Number(r.respuesta_leida) === 0 ? 'nueva' : ''}">
+            <div class="rep-nota-top">
+                <span>${repEsc(REP_TIPOS[r.tipo] || r.tipo)}</span>
+                <span>${repEsc(r.respondido_at || '')}</span>
+            </div>
+            <div class="rep-nota-pedido">${r.id_pedido ? 'Pedido ' + repEsc(String(r.id_pedido).padStart(6, '0')) : 'Sin pedido asociado'}</div>
+            ${r.cliente ? `<div class="rep-nota-dato"><i class="fas fa-user"></i> ${repEsc(r.cliente)}</div>` : ''}
+            ${r.direccion ? `<div class="rep-nota-dato"><i class="fas fa-location-dot"></i> ${repEsc(r.direccion)}</div>` : ''}
+            <div class="rep-nota-resp">
+                <div class="rep-nota-resp-label">Respuesta</div>${repEsc(r.respuesta)}
+            </div>
+        </div>`).join('');
+}
+
+function repAbrirNotif() {
+    document.getElementById('rep-notif').classList.add('activo');
+    repPintarNotif(); // pinta primero para que se vean las nuevas resaltadas
+    if (repNoLeidas > 0) {
+        repPost(REP_API + '/respuestas/leer', {}).catch(() => {});
+        repRespuestas.forEach(r => r.respuesta_leida = 1);
+        repNoLeidas = 0;
+        repActualizarBadge();
+    }
+}
+
+function repCerrarNotif() {
+    document.getElementById('rep-notif').classList.remove('activo');
+}
+
+async function repCargarRespuestas() {
+    try {
+        const d = await (await fetch(REP_API + '/respuestas')).json();
+        const nuevas = Number(d.no_leidas) || 0;
+
+        if (!repPrimeraCarga && nuevas > repNoLeidas) {
+            repAviso('Tienes una respuesta del administrador');
+            const bell = document.getElementById('rep-bell');
+            bell.classList.add('con-nuevas');
+            setTimeout(() => bell.classList.remove('con-nuevas'), 2500);
+        }
+        repPrimeraCarga = false;
+
+        repRespuestas = d.data || [];
+        repNoLeidas = nuevas;
+        repActualizarBadge();
+
+        if (document.getElementById('rep-notif').classList.contains('activo')) repAbrirNotif();
+    } catch (e) {}
+}
+repCargarRespuestas();
+setInterval(repCargarRespuestas, 8000);
 </script>

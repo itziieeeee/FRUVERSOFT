@@ -311,15 +311,22 @@
                         <!-- Campo adicional para repartidor (se muestra solo si entrega es domicilio) -->
                         <div class="form-group" id="grupoRepartidor" style="display: none;">
                             <label><i class="fa-solid fa-motorcycle"></i> Repartidor:</label>
-                            <select id="selectRepartidor" name="id_repartidor">
+                            <select id="selectRepartidor" name="id_repartidor" style="display:none;">
                                 <option value="">Seleccione repartidor...</option>
                                <?php foreach($repartidores as $repartidor): ?>
     <option value="<?= $repartidor['id']; ?>">
         <?= $repartidor['nombre'] . ' ' . $repartidor['ap_p']; ?>
     </option>
 <?php endforeach; ?>
-                                
                             </select>
+                            <button type="button" id="btnMostrarOtrosRepartidores" class="btn-primary" style="display:none; margin-top:8px; background:#5b6b5d;">
+                                <i class="fa-solid fa-users"></i> Elegir otro repartidor
+                            </button>
+                            <div id="listaAlternativasRepartidor" style="display:none; margin-top:8px; padding:8px; border-radius:8px; background:#fafafa; border:1px solid #e0e0e0; font-size:.88rem;"></div>
+                            <button type="button" id="btnSugerirRepartidor" class="btn-primary" style="margin-top:8px; background:#2d572c;">
+                                <i class="fa-solid fa-route"></i> Sugerir por ruta
+                            </button>
+                            <div id="panelSugerenciaRepartidor" style="display:none; margin-top:10px; padding:10px; border-radius:8px; background:#f4f8f2; border:1px solid #cfe3ca; font-size:.9rem;"></div>
                         </div>
                     </div>
                 </form>
@@ -365,16 +372,163 @@
 <script>
 
 // Mostrar/ocultar campo repartidor según tipo de entrega
-document.getElementById('selectEntrega').addEventListener('change', function() {
-    const grupoRepartidor = document.getElementById('grupoRepartidor');
+const selectEntrega = document.getElementById('selectEntrega');
+const selectCliente = document.getElementById('selectCliente');
+const grupoRepartidor = document.getElementById('grupoRepartidor');
+const selectRepartidor = document.getElementById('selectRepartidor');
+const btnSugerirRepartidor = document.getElementById('btnSugerirRepartidor');
+const btnMostrarOtrosRepartidores = document.getElementById('btnMostrarOtrosRepartidores');
+const listaAlternativasRepartidor = document.getElementById('listaAlternativasRepartidor');
+const panelSugerenciaRepartidor = document.getElementById('panelSugerenciaRepartidor');
+
+selectEntrega.addEventListener('change', function() {
     if (this.value === 'domicilio') {
         grupoRepartidor.style.display = 'block';
+        solicitarSugerenciaRepartidor();
     } else {
         grupoRepartidor.style.display = 'none';
-        // Limpiar selección de repartidor si se oculta
-        document.getElementById('selectRepartidor').value = '';
+        selectRepartidor.value = '';
+        btnMostrarOtrosRepartidores.style.display = 'none';
+        listaAlternativasRepartidor.style.display = 'none';
+        listaAlternativasRepartidor.innerHTML = '';
+        panelSugerenciaRepartidor.style.display = 'none';
+        panelSugerenciaRepartidor.innerHTML = '';
     }
 });
+
+selectCliente.addEventListener('change', function() {
+    if (selectEntrega.value === 'domicilio') {
+        solicitarSugerenciaRepartidor();
+    }
+});
+
+btnSugerirRepartidor.addEventListener('click', solicitarSugerenciaRepartidor);
+btnMostrarOtrosRepartidores.addEventListener('click', function() {
+    const visible = listaAlternativasRepartidor.style.display === 'block';
+    listaAlternativasRepartidor.style.display = visible ? 'none' : 'block';
+    this.innerHTML = visible
+        ? '<i class="fa-solid fa-users"></i> Elegir otro repartidor'
+        : '<i class="fa-solid fa-chevron-up"></i> Ocultar repartidores';
+});
+
+listaAlternativasRepartidor.addEventListener('click', function(evento) {
+    const opcion = evento.target.closest('[data-id-repartidor]');
+    if (!opcion) return;
+
+    selectRepartidor.value = opcion.dataset.idRepartidor;
+    listaAlternativasRepartidor.querySelectorAll('[data-id-repartidor]').forEach(elemento => {
+        elemento.style.background = '#fff';
+    });
+    opcion.style.background = '#e8f3e6';
+});
+
+function escaparHtml(valor) {
+    return String(valor ?? '').replace(/[&<>'"]/g, caracter => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    })[caracter]);
+}
+
+// Explica de dónde salieron los km: carretera real (OSRM), estimados o por zonas.
+function describirCalculo(candidato, datos) {
+    if (candidato.metodo !== 'coordenadas') {
+        return 'calculado por zonas';
+    }
+    const fuentes = {
+        osrm: 'km reales por carretera',
+        mixta: 'km por carretera (algunos estimados)',
+        estimada: 'km estimados'
+    };
+    const texto = fuentes[datos.configuracion?.fuente_distancia] || 'km calculados';
+    return texto + (candidato.aproximado ? ' · ubicación aproximada de algún pedido' : '');
+}
+
+function mostrarAlternativasRepartidor(candidatos) {
+    listaAlternativasRepartidor.innerHTML = (candidatos || []).map(candidato => {
+        const distancia = candidato.distancia_extra === null
+            ? 'Sin ruta'
+            : '+' + Number(candidato.distancia_extra).toFixed(2) + ' km';
+        const estado = candidato.disponible
+            ? distancia + ' · ' + candidato.pedidos_activos + ' pedidos'
+            : (candidato.motivo || 'No disponible');
+        const color = candidato.disponible ? '#1d4a27' : '#8a5a00';
+
+        return '<button type="button" data-id-repartidor="' + candidato.id + '" ' +
+            'style="display:block; width:100%; text-align:left; border:0; border-bottom:1px solid #ededed; background:#fff; padding:8px 6px; cursor:pointer;">' +
+            '<strong>' + escaparHtml(candidato.nombre) + '</strong>' +
+            '<br><small style="color:' + color + ';">' + escaparHtml(estado) + '</small>' +
+            '</button>';
+    }).join('');
+
+    btnMostrarOtrosRepartidores.style.display = candidatos && candidatos.length ? 'inline-flex' : 'none';
+}
+
+async function solicitarSugerenciaRepartidor() {
+    if (selectEntrega.value !== 'domicilio') return;
+
+    const idCliente = selectCliente.value;
+    if (!idCliente) {
+        panelSugerenciaRepartidor.style.display = 'block';
+        panelSugerenciaRepartidor.innerHTML = '<i class="fa-solid fa-circle-info"></i> Selecciona un cliente para calcular su zona.';
+        return;
+    }
+
+    btnSugerirRepartidor.disabled = true;
+    btnSugerirRepartidor.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Calculando ruta...';
+
+    try {
+        const respuesta = await fetch('<?= base_url("pedido/sugerir_repartidor") ?>', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_cliente: idCliente })
+        });
+        const resultado = await respuesta.json();
+
+        panelSugerenciaRepartidor.style.display = 'block';
+        if (resultado.status !== 'success') {
+            btnMostrarOtrosRepartidores.style.display = 'none';
+            listaAlternativasRepartidor.style.display = 'none';
+            panelSugerenciaRepartidor.style.background = '#fff8e6';
+            panelSugerenciaRepartidor.style.borderColor = '#f1d28a';
+            panelSugerenciaRepartidor.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + escaparHtml(resultado.message);
+            return;
+        }
+
+        const datos = resultado.data;
+        const recomendado = datos.recomendado;
+        mostrarAlternativasRepartidor(datos.candidatos || []);
+        listaAlternativasRepartidor.style.display = 'none';
+        btnMostrarOtrosRepartidores.innerHTML = '<i class="fa-solid fa-users"></i> Elegir otro repartidor';
+
+        if (recomendado) {
+            selectRepartidor.value = String(recomendado.id);
+            panelSugerenciaRepartidor.style.background = '#f4f8f2';
+            panelSugerenciaRepartidor.style.borderColor = '#cfe3ca';
+            panelSugerenciaRepartidor.innerHTML =
+                '<strong><i class="fa-solid fa-check-circle" style="color:#1d4a27;"></i> Repartidor sugerido:</strong> ' +
+                escaparHtml(recomendado.nombre) + ' (+' + Number(recomendado.distancia_extra).toFixed(2) + ' km)' +
+                '<br><small>Zona: ' + escaparHtml(datos.destino.zona) + ' · ' + describirCalculo(recomendado, datos) +
+                (recomendado.zona_base
+                    ? '<br>Zona del repartidor: ' + escaparHtml(recomendado.zona_base) +
+                      (recomendado.criterio === 'zona' ? ' (se prefirió por su zona)' : '')
+                    : '') +
+                '</small>';
+        } else {
+            panelSugerenciaRepartidor.style.background = '#fff8e6';
+            panelSugerenciaRepartidor.style.borderColor = '#f1d28a';
+            panelSugerenciaRepartidor.innerHTML =
+                '<strong><i class="fa-solid fa-triangle-exclamation"></i> Sin ruta cercana.</strong> Se agenda para la siguiente salida.' +
+                '<br><small>Zona: ' + escaparHtml(datos.destino.zona) + '.</small>';
+        }
+    } catch (error) {
+        panelSugerenciaRepartidor.style.display = 'block';
+        panelSugerenciaRepartidor.style.background = '#fff0f0';
+        panelSugerenciaRepartidor.style.borderColor = '#e7b8b8';
+        panelSugerenciaRepartidor.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> No se pudo calcular la sugerencia.';
+    } finally {
+        btnSugerirRepartidor.disabled = false;
+        btnSugerirRepartidor.innerHTML = '<i class="fa-solid fa-route"></i> Sugerir por ruta';
+    }
+}
 
 // AGREGAR PRODUCTO
 document.getElementById('formAgregarProducto').addEventListener('submit', function(e) {
@@ -798,11 +952,14 @@ async function cargarDatosConfiguracion(idConfig) {
             document.getElementById('selectTipoVenta').value = config.tipo_venta;
             document.getElementById('selectEntrega').value = config.tipo_entrega;
 
-            if (config.tipo_entrega === 'domicilio' && config.id_repartidor) {
+            if (config.tipo_entrega === 'domicilio') {
                 document.getElementById('grupoRepartidor').style.display = 'block';
-                document.getElementById('selectRepartidor').value = config.id_repartidor;
+                document.getElementById('selectRepartidor').value = config.id_repartidor || '';
+                solicitarSugerenciaRepartidor();
             } else {
                 document.getElementById('grupoRepartidor').style.display = 'none';
+                document.getElementById('selectRepartidor').value = '';
+                document.getElementById('panelSugerenciaRepartidor').style.display = 'none';
             }
 
             // Limpiar tabla actual e insertar los productos de la plantilla

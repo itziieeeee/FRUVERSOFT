@@ -64,7 +64,8 @@ $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
 
     // Clientes (Gestión desde Admin)
     $routes->get('alta_cliente', 'FRUVER::nuevo_cliente');
-    $routes->get('pantalla_rcliente', 'Clientes::pantalla_rcliente');
+    // Compatibilidad con el enlace antiguo "Nuevo Cliente".
+    $routes->get('pantalla_rcliente', 'FRUVER::nuevo_cliente');
     $routes->post('guardar_cliente', 'Clientes::registrar');
     $routes->post('clientes/registrar', 'Clientes::registrar');
     $routes->get('pantalla_clientes', 'Clientes::pantalla_clientes');
@@ -74,6 +75,8 @@ $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
 
     // Ventas y Pedidos (Administración)
     $routes->get('pantalla_ventas', 'PedidoController::pantalla_ventas');
+    $routes->post('pedido/sugerir_repartidor', 'PedidoController::sugerir_repartidor');
+    $routes->get('pedido/ordenar_ruta/(:num)', 'PedidoController::ordenar_ruta/$1');
     $routes->post('pedido/guardar_productos_pedido', 'PedidoController::guardar_productos_pedido');
     $routes->post('pedido/eliminar/(:num)', 'PedidoController::eliminarPedido/$1');
     $routes->get('pantalla_pedidos', 'Status::pantalla_pedidos');
@@ -127,14 +130,20 @@ $routes->get('api/pedidos', 'RepartidorApp::pedidos');
 $routes->post('api/estado', 'RepartidorApp::estado');
 $routes->post('api/incidencia', 'RepartidorApp::incidencia');
 $routes->post('api/ubicacion', 'RepartidorApp::ubicacion');
+$routes->get('api/respuestas', 'RepartidorApp::respuestas');
+$routes->post('api/respuestas/leer', 'RepartidorApp::respuestasLeer');
     // marquen como entregado
     $routes->post('cambiar_estado', 'PanelRepartidorController::cambiar_estado');
 });
     $routes->post('marcar_entregado', 'PanelRepartidorController::marcar_entregado');
 
 $routes->get('clientes/obtener_ultimo_pedido/(:num)', 'Clientes::obtener_ultimo_pedido/$1'); //ruta ticket ws
-$routes->get('admin_api/cambios', 'AdminCambios::cambios');
-$routes->post('admin_api/incidencia/resolver/(:num)', 'AdminCambios::resolver/$1');
+$routes->group('admin_api', ['filter' => 'authFilter:admin'], function($routes) {
+    $routes->get('cambios', 'AdminCambios::cambios');
+    $routes->get('incidencias/historial', 'AdminCambios::historial');
+    $routes->post('incidencia/resolver/(:num)', 'AdminCambios::resolver/$1');
+    $routes->post('incidencia/responder/(:num)', 'AdminCambios::responder/$1');
+});
 // Rutas para configuraciones / plantillas de pedidos frecuentes
     $routes->post('pedido/guardar_configuracion', 'PedidoController::guardar_configuracion');
     $routes->get('pedido/listar_configuraciones', 'PedidoController::listar_configuraciones');

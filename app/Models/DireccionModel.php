@@ -17,7 +17,9 @@ class DireccionModel extends Model
         'numero',
         'municipio',
         'estado',
-        'id_cliente'
+        'id_cliente',
+        'lat',
+        'lng'
     ];
 
     // Actualiza solo el estado de la dirección de un cliente

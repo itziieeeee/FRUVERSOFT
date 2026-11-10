@@ -27,6 +27,7 @@
   <a href="<?= base_url('salir') ?>">Salir</a>
 </header>
 
+<div id="respuestas"></div>
 <div id="lista"></div>
 <div class="card"><button class="btn help" style="width:100%" onclick="abrirAyuda(null)">🆘 Necesito ayuda</button></div>
 
@@ -106,8 +107,38 @@ if (navigator.geolocation) {
   }, () => {}, {enableHighAccuracy: true, maximumAge: 10000});
 }
 
+// Respuestas del administrador a las ayudas enviadas. Se muestran hasta que el repartidor las confirma.
+const respuestasMostradas = new Set();
+
+function mostrarRespuesta(r){
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.borderLeft = '6px solid #1e5631';
+  card.innerHTML = `<b>📩 Respuesta del administrador</b>${r.id_pedido ? ' · Pedido #' + esc(r.id_pedido) : ''}
+    <div style="margin:6px 0;white-space:pre-wrap">${esc(r.respuesta)}</div>
+    <button class="btn ok" style="width:100%">Entendido</button>`;
+  card.querySelector('button').onclick = () => {
+    post(API + '/respuesta/leida/' + r.id, {});
+    card.remove();
+  };
+  document.getElementById('respuestas').appendChild(card);
+}
+
+async function cargarRespuestas(){
+  try {
+    const d = await (await fetch(API + '/respuestas')).json();
+    (d.data || []).forEach(r => {
+      if (respuestasMostradas.has(r.id)) return;
+      respuestasMostradas.add(r.id);
+      mostrarRespuesta(r);
+    });
+  } catch(e) {}
+}
+
 cargar();
+cargarRespuestas();
 setInterval(cargar, 8000);
+setInterval(cargarRespuestas, 8000);
 </script>
 </body>
 </html>
