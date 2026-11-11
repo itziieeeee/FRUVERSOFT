@@ -76,6 +76,7 @@ $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
     // Ventas y Pedidos (Administración)
     $routes->get('pantalla_ventas', 'PedidoController::pantalla_ventas');
     $routes->post('pedido/sugerir_repartidor', 'PedidoController::sugerir_repartidor');
+    $routes->post('pedido/plan_salida', 'PedidoController::plan_salida');
     $routes->get('pedido/ordenar_ruta/(:num)', 'PedidoController::ordenar_ruta/$1');
     $routes->post('pedido/guardar_productos_pedido', 'PedidoController::guardar_productos_pedido');
     $routes->post('pedido/eliminar/(:num)', 'PedidoController::eliminarPedido/$1');

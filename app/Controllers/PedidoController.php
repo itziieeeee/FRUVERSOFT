@@ -51,6 +51,30 @@ class PedidoController extends BaseController {
     }
 
     /**
+     * Plan de salida del repartidor elegido en la venta, incluyendo la entrega que se está capturando.
+     */
+    public function plan_salida()
+    {
+        $json = $this->request->getJSON(true) ?? [];
+        $idRepartidor = (int) ($json['id_repartidor'] ?? 0);
+        $idCliente    = (int) ($json['id_cliente'] ?? 0);
+
+        if ($idRepartidor <= 0) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Selecciona un repartidor para ver su ruta.',
+            ]);
+        }
+
+        try {
+            $plan = (new RutaRepartidorService())->planSalida($idRepartidor, $idCliente > 0 ? $idCliente : null);
+            return $this->response->setJSON(['status' => 'success', 'data' => $plan]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * Devuelve el orden recomendado de entregas para la salida de un repartidor.
      */
     public function ordenar_ruta($idRepartidor = null)
@@ -64,7 +88,7 @@ class PedidoController extends BaseController {
         }
 
         try {
-            $datos = (new RutaRepartidorService())->ordenarEntregas($idRepartidor);
+            $datos = (new RutaRepartidorService())->planSalida($idRepartidor);
             return $this->response->setJSON([
                 'status' => 'success',
                 'data'   => $datos,

@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?= base_url('css/ventasestilo.css') ?>">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
 </head>
 <style>
@@ -111,6 +113,43 @@
             min-width: 180px;
         }
 
+        /* ===== Repartidor y ruta de entrega ===== */
+        .asignacion-ruta { margin-top: 1.2rem; }
+        .asignacion-grid {
+            display: grid;
+            grid-template-columns: minmax(280px, 370px) 1fr;
+            gap: 1.2rem;
+            align-items: start;
+        }
+        .asignacion-lateral { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+        .acciones-repartidor { display: flex; gap: 8px; flex-wrap: wrap; }
+        .acciones-repartidor .btn-primary { margin: 0; flex: 1; justify-content: center; padding: .55rem .8rem; font-size: .85rem; }
+        #listaAlternativasRepartidor { max-height: 190px; overflow-y: auto; }
+        #mapaRuta { height: 430px; border-radius: 12px; border: 1px solid var(--gray-border); z-index: 0; }
+        .mapa-vacio {
+            position: absolute; inset: 0; z-index: 1000;
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            padding: 1rem; border-radius: 12px; background: rgba(248, 249, 250, .94);
+            color: #666; font-size: .92rem;
+        }
+        .mapa-controles { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+        .mapa-controles .btn-primary { margin: 0; padding: .55rem .9rem; font-size: .85rem; text-decoration: none; }
+        .itinerario { list-style: none; margin: 0; padding: 0; max-height: 230px; overflow-y: auto; }
+        .itinerario li {
+            display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 8px;
+            border: 1px solid transparent; font-size: .85rem; line-height: 1.25;
+        }
+        .itinerario li[data-orden] { cursor: pointer; }
+        .itinerario li[data-orden]:hover, .itinerario li.activo { background: #e8f3e6; border-color: #cfe3ca; }
+        .itinerario .num {
+            width: 26px; height: 26px; border-radius: 50%; background: #2d8a3e; color: #fff; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .78rem;
+        }
+        .itinerario li.nuevo .num { background: #f16b1a; }
+        .itinerario li.fijo .num { background: #1d4a27; }
+        .itinerario .km { margin-left: auto; color: #666; white-space: nowrap; font-size: .8rem; }
+        .marcador-resaltado > div { transform: scale(1.3); transition: transform .15s; }
+        @media (max-width: 900px) { .asignacion-grid { grid-template-columns: 1fr; } }
         .btn-guardar-pedido {
             margin-top: 1.8rem;
             text-align: right;
@@ -308,28 +347,58 @@
                             </select>
                         </div>
 
-                        <!-- Campo adicional para repartidor (se muestra solo si entrega es domicilio) -->
-                        <div class="form-group" id="grupoRepartidor" style="display: none;">
-                            <label><i class="fa-solid fa-motorcycle"></i> Repartidor:</label>
-                            <select id="selectRepartidor" name="id_repartidor" style="display:none;">
-                                <option value="">Seleccione repartidor...</option>
-                               <?php foreach($repartidores as $repartidor): ?>
-    <option value="<?= $repartidor['id']; ?>">
-        <?= $repartidor['nombre'] . ' ' . $repartidor['ap_p']; ?>
-    </option>
-<?php endforeach; ?>
-                            </select>
-                            <button type="button" id="btnMostrarOtrosRepartidores" class="btn-primary" style="display:none; margin-top:8px; background:#5b6b5d;">
-                                <i class="fa-solid fa-users"></i> Elegir otro repartidor
-                            </button>
-                            <div id="listaAlternativasRepartidor" style="display:none; margin-top:8px; padding:8px; border-radius:8px; background:#fafafa; border:1px solid #e0e0e0; font-size:.88rem;"></div>
-                            <button type="button" id="btnSugerirRepartidor" class="btn-primary" style="margin-top:8px; background:#2d572c;">
-                                <i class="fa-solid fa-route"></i> Sugerir por ruta
-                            </button>
-                            <div id="panelSugerenciaRepartidor" style="display:none; margin-top:10px; padding:10px; border-radius:8px; background:#f4f8f2; border:1px solid #cfe3ca; font-size:.9rem;"></div>
-                        </div>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Repartidor y ruta de entrega (aparece solo con entrega a domicilio) -->
+        <div id="grupoRepartidor" class="asignacion-ruta" style="display:none;">
+            <div class="subtitulo-seccion"><i class="fa-solid fa-motorcycle"></i> Repartidor y ruta de entrega</div>
+
+            <select id="selectRepartidor" name="id_repartidor" style="display:none;">
+                <option value="">Seleccione repartidor...</option>
+                <?php foreach($repartidores as $repartidor): ?>
+                    <option value="<?= $repartidor['id']; ?>"><?= $repartidor['nombre'] . ' ' . $repartidor['ap_p']; ?></option>
+                <?php endforeach; ?>
+            </select>
+
+            <div class="asignacion-grid">
+                <aside class="asignacion-lateral">
+                    <div id="panelSugerenciaRepartidor" style="display:none; padding:10px; border-radius:8px; background:#f4f8f2; border:1px solid #cfe3ca; font-size:.9rem;"></div>
+                    <div class="acciones-repartidor">
+                        <button type="button" id="btnMostrarOtrosRepartidores" class="btn-primary" style="display:none; background:#5b6b5d;">
+                            <i class="fa-solid fa-users"></i> Elegir otro repartidor
+                        </button>
+                        <button type="button" id="btnSugerirRepartidor" class="btn-primary" style="background:#2d572c;">
+                            <i class="fa-solid fa-route"></i> Sugerir por ruta
+                        </button>
+                    </div>
+                    <div id="listaAlternativasRepartidor" style="display:none; padding:6px; border-radius:8px; background:#fafafa; border:1px solid #e0e0e0; font-size:.88rem;"></div>
+                    <div id="resumenRuta" style="font-size:.88rem;"></div>
+                    <ol id="itinerarioRuta" class="itinerario"></ol>
+                </aside>
+
+                <div class="asignacion-mapa">
+                    <div id="panelMapaRuta" style="position:relative;">
+                        <div id="mapaRuta"></div>
+                        <div id="mapaVacio" class="mapa-vacio">
+                            <span><i class="fa-solid fa-map-location-dot" style="font-size:1.6rem; color:#2d8a3e;"></i><br>Elige un cliente y un repartidor para ver la ruta de entrega.</span>
+                        </div>
+                    </div>
+                    <div class="mapa-controles">
+                        <button type="button" id="btnVerTodaRuta" class="btn-primary" style="background:#5b6b5d;" disabled>
+                            <i class="fa-solid fa-expand"></i> Ver toda la ruta
+                        </button>
+                        <button type="button" id="btnSimularRuta" class="btn-primary" style="background:#2563eb;" disabled>
+                            <i class="fa-solid fa-play"></i> Simular recorrido
+                        </button>
+                        <a id="btnGoogleMaps" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary" style="background:#1d4a27; display:none;">
+                            <i class="fa-brands fa-google"></i> Abrir en Google Maps
+                        </a>
+                    </div>
+                    <small id="leyendaMapa" style="display:block; margin-top:6px; color:#666;"></small>
+                </div>
             </div>
         </div>
 
@@ -393,6 +462,7 @@ selectEntrega.addEventListener('change', function() {
         listaAlternativasRepartidor.innerHTML = '';
         panelSugerenciaRepartidor.style.display = 'none';
         panelSugerenciaRepartidor.innerHTML = '';
+        ocultarMapaRuta();
     }
 });
 
@@ -420,6 +490,7 @@ listaAlternativasRepartidor.addEventListener('click', function(evento) {
         elemento.style.background = '#fff';
     });
     opcion.style.background = '#e8f3e6';
+    cargarPlanSalida();
 });
 
 function escaparHtml(valor) {
@@ -428,6 +499,314 @@ function escaparHtml(valor) {
     })[caracter]);
 }
 
+// ===== Mapa de la ruta del repartidor =====
+const panelMapaRuta = document.getElementById('panelMapaRuta');
+const mapaVacio = document.getElementById('mapaVacio');
+const mensajeMapaVacio = mapaVacio.innerHTML;
+const resumenRuta = document.getElementById('resumenRuta');
+const itinerarioRuta = document.getElementById('itinerarioRuta');
+const btnGoogleMaps = document.getElementById('btnGoogleMaps');
+const btnVerTodaRuta = document.getElementById('btnVerTodaRuta');
+const btnSimularRuta = document.getElementById('btnSimularRuta');
+const leyendaMapa = document.getElementById('leyendaMapa');
+let mapaRuta = null;
+let capaRuta = null;
+let tokenPlan = 0;
+let marcadoresParadas = {};
+let limitesRuta = null;
+let trazoActual = [];
+let carroSimulado = null;
+let temporizadorSimulacion = null;
+const cachePlanes = new Map(); // "idRepartidor:idCliente" -> plan, para cambiar de repartidor al instante
+
+function ocultarMapaRuta() {
+    tokenPlan++; // descarta cualquier respuesta que siga en camino
+    detenerSimulacion(false);
+    if (capaRuta) { capaRuta.remove(); capaRuta = null; }
+    marcadoresParadas = {};
+    limitesRuta = null;
+    trazoActual = [];
+    mapaVacio.innerHTML = mensajeMapaVacio;
+    mapaVacio.style.display = 'flex';
+    resumenRuta.innerHTML = '';
+    itinerarioRuta.innerHTML = '';
+    leyendaMapa.textContent = '';
+    btnVerTodaRuta.disabled = true;
+    btnSimularRuta.disabled = true;
+    btnGoogleMaps.style.display = 'none';
+}
+
+function iconoMapa(contenido, fondo, tamano, opacidad) {
+    return L.divIcon({
+        className: '',
+        iconSize: [tamano, tamano],
+        iconAnchor: [tamano / 2, tamano / 2],
+        popupAnchor: [0, -tamano / 2],
+        html: '<div style="width:' + tamano + 'px;height:' + tamano + 'px;border-radius:50%;background:' + fondo +
+              ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:' + Math.round(tamano * 0.45) +
+              'px;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45);opacity:' + (opacidad ?? 1) + ';">' + contenido + '</div>'
+    });
+}
+
+function textoHace(minutos) {
+    if (minutos === null || minutos === undefined) return 'hora desconocida';
+    if (minutos < 1) return 'hace menos de 1 minuto';
+    if (minutos < 60) return 'hace ' + minutos + ' min';
+    if (minutos < 1440) return 'hace ' + Math.round(minutos / 60) + ' h';
+    return 'hace ' + Math.round(minutos / 1440) + ' día(s)';
+}
+
+async function cargarPlanSalida() {
+    const idRepartidor = selectRepartidor.value;
+    const idCliente = selectCliente.value;
+    if (selectEntrega.value !== 'domicilio' || !idRepartidor || !idCliente) {
+        ocultarMapaRuta();
+        return;
+    }
+
+    const token = ++tokenPlan;
+    const clave = idRepartidor + ':' + idCliente;
+    if (cachePlanes.has(clave)) {
+        dibujarPlanRuta(cachePlanes.get(clave));
+        return;
+    }
+
+    mapaVacio.innerHTML = '<span><i class="fa-solid fa-spinner fa-spin" style="font-size:1.4rem;"></i><br>Calculando la ruta...</span>';
+    mapaVacio.style.display = 'flex';
+    resumenRuta.innerHTML = '';
+    itinerarioRuta.innerHTML = '';
+
+    try {
+        const respuesta = await fetch('<?= base_url("pedido/plan_salida") ?>', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_repartidor: idRepartidor, id_cliente: idCliente })
+        });
+        const resultado = await respuesta.json();
+        if (token !== tokenPlan) return; // se eligió otro repartidor mientras tanto
+
+        if (resultado.status !== 'success') {
+            mapaVacio.innerHTML = '<span style="color:#8a5a00;"><i class="fa-solid fa-triangle-exclamation" style="font-size:1.4rem;"></i><br>' +
+                escaparHtml(resultado.message) + '</span>';
+            return;
+        }
+        cachePlanes.set(clave, resultado.data);
+        dibujarPlanRuta(resultado.data);
+    } catch (error) {
+        if (token !== tokenPlan) return;
+        mapaVacio.innerHTML = '<span style="color:#b00020;"><i class="fa-solid fa-circle-xmark" style="font-size:1.4rem;"></i><br>No se pudo cargar el mapa de la ruta.</span>';
+    }
+}
+
+function dibujarPlanRuta(plan) {
+    detenerSimulacion(false);
+    const fuentes = { osrm: 'km reales por carretera', mixta: 'km por carretera (algunos estimados)', estimada: 'km estimados' };
+    const ultima = plan.repartidor.ultima_ubicacion;
+
+    // --- Resumen (columna izquierda) ---
+    let html = '<strong>' + escaparHtml(plan.repartidor.nombre) + '</strong><br>' + plan.paradas.length + ' entrega(s) · <strong>' +
+        Number(plan.km_total).toFixed(1) + ' km</strong> ida y vuelta<br><small style="color:#666;">' +
+        (fuentes[plan.fuente_distancia] || 'km calculados') + ' · ' +
+        (ultima ? 'última ubicación ' + textoHace(ultima.minutos) : 'sin ubicación enviada') + '</small>';
+    (plan.advertencias || []).forEach(aviso => {
+        html += '<br><span style="color:#8a5a00;"><i class="fa-solid fa-triangle-exclamation"></i> ' + escaparHtml(aviso) + '</span>';
+    });
+    if ((plan.sin_ubicacion || []).length) {
+        html += '<br><small style="color:#8a5a00;">' + plan.sin_ubicacion.length +
+            ' pedido(s) del repartidor no tienen ubicación y no aparecen en el mapa ni en el cálculo.</small>';
+    }
+    resumenRuta.innerHTML = html;
+
+    // --- Itinerario clicable ---
+    let items = '<li class="fijo"><span class="num"><i class="fa-solid fa-house"></i></span><span>Salida: Fruver</span></li>';
+    plan.paradas.forEach(p => {
+        const lugar = String(p.direccion || '').split(',').slice(-3).join(',').trim();
+        items += '<li data-orden="' + p.orden + '" class="' + (p.es_nuevo ? 'nuevo' : '') + '" title="Clic para ver en el mapa">' +
+            '<span class="num">' + p.orden + '</span>' +
+            '<span><strong>' + (p.es_nuevo ? 'Esta venta' : 'Pedido #' + p.id_pedido) + '</strong><br><small>' + escaparHtml(lugar) + '</small></span>' +
+            '<span class="km">+' + Number(p.km_desde_anterior).toFixed(1) + ' km</span></li>';
+    });
+    if (plan.paradas.length) {
+        items += '<li class="fijo"><span class="num"><i class="fa-solid fa-flag-checkered"></i></span><span>Regreso al local</span>' +
+            '<span class="km">+' + Number(plan.regreso_km).toFixed(1) + ' km</span></li>';
+    }
+    itinerarioRuta.innerHTML = items;
+
+    // --- Mapa ---
+    mapaVacio.style.display = 'none';
+    if (!mapaRuta) {
+        mapaRuta = L.map('mapaRuta', { scrollWheelZoom: false }); // la rueda mueve la página hasta hacer clic en el mapa
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(mapaRuta);
+        mapaRuta.on('click', () => mapaRuta.scrollWheelZoom.enable());
+        mapaRuta.on('mouseout', () => mapaRuta.scrollWheelZoom.disable());
+    }
+    mapaRuta.invalidateSize();
+    if (capaRuta) capaRuta.remove();
+    capaRuta = L.layerGroup().addTo(mapaRuta);
+    marcadoresParadas = {};
+
+    const local = [plan.local.lat, plan.local.lng];
+    const limites = [local];
+    const recorrido = [local];
+
+    L.marker(local, { icon: iconoMapa('<i class="fa-solid fa-house"></i>', '#1d4a27', 36) })
+        .bindPopup('<strong>Fruver</strong><br>Punto de salida y regreso').addTo(capaRuta);
+
+    plan.paradas.forEach(parada => {
+        const punto = [parada.lat, parada.lng];
+        limites.push(punto);
+        recorrido.push(punto);
+
+        const titulo = parada.es_nuevo ? '<strong>Esta venta</strong>' : '<strong>Pedido #' + parada.id_pedido + '</strong>';
+        const marcador = L.marker(punto, { icon: iconoMapa(parada.orden, parada.es_nuevo ? '#f16b1a' : '#2d8a3e', 32) })
+            .bindPopup(titulo + '<br>' + escaparHtml(parada.direccion) +
+                (parada.aproximada ? '<br><em>Ubicación aproximada (centro de su zona)</em>' : '') +
+                '<br>' + Number(parada.km_desde_anterior).toFixed(1) + ' km desde la parada anterior')
+            .addTo(capaRuta);
+        marcador.on('click', () => marcarItinerario(parada.orden));
+        marcadoresParadas[parada.orden] = marcador;
+    });
+    recorrido.push(local);
+
+    // Trazo por carretera si OSRM lo dio; si no, línea recta punteada entre paradas.
+    const hayTrazo = Array.isArray(plan.geometria) && plan.geometria.length > 1;
+    trazoActual = hayTrazo ? plan.geometria : recorrido;
+    L.polyline(trazoActual, {
+        color: '#2563eb', weight: 4, opacity: 0.8, dashArray: hayTrazo ? null : '8 8'
+    }).addTo(capaRuta);
+
+    let leyenda = 'Casa: salida y regreso · Verde: entregas en orden · Naranja: esta venta';
+    if (ultima) {
+        const punto = [ultima.lat, ultima.lng];
+        limites.push(punto);
+        const antigua = ultima.minutos === null || ultima.minutos > 60;
+        L.marker(punto, { icon: iconoMapa('<i class="fa-solid fa-car-side"></i>', '#2563eb', 38, antigua ? 0.55 : 1) })
+            .bindPopup('<strong>' + escaparHtml(plan.repartidor.nombre) + '</strong><br>Última ubicación: ' + textoHace(ultima.minutos) +
+                (antigua ? '<br><em>Puede no ser su posición actual.</em>' : ''))
+            .addTo(capaRuta);
+        leyenda += ' · Carro azul: última ubicación del repartidor' + (antigua ? ' (antigua)' : '');
+    }
+    leyendaMapa.textContent = leyenda;
+
+    limitesRuta = L.latLngBounds(limites);
+    mapaRuta.fitBounds(limitesRuta, { padding: [30, 30] });
+
+    btnVerTodaRuta.disabled = false;
+    btnSimularRuta.disabled = trazoActual.length < 2;
+
+    const url = plan.google_maps_url || '';
+    if (url.startsWith('https://www.google.com/maps/')) {
+        btnGoogleMaps.href = url;
+        btnGoogleMaps.style.display = 'inline-flex';
+    } else {
+        btnGoogleMaps.style.display = 'none';
+    }
+}
+
+// --- Interactividad: itinerario <-> mapa ---
+function marcarItinerario(orden) {
+    itinerarioRuta.querySelectorAll('li').forEach(li => li.classList.remove('activo'));
+    const item = itinerarioRuta.querySelector('li[data-orden="' + orden + '"]');
+    if (item) {
+        item.classList.add('activo');
+        item.scrollIntoView({ block: 'nearest' });
+    }
+}
+
+function resaltarMarcador(orden, activo) {
+    const marcador = marcadoresParadas[orden];
+    const elemento = marcador && marcador.getElement();
+    if (elemento) elemento.classList.toggle('marcador-resaltado', activo);
+}
+
+function enfocarParada(orden) {
+    const marcador = marcadoresParadas[orden];
+    if (!marcador || !mapaRuta) return;
+    mapaRuta.flyTo(marcador.getLatLng(), Math.max(mapaRuta.getZoom(), 12), { duration: 0.7 });
+    marcador.openPopup();
+    marcarItinerario(orden);
+}
+
+itinerarioRuta.addEventListener('click', evento => {
+    const item = evento.target.closest('li[data-orden]');
+    if (item) enfocarParada(item.dataset.orden);
+});
+itinerarioRuta.addEventListener('mouseover', evento => {
+    const item = evento.target.closest('li[data-orden]');
+    if (item) resaltarMarcador(item.dataset.orden, true);
+});
+itinerarioRuta.addEventListener('mouseout', evento => {
+    const item = evento.target.closest('li[data-orden]');
+    if (item) resaltarMarcador(item.dataset.orden, false);
+});
+
+btnVerTodaRuta.addEventListener('click', () => {
+    if (!mapaRuta || !limitesRuta) return;
+    mapaRuta.closePopup();
+    mapaRuta.fitBounds(limitesRuta, { padding: [30, 30] });
+});
+
+// --- Simulación del recorrido: un carro recorre el trazo del local a las entregas y de regreso ---
+function detenerSimulacion(terminoSolo) {
+    if (temporizadorSimulacion) {
+        clearInterval(temporizadorSimulacion);
+        temporizadorSimulacion = null;
+    }
+    if (carroSimulado && !terminoSolo) {
+        carroSimulado.remove();
+        carroSimulado = null;
+    }
+    btnSimularRuta.innerHTML = '<i class="fa-solid fa-play"></i> Simular recorrido';
+}
+
+// Si el trazo tiene pocos puntos (línea recta de respaldo), se agregan puntos intermedios para que el carro avance suave.
+function densificar(trazo) {
+    if (trazo.length >= 150) return trazo;
+    const salida = [];
+    for (let i = 0; i < trazo.length - 1; i++) {
+        for (let k = 0; k < 40; k++) {
+            const t = k / 40;
+            salida.push([
+                trazo[i][0] + (trazo[i + 1][0] - trazo[i][0]) * t,
+                trazo[i][1] + (trazo[i + 1][1] - trazo[i][1]) * t
+            ]);
+        }
+    }
+    salida.push(trazo[trazo.length - 1]);
+    return salida;
+}
+
+function simularRecorrido() {
+    if (temporizadorSimulacion) {
+        detenerSimulacion(false);
+        return;
+    }
+    if (!mapaRuta || trazoActual.length < 2) return;
+
+    if (carroSimulado) { carroSimulado.remove(); carroSimulado = null; }
+    mapaRuta.closePopup();
+    mapaRuta.fitBounds(limitesRuta, { padding: [30, 30] });
+
+    const puntos = densificar(trazoActual);
+    carroSimulado = L.marker(puntos[0], {
+        icon: iconoMapa('<i class="fa-solid fa-car-side"></i>', '#e11d48', 38),
+        zIndexOffset: 1000
+    }).addTo(mapaRuta);
+
+    const ultimo = puntos.length - 1;
+    const pasos = Math.min(ultimo, 300);
+    let paso = 0;
+    btnSimularRuta.innerHTML = '<i class="fa-solid fa-stop"></i> Detener';
+    temporizadorSimulacion = setInterval(() => {
+        paso++;
+        carroSimulado.setLatLng(puntos[Math.round(paso * ultimo / pasos)]);
+        if (paso >= pasos) detenerSimulacion(true);
+    }, 25);
+}
+btnSimularRuta.addEventListener('click', simularRecorrido);
 // Explica de dónde salieron los km: carretera real (OSRM), estimados o por zonas.
 function describirCalculo(candidato, datos) {
     if (candidato.metodo !== 'coordenadas') {
@@ -464,6 +843,7 @@ function mostrarAlternativasRepartidor(candidatos) {
 
 async function solicitarSugerenciaRepartidor() {
     if (selectEntrega.value !== 'domicilio') return;
+    cachePlanes.clear(); // una sugerencia nueva vuelve a calcular las rutas con datos frescos
 
     const idCliente = selectCliente.value;
     if (!idCliente) {
@@ -487,6 +867,7 @@ async function solicitarSugerenciaRepartidor() {
         if (resultado.status !== 'success') {
             btnMostrarOtrosRepartidores.style.display = 'none';
             listaAlternativasRepartidor.style.display = 'none';
+            ocultarMapaRuta();
             panelSugerenciaRepartidor.style.background = '#fff8e6';
             panelSugerenciaRepartidor.style.borderColor = '#f1d28a';
             panelSugerenciaRepartidor.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + escaparHtml(resultado.message);
@@ -501,6 +882,7 @@ async function solicitarSugerenciaRepartidor() {
 
         if (recomendado) {
             selectRepartidor.value = String(recomendado.id);
+            cargarPlanSalida();
             panelSugerenciaRepartidor.style.background = '#f4f8f2';
             panelSugerenciaRepartidor.style.borderColor = '#cfe3ca';
             panelSugerenciaRepartidor.innerHTML =
@@ -513,6 +895,7 @@ async function solicitarSugerenciaRepartidor() {
                     : '') +
                 '</small>';
         } else {
+            ocultarMapaRuta();
             panelSugerenciaRepartidor.style.background = '#fff8e6';
             panelSugerenciaRepartidor.style.borderColor = '#f1d28a';
             panelSugerenciaRepartidor.innerHTML =

@@ -342,6 +342,23 @@ class RutaRepartidorService
             return null;
         }
 
+        $datos = $this->pedirOsrm('table', $lista, 'annotations=distance');
+        if ($datos === null || !isset($datos['distances'])) {
+            return null;
+        }
+
+        return $datos['distances'];
+    }
+
+    /**
+     * Llama a un servicio de OSRM (table, route...) con la lista de puntos. Devuelve null si falla.
+     */
+    private function pedirOsrm(string $servicio, array $puntos, string $consulta): ?array
+    {
+        if (($this->config['usar_osrm'] ?? '1') !== '1' || !function_exists('curl_init')) {
+            return null;
+        }
+
         $base = rtrim((string) ($this->config['osrm_url'] ?? 'https://router.project-osrm.org'), '/');
         if (!preg_match('#^https?://#i', $base)) {
             return null;
@@ -349,10 +366,10 @@ class RutaRepartidorService
 
         $coordenadas = implode(';', array_map(
             static fn (array $p): string => sprintf('%.6f,%.6f', $p['lng'], $p['lat']),
-            $lista
+            $puntos
         ));
 
-        $curl = curl_init($base . '/table/v1/driving/' . $coordenadas . '?annotations=distance');
+        $curl = curl_init($base . '/' . $servicio . '/v1/driving/' . $coordenadas . '?' . $consulta);
         curl_setopt_array($curl, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 8,
@@ -368,11 +385,30 @@ class RutaRepartidorService
         }
 
         $datos = json_decode($respuesta, true);
-        if (!is_array($datos) || ($datos['code'] ?? '') !== 'Ok' || !isset($datos['distances'])) {
+        if (!is_array($datos) || ($datos['code'] ?? '') !== 'Ok') {
             return null;
         }
 
-        return $datos['distances'];
+        return $datos;
+    }
+
+    /**
+     * Trazo real de la ruta por carretera, como lista de [lat, lng]. Null si OSRM no responde.
+     */
+    private function geometriaRutaOsrm(array $puntos): ?array
+    {
+        if (count($puntos) < 2 || count($puntos) > 25) {
+            return null;
+        }
+
+        $datos = $this->pedirOsrm('route', $puntos, 'overview=full&geometries=geojson');
+        $coordenadas = $datos['routes'][0]['geometry']['coordinates'] ?? null;
+        if (!is_array($coordenadas) || !$coordenadas) {
+            return null;
+        }
+
+        // GeoJSON viene como [lng, lat]; el mapa usa [lat, lng].
+        return array_map(static fn (array $c): array => [(float) $c[1], (float) $c[0]], $coordenadas);
     }
 
     private function radioZonaKm(): float
@@ -467,6 +503,304 @@ class RutaRepartidorService
             'pedidos'       => $ordenados,
             'sin_zona'      => $sinZona,
         ];
+    }
+
+    /**
+     * Plan de salida de un repartidor: sale del local, hace todas sus entregas y regresa al local.
+     *
+     * - Orden: se prueban todas las combinaciones (son pocas, máximo 6 pedidos) y se elige la más corta.
+     * - Árbol de expansión mínima: une las entregas con la menor distancia total; si una queda muy
+     *   lejos de las demás, se avisa que conviene separarla en otra salida.
+     * - Si se manda $idClienteNuevo, su entrega entra como una parada más (la venta que se captura).
+     * - La última ubicación del repartidor solo se devuelve para mostrarla; no entra al cálculo.
+     */
+    public function planSalida(int $idRepartidor, ?int $idClienteNuevo = null): array
+    {
+        $coordLocal = $this->coordenadasLocal();
+        if ($coordLocal === null) {
+            throw new RuntimeException('No hay coordenadas del local configuradas (local_lat y local_lng).');
+        }
+
+        $repartidor = $this->db->table('repartidor')
+            ->select('id, nombre, ap_p, ap_m, ultima_lat, ultima_lng, ultima_actualizacion')
+            ->where('id', $idRepartidor)
+            ->get()
+            ->getRowArray();
+        if (!$repartidor) {
+            throw new RuntimeException('El repartidor no existe.');
+        }
+
+        $paradas      = [];
+        $sinUbicacion = [];
+        foreach ($this->obtenerPedidosActivos($idRepartidor) as $pedido) {
+            $direccion = $this->textoDireccion($pedido);
+            $ubicacion = $this->ubicacionDireccion($pedido, $this->resolverNodoDireccion($pedido));
+            if ($ubicacion === null) {
+                $sinUbicacion[] = ['id_pedido' => (int) $pedido['id'], 'direccion' => $direccion];
+                continue;
+            }
+            $paradas[] = $ubicacion + ['id_pedido' => (int) $pedido['id'], 'es_nuevo' => false, 'direccion' => $direccion];
+        }
+
+        if ($idClienteNuevo !== null) {
+            $direccionNueva = $this->obtenerDireccionCliente($idClienteNuevo);
+            $ubicacionNueva = $direccionNueva
+                ? $this->ubicacionDireccion($direccionNueva, $this->resolverNodoDireccion($direccionNueva))
+                : null;
+            if ($ubicacionNueva === null) {
+                throw new RuntimeException('El cliente de esta venta no tiene ubicación. Pon su pin en el mapa.');
+            }
+            $paradas[] = $ubicacionNueva + [
+                'id_pedido' => null,
+                'es_nuevo'  => true,
+                'direccion' => $this->textoDireccion($direccionNueva),
+            ];
+        }
+
+        // Una sola consulta a OSRM trae todas las distancias entre el local y las paradas.
+        $this->prepararDistancias(array_merge([$coordLocal], $paradas));
+
+        $orden   = $this->mejorOrden($coordLocal, $paradas);
+        $detalle = [];
+        $anterior = $coordLocal;
+        $total = 0.0;
+        foreach ($orden as $indice => $parada) {
+            $km = $this->distanciaCoordenadas($anterior, $parada);
+            $total += $km;
+            $detalle[] = [
+                'orden'             => $indice + 1,
+                'id_pedido'         => $parada['id_pedido'],
+                'es_nuevo'          => $parada['es_nuevo'],
+                'direccion'         => $parada['direccion'],
+                'lat'               => $parada['lat'],
+                'lng'               => $parada['lng'],
+                'aproximada'        => $parada['aproximada'],
+                'km_desde_anterior' => round($km, 2),
+            ];
+            $anterior = $parada;
+        }
+        $regreso = $orden ? $this->distanciaCoordenadas($anterior, $coordLocal) : 0.0;
+        $total  += $regreso;
+
+        // Trazo por carretera del recorrido completo (ida y regreso al local).
+        $geometria = null;
+        if ($orden) {
+            $geometria = $this->geometriaRutaOsrm(array_merge([$coordLocal], $orden, [$coordLocal]));
+        }
+
+        $arbol = $this->arbolExpansionMinima($orden);
+        $grupos = $this->gruposLejanos($orden, $arbol['aristas']);
+
+        $ultima = $this->coordenadas(['lat' => $repartidor['ultima_lat'], 'lng' => $repartidor['ultima_lng']]);
+        $minutos = null;
+        if ($ultima !== null && !empty($repartidor['ultima_actualizacion'])) {
+            $marca = strtotime((string) $repartidor['ultima_actualizacion']);
+            $minutos = $marca ? max(0, (int) round((time() - $marca) / 60)) : null;
+        }
+
+        return [
+            'repartidor' => [
+                'id'     => (int) $repartidor['id'],
+                'nombre' => trim(($repartidor['nombre'] ?? '') . ' ' . ($repartidor['ap_p'] ?? '') . ' ' . ($repartidor['ap_m'] ?? '')),
+                'ultima_ubicacion' => $ultima === null ? null : $ultima + ['minutos' => $minutos],
+            ],
+            'local'            => $coordLocal,
+            'paradas'          => $detalle,
+            'regreso_km'       => round($regreso, 2),
+            'km_total'         => round($total, 2),
+            'fuente_distancia' => $this->fuenteDistancia,
+            'geometria'        => $geometria,
+            'arbol_minimo'     => ['km_total' => round($arbol['km_total'], 2), 'aristas' => $arbol['aristas']],
+            'grupos'           => $grupos,
+            'advertencias'     => count($grupos) > 1
+                ? ['Hay entregas muy lejos unas de otras (más de ' . $this->formatoKm($this->umbralLejaniaKm()) . ' km). Conviene separarlas en otra salida.']
+                : [],
+            'sin_ubicacion'    => $sinUbicacion,
+            'google_maps_url'  => $this->urlGoogleMaps($coordLocal, $orden),
+        ];
+    }
+
+    /**
+     * Prueba todas las combinaciones posibles de entrega y devuelve la de menor recorrido total
+     * (con regreso al local). Con más de 8 paradas usa el vecino más cercano para no tardar.
+     */
+    private function mejorOrden(array $local, array $paradas): array
+    {
+        $cantidad = count($paradas);
+        if ($cantidad <= 1) {
+            return $paradas;
+        }
+
+        if ($cantidad > 8) {
+            $pendientes = $paradas;
+            $orden = [];
+            $actual = $local;
+            while ($pendientes) {
+                $mejorIndice = null;
+                $mejorKm = INF;
+                foreach ($pendientes as $indice => $parada) {
+                    $km = $this->distanciaCoordenadas($actual, $parada);
+                    if ($km < $mejorKm) {
+                        $mejorKm = $km;
+                        $mejorIndice = $indice;
+                    }
+                }
+                $actual = $pendientes[$mejorIndice];
+                $orden[] = $actual;
+                unset($pendientes[$mejorIndice]);
+            }
+            return $orden;
+        }
+
+        $evaluadas = [];
+        $mejorCosto = INF;
+        foreach ($this->permutaciones($paradas) as $candidata) {
+            $costo = $this->costoRutaCoordenadas($local, $candidata);
+            $evaluadas[] = ['costo' => $costo, 'orden' => $candidata];
+            $mejorCosto = min($mejorCosto, $costo);
+        }
+
+        // Un recorrido de ida y vuelta se puede hacer en ambos sentidos con casi los mismos km.
+        // Entre los que quedan a menos de medio kilómetro del mejor, se empieza por el más cercano.
+        $mejor = null;
+        $primerKm = INF;
+        foreach ($evaluadas as $evaluada) {
+            if ($evaluada['costo'] > $mejorCosto + 0.5) {
+                continue;
+            }
+            $km = $this->distanciaCoordenadas($local, $evaluada['orden'][0]);
+            if ($km < $primerKm) {
+                $primerKm = $km;
+                $mejor = $evaluada['orden'];
+            }
+        }
+        return $mejor ?? $paradas;
+    }
+
+    private function permutaciones(array $elementos): \Generator
+    {
+        if (count($elementos) <= 1) {
+            yield $elementos;
+            return;
+        }
+
+        foreach ($elementos as $indice => $elemento) {
+            $resto = $elementos;
+            unset($resto[$indice]);
+            foreach ($this->permutaciones(array_values($resto)) as $permutacion) {
+                yield array_merge([$elemento], $permutacion);
+            }
+        }
+    }
+
+    /** Distancia entre dos puntos sin importar el sentido (promedio de ida y vuelta). */
+    private function distanciaSimetrica(array $a, array $b): float
+    {
+        return ($this->distanciaCoordenadas($a, $b) + $this->distanciaCoordenadas($b, $a)) / 2;
+    }
+
+    /**
+     * Árbol de expansión mínima (algoritmo de Prim) entre las entregas.
+     * Devuelve las conexiones usando la posición de cada parada en la lista (0, 1, 2...).
+     */
+    private function arbolExpansionMinima(array $paradas): array
+    {
+        $cantidad = count($paradas);
+        if ($cantidad < 2) {
+            return ['km_total' => 0.0, 'aristas' => []];
+        }
+
+        $enArbol = [0 => true];
+        $costo   = [];
+        $padre   = [];
+        for ($j = 1; $j < $cantidad; $j++) {
+            $costo[$j] = $this->distanciaSimetrica($paradas[0], $paradas[$j]);
+            $padre[$j] = 0;
+        }
+
+        $total   = 0.0;
+        $aristas = [];
+        while (count($enArbol) < $cantidad) {
+            $elegido = null;
+            $minimo  = INF;
+            foreach ($costo as $j => $km) {
+                if (!isset($enArbol[$j]) && $km < $minimo) {
+                    $minimo  = $km;
+                    $elegido = $j;
+                }
+            }
+
+            $enArbol[$elegido] = true;
+            $total += $minimo;
+            $aristas[] = ['desde' => $padre[$elegido] + 1, 'hasta' => $elegido + 1, 'km' => round($minimo, 2)];
+
+            foreach (array_keys($costo) as $j) {
+                if (isset($enArbol[$j])) {
+                    continue;
+                }
+                $km = $this->distanciaSimetrica($paradas[$elegido], $paradas[$j]);
+                if ($km < $costo[$j]) {
+                    $costo[$j] = $km;
+                    $padre[$j] = $elegido;
+                }
+            }
+        }
+
+        return ['km_total' => $total, 'aristas' => $aristas];
+    }
+
+    /**
+     * Agrupa las entregas cortando las conexiones del árbol más largas que el umbral.
+     * Devuelve grupos de números de parada (1, 2, 3...). Más de un grupo significa entregas muy separadas.
+     */
+    private function gruposLejanos(array $paradas, array $aristas): array
+    {
+        $cantidad = count($paradas);
+        if ($cantidad === 0) {
+            return [];
+        }
+
+        $representante = range(0, $cantidad - 1);
+        $buscar = function (int $x) use (&$representante, &$buscar): int {
+            return $representante[$x] === $x ? $x : ($representante[$x] = $buscar($representante[$x]));
+        };
+
+        foreach ($aristas as $arista) {
+            if ($arista['km'] <= $this->umbralLejaniaKm()) {
+                $representante[$buscar($arista['desde'] - 1)] = $buscar($arista['hasta'] - 1);
+            }
+        }
+
+        $grupos = [];
+        for ($i = 0; $i < $cantidad; $i++) {
+            $grupos[$buscar($i)][] = $i + 1;
+        }
+        return array_values($grupos);
+    }
+
+    private function umbralLejaniaKm(): float
+    {
+        return max(1.0, (float) ($this->config['umbral_lejania_km'] ?? 80));
+    }
+
+    /**
+     * Enlace de Google Maps con la salida completa. Google admite hasta 9 paradas intermedias.
+     */
+    private function urlGoogleMaps(array $local, array $orden): ?string
+    {
+        if (!$orden) {
+            return null;
+        }
+
+        $punto = static fn (array $p): string => sprintf('%.6f,%.6f', $p['lat'], $p['lng']);
+
+        return 'https://www.google.com/maps/dir/?' . http_build_query([
+            'api'         => 1,
+            'origin'      => $punto($local),
+            'destination' => $punto($local),
+            'travelmode'  => 'driving',
+            'waypoints'   => implode('|', array_map($punto, array_slice($orden, 0, 9))),
+        ]);
     }
 
     private function cargarConfiguracion(): void
