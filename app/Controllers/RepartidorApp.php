@@ -2,6 +2,7 @@
 namespace App\Controllers;
 
 use App\Models\StatusModel;
+use App\Services\SalidasRepartoService;
 
 class RepartidorApp extends BaseController
 {
@@ -13,6 +14,66 @@ class RepartidorApp extends BaseController
     public function vista()
     {
         return view('Repartidor/app_movil');
+    }
+
+    /** Vista previa del recorrido con los pedidos listos del repartidor (no guarda nada). */
+    public function recorridoPrevia()
+    {
+        try {
+            return $this->response->setJSON([
+                'success' => true,
+                'data'    => (new SalidasRepartoService())->vistaPrevia($this->idRep()),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /** El repartidor arranca su recorrido: se crea la salida y sus pedidos pasan a "en tránsito". */
+    public function recorridoIniciar()
+    {
+        try {
+            return $this->response->setJSON([
+                'success' => true,
+                'data'    => (new SalidasRepartoService())->iniciarRecorrido($this->idRep()),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function salidaActiva()
+    {
+        try {
+            return $this->response->setJSON([
+                'success' => true,
+                'data'    => (new SalidasRepartoService())->activaDeRepartidor($this->idRep()),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function entregarSalidaPedido($idPedido)
+    {
+        $lat = $this->request->getPost('lat');
+        $lng = $this->request->getPost('lng');
+        $lat = is_numeric($lat) ? (float) $lat : null;
+        $lng = is_numeric($lng) ? (float) $lng : null;
+        $nota = trim((string) $this->request->getPost('nota'));
+
+        try {
+            $data = (new SalidasRepartoService())->entregar(
+                $this->idRep(),
+                (int) $idPedido,
+                $lat,
+                $lng,
+                $nota !== '' ? $nota : null
+            );
+            return $this->response->setJSON(['success' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     public function pedidos()

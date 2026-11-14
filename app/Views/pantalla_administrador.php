@@ -267,7 +267,8 @@
             </div>
             <div class="opcionesdelabarra">
                 <a href="#" class="boton"><i class="fas fa-user-shield"></i> Administrador</a>
-                <a href="#" class="boton"><i class="fas fa-bell"></i> Notificaciones </a>
+                <?= view('partials/admin_alertas') ?>
+                <a href="<?= base_url('alertas') ?>" class="boton"><i class="fas fa-bell"></i> Estado del stock</a>
                 <a href="<?= base_url('salir') ?>" class="boton"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
             </div>
             <div class="buscador">

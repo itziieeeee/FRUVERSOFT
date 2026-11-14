@@ -347,6 +347,15 @@
             <span class="module-arrow"><i class="fas fa-arrow-right"></i></span>
         </a>
 
+        <a href="<?= base_url('repartidor/app') ?>" class="module-card">
+            <div class="card-icon-wrapper">
+                <i class="fas fa-route" style="font-size:3.2rem;color:#f16b1a;"></i>
+            </div>
+            <span class="module-title">Mi Recorrido</span>
+            <span class="module-sub">Inicia tu salida y registra entregas</span>
+            <span class="module-arrow"><i class="fas fa-arrow-right"></i></span>
+        </a>
+
         <a href="<?= base_url('repartidor/inventario') ?>" class="module-card">
             <div class="card-icon-wrapper">
                 <img src="<?= base_url('img/INVENTARIO1.png') ?>" alt="Inventario" class="module-img">

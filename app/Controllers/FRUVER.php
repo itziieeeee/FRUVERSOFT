@@ -215,6 +215,7 @@ class FRUVER extends BaseController
     public function guardarrepartidor()
     {
         $model = new RepartidorModel();
+        $db = \Config\Database::connect();
 
         // Manejo de foto
         $foto = $this->request->getFile('foto');
@@ -225,13 +226,14 @@ class FRUVER extends BaseController
             $foto->move(FCPATH . 'uploads/repartidores/', $nombreFoto);
         }
 
+        $direccion = $this->formarDireccionRepartidor();
         $data = [
-            'nombre'    => $this->request->getPost('nombre'),
-            'ap_p'      => $this->request->getPost('ap_p'),
-            'ap_m'      => $this->request->getPost('ap_m'),
-            'tel'       => $this->request->getPost('tel'),
-            'direccion' => $this->request->getPost('direccion'),
-            'notas'     => $this->request->getPost('notas'),
+            'nombre'       => trim((string) $this->request->getPost('nombre')),
+            'ap_p'         => trim((string) $this->request->getPost('ap_p')),
+            'ap_m'         => trim((string) $this->request->getPost('ap_m')),
+            'tel'          => trim((string) $this->request->getPost('tel')),
+            'direccion'    => $direccion,
+            'notas'        => trim((string) $this->request->getPost('notas')),
             'zona_base_id' => $model->zonaValidaOrNull($this->request->getPost('zona_base_id')),
         ];
 
@@ -239,11 +241,72 @@ class FRUVER extends BaseController
             $data['foto'] = $nombreFoto;
         }
 
-        if ($model->insert($data)) {
-            return $this->response->setJSON(['success' => true]);
-        } else {
+        if (!$model->insert($data)) {
             return $this->response->setJSON(['success' => false, 'error' => $model->errors()]);
         }
+
+        $idRepartidor = (int) $model->getInsertID();
+        $credenciales = null;
+
+        if ($this->request->getPost('crear_acceso') === '1') {
+            $correo = strtolower(trim((string) $this->request->getPost('correo')));
+            if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+                $model->delete($idRepartidor);
+                return $this->response->setJSON(['success' => false, 'error' => 'Escribe un correo válido para crear el acceso.']);
+            }
+
+            if ($db->table('usuarios')->where('correo', $correo)->countAllResults() > 0) {
+                $model->delete($idRepartidor);
+                return $this->response->setJSON(['success' => false, 'error' => 'Ese correo ya está registrado.']);
+            }
+
+            $usuario = 'rep_' . str_pad((string) $idRepartidor, 4, '0', STR_PAD_LEFT);
+            $passwordTemporal = 'Rp-' . strtoupper(bin2hex(random_bytes(4)));
+            $insertado = $db->table('usuarios')->insert([
+                'nombre'               => trim($data['nombre'] . ' ' . $data['ap_p']),
+                'usuario'              => $usuario,
+                'correo'               => $correo,
+                'password'             => password_hash($passwordTemporal, PASSWORD_DEFAULT),
+                'rol'                  => 'repartidor',
+                'id_repartidor'        => $idRepartidor,
+                'debe_cambiar_password'=> 1,
+                'activo'               => 1,
+            ]);
+
+            if (!$insertado) {
+                $model->delete($idRepartidor);
+                return $this->response->setJSON(['success' => false, 'error' => 'No se pudo crear la cuenta del repartidor.']);
+            }
+
+            $credenciales = [
+                'usuario'  => $usuario,
+                'correo'   => $correo,
+                'password' => $passwordTemporal,
+            ];
+        }
+
+        return $this->response->setJSON([
+            'success'      => true,
+            'credenciales' => $credenciales,
+        ]);
+    }
+
+    private function formarDireccionRepartidor(): ?string
+    {
+        $partes = [
+            trim((string) $this->request->getPost('calle')),
+            trim((string) $this->request->getPost('numero')) !== '' ? 'No. ' . trim((string) $this->request->getPost('numero')) : '',
+            trim((string) $this->request->getPost('colonia')),
+            trim((string) $this->request->getPost('municipio')),
+            trim((string) $this->request->getPost('estado')),
+        ];
+        $partes = array_values(array_filter($partes, static fn (string $parte): bool => $parte !== ''));
+        if ($partes) {
+            return implode(', ', $partes);
+        }
+
+        $texto = trim((string) $this->request->getPost('direccion'));
+        return $texto !== '' ? $texto : null;
     }
 
     public function editarrepartidor($id)
@@ -255,9 +318,9 @@ class FRUVER extends BaseController
             'nombre'    => $this->request->getPost('nombre'),
             'ap_p'      => $this->request->getPost('ap_p'),
             'ap_m'      => $this->request->getPost('ap_m'),
-            'tel'       => $this->request->getPost('tel'),
-            'direccion' => $this->request->getPost('direccion'),
-            'notas'     => $this->request->getPost('notas'),
+            'tel'          => trim((string) $this->request->getPost('tel')),
+            'direccion'    => $this->formarDireccionRepartidor(),
+            'notas'        => trim((string) $this->request->getPost('notas')),
             'zona_base_id' => $model->zonaValidaOrNull($this->request->getPost('zona_base_id')),
         ];
 

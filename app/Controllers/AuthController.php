@@ -9,9 +9,11 @@ class AuthController extends BaseController
     public function login()
     {
         if (session()->get('isLoggedIn')) {
-            return session()->get('rol') === 'admin' 
-                ? redirect()->to(base_url('menusolo'))
-                : redirect()->to(base_url('cliente/menu'));
+            if (session()->get('rol') === 'admin') return redirect()->to(base_url('menusolo'));
+            if (session()->get('rol') === 'repartidor') {
+                return session()->get('debe_cambiar_password') ? redirect()->to(base_url('cuenta/cambiar-password')) : redirect()->to(base_url('repartidor/app'));
+            }
+            return redirect()->to(base_url('cliente/menu'));
         }
         return view('auth/login');
     }
@@ -19,32 +21,44 @@ class AuthController extends BaseController
     public function ingresar()
     {
         $db = \Config\Database::connect();
-        $correo = trim($this->request->getPost('correo'));
-        $password = $this->request->getPost('password');
+        $identificador = trim((string) ($this->request->getPost('identificador') ?: $this->request->getPost('correo')));
+        $password = (string) $this->request->getPost('password');
 
-        $usuario = $db->table('usuarios')->where('correo', $correo)->get()->getRowArray();
+        $usuario = $db->table('usuarios')
+            ->groupStart()
+                ->where('correo', $identificador)
+                ->orWhere('usuario', $identificador)
+            ->groupEnd()
+            ->get()->getRowArray();
 
-        if ($usuario && password_verify($password, $usuario['password'])) {
-    session()->set([
-        'id_usuario'    => $usuario['id'],
-        'id_repartidor' => $usuario['id_repartidor'], 
-        'nombre'        => $usuario['nombre'],
-        'correo'        => $usuario['correo'],
-        'rol'           => $usuario['rol'],
-        'isLoggedIn'    => true
-    ]);
+        if ($usuario && (int) ($usuario['activo'] ?? 1) !== 0 && password_verify($password, $usuario['password'])) {
+            session()->regenerate(true);
+            session()->set([
+                'id_usuario'          => $usuario['id'],
+                'id_repartidor'       => $usuario['id_repartidor'] ?? null,
+                'nombre'              => $usuario['nombre'],
+                'correo'              => $usuario['correo'],
+                'rol'                 => $usuario['rol'],
+                'debe_cambiar_password' => (int) ($usuario['debe_cambiar_password'] ?? 0),
+                'isLoggedIn'          => true,
+            ]);
 
-    
-    if ($usuario['rol'] === 'admin') {
-        return redirect()->to(base_url('menusolo'));
-    } elseif ($usuario['rol'] === 'repartidor') {
-        return redirect()->to(base_url('repartidor/panel'));
-    } else {
-        return redirect()->to(base_url('cliente/menu'));
-    }
-}
+            if (password_needs_rehash($password, PASSWORD_DEFAULT)) {
+                $db->table('usuarios')->where('id', $usuario['id'])->update([
+                    'password' => password_hash($password, PASSWORD_DEFAULT),
+                ]);
+            }
 
-        return redirect()->back()->with('error', 'Correo o contraseña incorrectos.');
+            if ($usuario['rol'] === 'admin') return redirect()->to(base_url('menusolo'));
+            if ($usuario['rol'] === 'repartidor') {
+                return !empty($usuario['debe_cambiar_password'])
+                    ? redirect()->to(base_url('cuenta/cambiar-password'))
+                    : redirect()->to(base_url('repartidor/app'));
+            }
+            return redirect()->to(base_url('cliente/menu'));
+        }
+
+        return redirect()->back()->with('error', 'Correo, usuario o contraseña incorrectos.');
     }
 
     public function registro()
@@ -72,6 +86,42 @@ class AuthController extends BaseController
         ]);
 
         return redirect()->to(base_url('login'))->with('mensaje', 'Registro exitoso. Inicia sesión.');
+    }
+
+    public function cambiarPassword()
+    {
+        return view('auth/cambiar_password');
+    }
+
+    public function guardarPassword()
+    {
+        if (!session()->get('isLoggedIn')) {
+            return redirect()->to(base_url('login'));
+        }
+
+        $actual = (string) $this->request->getPost('password_actual');
+        $nueva = (string) $this->request->getPost('password_nueva');
+        $confirmacion = (string) $this->request->getPost('password_confirmacion');
+
+        if (strlen($nueva) < 8 || $nueva !== $confirmacion) {
+            return redirect()->back()->with('error', 'La nueva contraseña debe tener al menos 8 caracteres y coincidir con la confirmación.');
+        }
+
+        $db = \Config\Database::connect();
+        $usuario = $db->table('usuarios')->where('id', (int) session()->get('id_usuario'))->get()->getRowArray();
+        if (!$usuario || !password_verify($actual, $usuario['password'])) {
+            return redirect()->back()->with('error', 'La contraseña actual no es correcta.');
+        }
+
+        $db->table('usuarios')->where('id', $usuario['id'])->update([
+            'password' => password_hash($nueva, PASSWORD_DEFAULT),
+            'debe_cambiar_password' => 0,
+            'password_actualizado_at' => date('Y-m-d H:i:s'),
+        ]);
+        session()->set('debe_cambiar_password', 0);
+
+        $destino = session()->get('rol') === 'repartidor' ? 'repartidor/app' : 'menusolo';
+        return redirect()->to(base_url($destino))->with('mensaje', 'Contraseña actualizada correctamente.');
     }
 
     public function logout()

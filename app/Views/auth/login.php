@@ -53,8 +53,8 @@
                     <form action="<?= base_url('login/ingresar') ?>" method="POST">
                         <?= csrf_field() ?>
                         <div class="mb-3">
-                            <label for="correo" class="form-label text-secondary"><small>Correo Electrónico</small></label>
-                            <input type="email" name="correo" id="correo" class="form-control" required placeholder="ejemplo@correo.com">
+                            <label for="identificador" class="form-label text-secondary"><small>Correo o usuario</small></label>
+                            <input type="text" name="identificador" id="identificador" class="form-control" required placeholder="correo@ejemplo.com o rep_0001">
                         </div>
                         <div class="mb-3">
                             <label for="password" class="form-label text-secondary"><small>Contraseña</small></label>

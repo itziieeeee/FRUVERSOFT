@@ -438,6 +438,7 @@
             </div>
             <div class="user-actions">
                 <a href="#" class="btn-user"><i class="fas fa-user-shield"></i> Admin</a>
+                <a href="<?= base_url('alertas') ?>" class="btn-user"><i class="fas fa-chart-line"></i> Estado de inventario</a>
                 <a href="menusolo" class="btn-user"><i class="fas fa-arrow-right-from-bracket"></i> Regresar</a>
             </div>
         </div>

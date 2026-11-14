@@ -104,6 +104,17 @@ class RutaRepartidorService
             $this->prepararDistancias($puntos);
         }
 
+        // Pedidos que cada repartidor ya lleva en la calle (para mostrarlo y desempatar).
+        $enTransito = [];
+        foreach ($this->db->table('pedido')
+            ->select('id_repartidor, COUNT(*) AS n')
+            ->where('tipo_entrega', 'domicilio')
+            ->where('estado_actual', 'Pedido en tránsito')
+            ->groupBy('id_repartidor')
+            ->get()->getResultArray() as $fila) {
+            $enTransito[(int) $fila['id_repartidor']] = (int) $fila['n'];
+        }
+
         $candidatos = [];
         foreach ($repartidores as $repartidor) {
             $idRepartidor    = (int) $repartidor['id'];
@@ -121,6 +132,7 @@ class RutaRepartidorService
                 'id'                => $idRepartidor,
                 'nombre'            => trim(($repartidor['nombre'] ?? '') . ' ' . ($repartidor['ap_p'] ?? '') . ' ' . ($repartidor['ap_m'] ?? '')),
                 'pedidos_activos'   => $cantidadPedidos,
+                'en_transito'       => $enTransito[$idRepartidor] ?? 0,
                 'distancia_extra'   => null,
                 'distancia_ruta'    => null,
                 'zona_nueva'        => $nombreZona,
@@ -210,6 +222,12 @@ class RutaRepartidorService
         usort($candidatos, static function (array $a, array $b): int {
             $distanciaA = $a['distancia_extra'] === null ? PHP_FLOAT_MAX : $a['distancia_extra'];
             $distanciaB = $b['distancia_extra'] === null ? PHP_FLOAT_MAX : $b['distancia_extra'];
+            if ($distanciaA === $distanciaB) {
+                // Empate de km: primero quien no tiene un recorrido en curso, luego quien lleva
+                // menos pedidos por salir, y por último el nombre para que el resultado sea estable.
+                return [(int) $a['en_transito'] > 0, $a['pedidos_activos'], $a['nombre']]
+                   <=> [(int) $b['en_transito'] > 0, $b['pedidos_activos'], $b['nombre']];
+            }
             return $distanciaA <=> $distanciaB;
         });
 
@@ -514,7 +532,7 @@ class RutaRepartidorService
      * - Si se manda $idClienteNuevo, su entrega entra como una parada más (la venta que se captura).
      * - La última ubicación del repartidor solo se devuelve para mostrarla; no entra al cálculo.
      */
-    public function planSalida(int $idRepartidor, ?int $idClienteNuevo = null): array
+    public function planSalida(int $idRepartidor, ?int $idClienteNuevo = null, ?array $idsPedidos = null): array
     {
         $coordLocal = $this->coordenadasLocal();
         if ($coordLocal === null) {
@@ -532,7 +550,7 @@ class RutaRepartidorService
 
         $paradas      = [];
         $sinUbicacion = [];
-        foreach ($this->obtenerPedidosActivos($idRepartidor) as $pedido) {
+        foreach ($this->obtenerPedidosActivos($idRepartidor, $idsPedidos) as $pedido) {
             $direccion = $this->textoDireccion($pedido);
             $ubicacion = $this->ubicacionDireccion($pedido, $this->resolverNodoDireccion($pedido));
             if ($ubicacion === null) {
@@ -950,25 +968,35 @@ class RutaRepartidorService
             ->getRowArray();
     }
 
-    private function obtenerPedidosActivos(int $idRepartidor): array
+    private function obtenerPedidosActivos(int $idRepartidor, ?array $idsPedidos = null): array
     {
-        return $this->db->table('pedido p')
+        $builder = $this->db->table('pedido p')
             ->select('p.id, p.estado_actual, d.calle, d.numero, d.colonia, d.municipio, d.estado, d.lat, d.lng')
             // Una sola dirección por cliente (la más reciente), para no duplicar pedidos.
             ->join('direccion d', 'd.id = (SELECT MAX(d2.id) FROM direccion d2 WHERE d2.id_cliente = p.id_cliente)', 'left', false)
             ->where('p.id_repartidor', $idRepartidor)
             ->where('p.tipo_entrega', 'domicilio')
             ->whereNotIn('p.estado_actual', [
+                // Un pedido en tránsito ya salió: no forma parte de la ruta a la que se puede sumar
+                // un pedido nuevo, ni cuenta para el máximo de 6 de la próxima salida.
+                'Pedido en tránsito',
                 'Venta confirmada',
                 'Pedido pagado',
                 'Pedido entregado',
                 'Entregado',
                 'Cancelado',
                 'Pedido cancelado',
-            ])
-            ->orderBy('p.id', 'ASC')
-            ->get()
-            ->getResultArray();
+            ]);
+
+        if ($idsPedidos !== null) {
+            $idsPedidos = array_values(array_filter(array_map('intval', $idsPedidos), static fn (int $id): bool => $id > 0));
+            if (!$idsPedidos) {
+                return [];
+            }
+            $builder->whereIn('p.id', $idsPedidos);
+        }
+
+        return $builder->orderBy('p.id', 'ASC')->get()->getResultArray();
     }
 
     /**

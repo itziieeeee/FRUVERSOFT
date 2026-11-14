@@ -342,9 +342,12 @@ h1 {
                 <i class="fa-solid fa-circle-user"></i> 
                 <span>Administrador</span>
             </div>
+            <?= view('partials/admin_alertas') ?>
         </div>
             <a href="<?= base_url('admin/avisos') ?>" class="admin-badge">
             <i class="fas fa-bullhorn"></i> <span>Avisos</span>
+        </a>
+            
         </a>
    
         <div class="search-wrapper">
@@ -353,9 +356,8 @@ h1 {
         </div>
 
         <div class="action-buttons">
-            <a href="#" class="action-btn">
-                <i class="fas fa-bell"></i> Notificaciones
-            </a>
+            
+        
             <a href="<?= base_url('logout') ?>" class="action-btn logout-btn">
                 <i class="fas fa-sign-out-alt"></i> Cerrar sesión
             </a>

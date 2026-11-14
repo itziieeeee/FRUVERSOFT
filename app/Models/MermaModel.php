@@ -101,6 +101,13 @@ class MermaModel extends Model
             return ['ok' => false, 'error' => 'No hay stock disponible para este producto en las entradas.'];
         }
 
+        // No se puede mermar más de lo que hay: un stock negativo arruina las alertas de stock crítico
+        $existenciaActual = $this->getExistencia($id_producto);
+        if ($existenciaActual && $cantidad_mermar > (float) $existenciaActual['e_total']) {
+            return ['ok' => false, 'error' => 'La merma (' . $cantidad_mermar . ') es mayor al stock actual ('
+                                             . (float) $existenciaActual['e_total'] . ').'];
+        }
+
         $this->insertarMerma([
             'cantidad'   => $cantidad_mermar,
             'fecha'      => date('Y-m-d H:i:s'),

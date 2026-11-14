@@ -6,10 +6,9 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
-// ==========================================
+
 // 1. RUTAS PÚBLICAS Y AUTENTICACIÓN
-// ==========================================
-$routes->get('/', 'FRUVER::index'); // Landing page o portada
+$routes->get('/', 'FRUVER::index'); 
 
 $routes->get('login', 'AuthController::login');
 $routes->post('login/ingresar', 'AuthController::ingresar');
@@ -19,21 +18,22 @@ $routes->post('registro/guardar', 'AuthController::guardarRegistro');
 
 $routes->get('logout', 'AuthController::logout');
 $routes->get('salir', 'AuthController::logout');
+$routes->get('cuenta/cambiar-password', 'AuthController::cambiarPassword', ['filter' => 'authFilter']);
+$routes->post('cuenta/cambiar-password', 'AuthController::guardarPassword', ['filter' => 'authFilter']);
 
 // Redirección inteligente para el botón "INGRESAR" de la portada
 $routes->get('ingresar_portal', function() {
     if (!session()->get('isLoggedIn')) {
         return redirect()->to(base_url('login'));
     }
-    return session()->get('rol') === 'admin' 
-        ? redirect()->to(base_url('menusolo')) 
-        : redirect()->to(base_url('cliente/menu'));
+    if (session()->get('rol') === 'admin') return redirect()->to(base_url('menusolo'));
+    if (session()->get('rol') === 'repartidor') return redirect()->to(base_url('repartidor/app'));
+    return redirect()->to(base_url('cliente/menu'));
 });
 
 
-// ==========================================
 // 2. RUTAS PROTEGIDAS DEL ADMINISTRADOR (admin)
-// ==========================================
+
 $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
 
     // Menú Principal Admin
@@ -93,14 +93,24 @@ $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
     $routes->post('merma/guardar', 'Merma::guardar');
     $routes->post('confirmar-entrada', 'GestionEntradas::guardar');
 
+    // Alertas predictivas de stock
+    $routes->get('alertas', 'Alertas::index');
+    $routes->get('pantalla_alertas', 'Alertas::index');
+    $routes->get('alertas/resumen', 'Alertas::resumen');
+    $routes->post('alertas/reposicion', 'Alertas::reposicion');
+    $routes->post('alertas/config', 'Alertas::config');
+
+    // Monitoreo de salidas de reparto (las inicia el repartidor desde su app)
+    $routes->get('salidas', 'SalidasController::index');
+    $routes->get('salidas/lista', 'SalidasController::lista');
+    $routes->get('salidas/detalle/(:num)', 'SalidasController::detalle/$1');
+
     // Repartidores
     $routes->get('pantalla_repartidores', 'FRUVER::mostrar_repartidores');
     $routes->post('FRUVER/guardarrepartidor', 'FRUVER::guardarrepartidor');
     $routes->post('FRUVER/editarrepartidor/(:num)', 'FRUVER::editarrepartidor/$1');
     $routes->post('FRUVER/eliminarrepartidor/(:num)', 'FRUVER::eliminarrepartidor/$1');
 });
-
-
 // ==========================================
 // 3. RUTAS PROTEGIDAS DEL CLIENTE (cliente)
 // ==========================================
@@ -133,6 +143,10 @@ $routes->post('api/incidencia', 'RepartidorApp::incidencia');
 $routes->post('api/ubicacion', 'RepartidorApp::ubicacion');
 $routes->get('api/respuestas', 'RepartidorApp::respuestas');
 $routes->post('api/respuestas/leer', 'RepartidorApp::respuestasLeer');
+$routes->get('api/recorrido/previa', 'RepartidorApp::recorridoPrevia');
+$routes->post('api/recorrido/iniciar', 'RepartidorApp::recorridoIniciar');
+$routes->get('api/salida-activa', 'RepartidorApp::salidaActiva');
+$routes->post('api/salida/pedido/entregar/(:num)', 'RepartidorApp::entregarSalidaPedido');
     // marquen como entregado
     $routes->post('cambiar_estado', 'PanelRepartidorController::cambiar_estado');
 });

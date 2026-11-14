@@ -153,15 +153,24 @@
                     <div class="form-group"><label>Apellido Paterno</label><input type="text" name="ap_p" required></div>
                     <div class="form-group"><label>Apellido Materno</label><input type="text" name="ap_m"></div>
                     <div class="form-group"><label>Teléfono</label><input type="text" name="tel" required></div>
-                    <div class="form-group full"><label>Dirección</label><input type="text" name="direccion"></div>
-                    <div class="form-group full">
-                        <label>Zona de reparto</label>
+                    <div class="form-group full"><label>Dirección de referencia <small>(opcional)</small></label><input type="text" name="direccion" placeholder="Escribe una referencia si no capturas los campos de abajo"></div>
+                    <div class="form-group"><label>Calle</label><input type="text" name="calle" placeholder="Calle o avenida"></div>
+                    <div class="form-group"><label>Número</label><input type="text" name="numero" placeholder="Número"></div>
+                    <div class="form-group"><label>Colonia</label><input type="text" name="colonia" placeholder="Colonia"></div>
+                    <div class="form-group"><label>Municipio</label><input type="text" name="municipio" placeholder="Municipio"></div>
+                    <div class="form-group"><label>Estado</label><input type="text" name="estado" placeholder="Estado"></div>
+                    <div class="form-group full"><label>Zona de reparto <small>(opcional)</small></label>
                         <select name="zona_base_id">
                             <option value="">Sin zona asignada</option>
                             <?php foreach (($zonas ?? []) as $z): ?>
                                 <option value="<?= (int) $z['id'] ?>"><?= esc($z['nombre']) ?> (<?= esc($z['estado']) ?>)</option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+                    <div class="form-group full cuenta-repartidor">
+                        <label><input type="checkbox" name="crear_acceso" value="1" id="crearAccesoRepartidor"> Crear acceso para la app</label>
+                        <input type="email" name="correo" id="correoRepartidor" placeholder="Correo del repartidor" disabled>
+                        <small>Se generará usuario y contraseña temporal. El repartidor deberá cambiarla al entrar.</small>
                     </div>
                     <div class="form-group full"><label>Notas</label><input type="text" name="notas"></div>
                     <div class="form-group full"><label>Foto</label><input type="file" name="foto" accept="image/*" onchange="previsualizarFoto(this, 'preview-nuevo')">
@@ -381,6 +390,14 @@ function previsualizarFoto(input, previewId) {
     const preview = document.getElementById(previewId);
     if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; }; reader.readAsDataURL(input.files[0]); }
 }
+const crearAccesoRepartidor = document.getElementById('crearAccesoRepartidor');
+const correoRepartidor = document.getElementById('correoRepartidor');
+crearAccesoRepartidor?.addEventListener('change', function () {
+    correoRepartidor.disabled = !this.checked;
+    correoRepartidor.required = this.checked;
+    if (!this.checked) correoRepartidor.value = '';
+});
+
 document.getElementById('formRepartidor')?.addEventListener('submit', function(e) {
     e.preventDefault();
     const formData = new FormData(this);
@@ -393,10 +410,20 @@ document.getElementById('formRepartidor')?.addEventListener('submit', function(e
     .then(data => {
         if (data.success) {
             cerrarModal();
+            if (data.credenciales) {
+                alert(
+                    'Cuenta creada. Guarda estas credenciales, se muestran solo ahora:\n\n' +
+                    'Usuario: ' + data.credenciales.usuario + '\n' +
+                    'Correo: ' + data.credenciales.correo + '\n' +
+                    'Contraseña temporal: ' + data.credenciales.password + '\n\n' +
+                    'El repartidor deberá cambiar la contraseña al iniciar sesión.'
+                );
+            }
             mostrarAlerta('¡Repartidor guardado!', 'success');
-            setTimeout(() => location.reload(), 1500);
+            setTimeout(() => location.reload(), 900);
         } else {
-            mostrarAlerta('Error al guardar', 'error');
+            const error = typeof data.error === 'string' ? data.error : 'Error al guardar';
+            mostrarAlerta(error, 'error');
         }
     })
     .catch(() => mostrarAlerta('Error de conexión', 'error')); 

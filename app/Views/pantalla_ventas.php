@@ -579,10 +579,17 @@ async function cargarPlanSalida() {
     try {
         const respuesta = await fetch('<?= base_url("pedido/plan_salida") ?>', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({ id_repartidor: idRepartidor, id_cliente: idCliente })
         });
-        const resultado = await respuesta.json();
+        const textoRespuesta = await respuesta.text();
+        let resultado;
+        try { resultado = JSON.parse(textoRespuesta); } catch (e) {
+            throw new Error('El servidor respondió HTTP ' + respuesta.status + ' al calcular el plan.');
+        }
+        if (!respuesta.ok) {
+            throw new Error(resultado.message || 'El servidor respondió HTTP ' + respuesta.status + '.');
+        }
         if (token !== tokenPlan) return; // se eligió otro repartidor mientras tanto
 
         if (resultado.status !== 'success') {
@@ -594,7 +601,7 @@ async function cargarPlanSalida() {
         dibujarPlanRuta(resultado.data);
     } catch (error) {
         if (token !== tokenPlan) return;
-        mapaVacio.innerHTML = '<span style="color:#b00020;"><i class="fa-solid fa-circle-xmark" style="font-size:1.4rem;"></i><br>No se pudo cargar el mapa de la ruta.</span>';
+        mapaVacio.innerHTML = '<span style="color:#b00020;"><i class="fa-solid fa-circle-xmark" style="font-size:1.4rem;"></i><br>' + escaparHtml(error.message || 'No se pudo cargar el mapa de la ruta.') + '</span>';
     }
 }
 
@@ -827,7 +834,8 @@ function mostrarAlternativasRepartidor(candidatos) {
             ? 'Sin ruta'
             : '+' + Number(candidato.distancia_extra).toFixed(2) + ' km';
         const estado = candidato.disponible
-            ? distancia + ' · ' + candidato.pedidos_activos + ' pedidos'
+            ? distancia + ' · ' + candidato.pedidos_activos + ' por salir' +
+              (candidato.en_transito > 0 ? ' · ' + candidato.en_transito + ' ya en camino' : '')
             : (candidato.motivo || 'No disponible');
         const color = candidato.disponible ? '#1d4a27' : '#8a5a00';
 
@@ -858,10 +866,17 @@ async function solicitarSugerenciaRepartidor() {
     try {
         const respuesta = await fetch('<?= base_url("pedido/sugerir_repartidor") ?>', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({ id_cliente: idCliente })
         });
-        const resultado = await respuesta.json();
+        const textoRespuesta = await respuesta.text();
+        let resultado;
+        try { resultado = JSON.parse(textoRespuesta); } catch (e) {
+            throw new Error('El servidor respondió HTTP ' + respuesta.status + ' en la sugerencia. Revisa que tu sesión de administrador siga activa.');
+        }
+        if (!respuesta.ok) {
+            throw new Error(resultado.message || 'El servidor respondió HTTP ' + respuesta.status + '.');
+        }
 
         panelSugerenciaRepartidor.style.display = 'block';
         if (resultado.status !== 'success') {
@@ -906,7 +921,7 @@ async function solicitarSugerenciaRepartidor() {
         panelSugerenciaRepartidor.style.display = 'block';
         panelSugerenciaRepartidor.style.background = '#fff0f0';
         panelSugerenciaRepartidor.style.borderColor = '#e7b8b8';
-        panelSugerenciaRepartidor.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> No se pudo calcular la sugerencia.';
+        panelSugerenciaRepartidor.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + escaparHtml(error.message || 'No se pudo calcular la sugerencia.');
     } finally {
         btnSugerirRepartidor.disabled = false;
         btnSugerirRepartidor.innerHTML = '<i class="fa-solid fa-route"></i> Sugerir por ruta';

@@ -15,6 +15,12 @@ class AuthFilter implements FilterInterface
             return redirect()->to(base_url('login'))->with('error', 'Debes iniciar sesión primero.');
         }
 
+        if (session()->get('rol') === 'repartidor'
+            && (int) session()->get('debe_cambiar_password') === 1
+            && !str_ends_with($request->getUri()->getPath(), 'cuenta/cambiar-password')) {
+            return redirect()->to(base_url('cuenta/cambiar-password'));
+        }
+
         // 2. Si la ruta requiere un rol específico (admin o cliente), verificarlo
         if ($arguments !== null && !empty($arguments)) {
             $rolRequerido = $arguments[0];
@@ -22,7 +28,7 @@ class AuthFilter implements FilterInterface
 
             if ($rolUsuario !== $rolRequerido) {
     if ($rolUsuario === 'admin') return redirect()->to(base_url('menusolo'));
-    if ($rolUsuario === 'repartidor') return redirect()->to(base_url('repartidor/panel'));
+    if ($rolUsuario === 'repartidor') return redirect()->to(base_url('repartidor/app'));
     return redirect()->to(base_url('cliente/menu'));
 }
         }

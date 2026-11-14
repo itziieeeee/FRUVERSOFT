@@ -18,8 +18,9 @@
             --text-dark: #333;
             --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
             --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
             --radius-md: 12px;
-            --transition: all 0.3s ease;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -42,20 +43,42 @@
         }
         .logo-area img { height: 80px; object-fit: contain; }
 
-        .user-actions { display: flex; gap: 0.8rem; }
+        .user-actions { display: flex; gap: 0.8rem; align-items: center; }
+
+        /* ===== BOTONES DINÁMICOS (ADMIN Y REGRESAR) ===== */
         .btn-user {
             color: white;
             text-decoration: none;
             font-size: 0.85rem;
-            padding: 0.5rem 1.2rem;
+            padding: 0.55rem 1.3rem;
             background: rgba(255,255,255,0.15);
             border-radius: 50px;
             transition: var(--transition);
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(6px);
         }
-        .btn-user:hover { background: rgba(255,255,255,0.3); transform: translateY(-1px); }
+        .btn-user::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transition: left 0.6s ease;
+        }
+        .btn-user:hover::before { left: 100%; }
+        .btn-user:hover {
+            background: rgba(255,255,255,0.28);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+        }
+        .btn-user:active { transform: translateY(0); }
 
         .menu-navegacion {
             background: white;
@@ -79,7 +102,7 @@
             align-items: center;
             gap: 8px;
         }
-        .nav-link:hover { background: #fef3ed; }
+        .nav-link:hover { background: #fef3ed; transform: translateY(-1px); }
         .nav-link.activo {
             color: var(--primary-orange);
             background: rgba(243, 156, 18, 0.08);
@@ -118,7 +141,13 @@
             box-shadow: var(--shadow-md);
             margin-bottom: 30px;
             border: 1px solid var(--gray-border);
+            animation: slideUp 0.5s ease;
         }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .form-group { display: flex; flex-direction: column; gap: 8px; }
         .form-group label { 
             font-weight: 600; 
@@ -133,11 +162,39 @@
             outline: none;
             font-family: 'Inter', sans-serif;
             transition: var(--transition);
+            height: 42px;
+            background: white;
+            color: var(--text-dark);
         }
         .form-group input:focus, .form-group select:focus {
             border-color: var(--primary-orange);
             box-shadow: 0 0 0 3px rgba(241, 110, 31, 0.1);
+            transform: translateY(-1px);
         }
+
+        /* ===== CAMPO MOTIVO HOMOGENEIZADO ===== */
+        .input-motivo {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--gray-border);
+            border-radius: 10px;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            transition: var(--transition);
+            height: 42px;
+            background: white;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+        .input-motivo::placeholder {
+            color: #aaa;
+        }
+        .input-motivo:focus {
+            border-color: var(--primary-orange);
+            box-shadow: 0 0 0 3px rgba(241, 110, 31, 0.1);
+            transform: translateY(-1px);
+        }
+
         .btn-registrar {
             background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-orange-dark) 100%);
             color: white;
@@ -153,26 +210,44 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            position: relative;
+            overflow: hidden;
         }
+        .btn-registrar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn-registrar:hover::before { left: 100%; }
         .btn-registrar:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(241, 110, 31, 0.3);
+            box-shadow: 0 6px 20px rgba(241, 110, 31, 0.4);
         }
+        .btn-registrar:active { transform: translateY(0); }
 
-        /* TABLA ESTILO MODERNO */
+        /* ===== TABLA ESTILO MODERNO Y DINÁMICO ===== */
         .tabla-card {
             background: white;
             border-radius: var(--radius-md);
             overflow: hidden;
             box-shadow: var(--shadow-sm);
             border: 1px solid var(--gray-border);
+            transition: var(--transition);
+        }
+        .tabla-card:hover {
+            box-shadow: var(--shadow-md);
         }
         table {
             width: 100%;
             border-collapse: collapse;
         }
         thead tr {
-            background: #f8f9fa;
+            background: linear-gradient(90deg, #f8f9fa 0%, #f0f4f1 100%);
             border-bottom: 2px solid var(--gray-border);
         }
         th {
@@ -181,23 +256,57 @@
             font-weight: 700;
             font-size: 0.85rem;
             color: var(--primary-green);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         td {
             padding: 1rem 1.2rem;
             border-bottom: 1px solid var(--gray-border);
             font-size: 0.9rem;
+            transition: var(--transition);
         }
+
+        /* Filas dinámicas con animación de entrada y hover */
+        .fila-merma {
+            animation: fadeInRow 0.4s ease forwards;
+            opacity: 0;
+        }
+        @keyframes fadeInRow {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .fila-merma:nth-child(1) { animation-delay: 0.05s; }
+        .fila-merma:nth-child(2) { animation-delay: 0.1s; }
+        .fila-merma:nth-child(3) { animation-delay: 0.15s; }
+        .fila-merma:nth-child(4) { animation-delay: 0.2s; }
+        .fila-merma:nth-child(5) { animation-delay: 0.25s; }
+
+        .fila-merma:hover {
+            background: #fef9f5;
+            transform: scale(1.005);
+            box-shadow: 0 2px 12px rgba(241, 110, 31, 0.08);
+        }
+        .fila-merma:hover td {
+            color: var(--primary-green);
+        }
+
         .badge-cantidad {
-            background: #fdeaea;
+            background: linear-gradient(135deg, #fdeaea 0%, #fbd5d5 100%);
             color: #c0392b;
             padding: 6px 12px;
             border-radius: 50px;
             font-weight: 700;
             font-size: 0.85rem;
             display: inline-block;
+            transition: var(--transition);
+            border: 1px solid rgba(192, 57, 43, 0.1);
+        }
+        .fila-merma:hover .badge-cantidad {
+            transform: scale(1.08);
+            box-shadow: 0 2px 8px rgba(192, 57, 43, 0.2);
         }
 
-        /* GRÁFICO */
+        /* ===== GRÁFICO DINÁMICO ===== */
         .chart-container {
             background: white;
             border-radius: var(--radius-md);
@@ -205,6 +314,28 @@
             margin-top: 2rem;
             box-shadow: var(--shadow-md);
             border: 1px solid var(--gray-border);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-green), var(--primary-orange), var(--primary-green));
+            background-size: 200% 100%;
+            animation: gradientMove 4s linear infinite;
+        }
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        .chart-container:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
         }
         .chart-container h3 {
             text-align: center;
@@ -212,6 +343,21 @@
             margin-bottom: 1.2rem;
             font-size: 1.1rem;
             font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .chart-container h3 i {
+            color: var(--primary-orange);
+            animation: pulseIcon 2s ease-in-out infinite;
+        }
+        @keyframes pulseIcon {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+        #graficaEntradaMerma {
+            max-height: 380px;
         }
 
         /* SELECT2 PERSONALIZADO */
@@ -220,6 +366,11 @@
             border-radius: 10px;
             height: 42px;
             padding: 5px;
+            transition: var(--transition);
+        }
+        .select2-container--default .select2-selection--single:focus {
+            border-color: var(--primary-orange);
+            box-shadow: 0 0 0 3px rgba(241, 110, 31, 0.1);
         }
         .select2-container--default .select2-selection--single .select2-selection__rendered {
             line-height: 32px;
@@ -248,9 +399,14 @@
             font-size: 0.9rem;
             outline: none;
             transition: all 0.3s ease;
+            height: 42px;
         }
-        
-                .dropdown-sugerencias {
+        .buscador-input:focus {
+            border-color: var(--primary-orange);
+            box-shadow: 0 0 0 3px rgba(241, 110, 31, 0.1);
+        }
+
+        .dropdown-sugerencias {
             position: absolute;
             top: 100%;
             left: 0;
@@ -313,11 +469,26 @@
             cursor: pointer;
             transition: all 0.2s;
             color: #555;
+            position: relative;
+            overflow: hidden;
         }
+        .filtro-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(241,110,31,0.15), transparent);
+            transition: left 0.5s;
+        }
+        .filtro-btn:hover::before { left: 100%; }
         .filtro-btn:hover, .filtro-btn.activo {
             background: var(--primary-orange);
             color: white;
             border-color: var(--primary-orange);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(241, 110, 31, 0.25);
         }
         .filtro-btn.activo-verde {
             background: var(--primary-green);
@@ -376,10 +547,9 @@
         <span>Registro de Mermas</span>
     </div>
 
-    <!-- FORMULARIO CON BUSCADOR MEJORADO (SIN ICONO DE MANZANA) -->
+    <!-- FORMULARIO CON BUSCADOR MEJORADO -->
     <form action="<?= base_url('merma/guardar') ?>" method="POST" class="form-merma-inline">
         
-        <!-- CAMPO OCULTO que guarda el id_producto seleccionado -->
         <input type="hidden" name="id_producto" id="input_id_producto">
 
         <div class="form-group">
@@ -417,8 +587,15 @@
         </div>
 
         <div class="form-group">
-            <label><i class="fas fa-comment"></i> Motivo</label>
-            <input type="text" name="motivo" placeholder="Ej. Golpeado, caducado..." required>
+            <label><i class="fas fa-comment-dots"></i> Motivo</label>
+            <input type="text" name="motivo" list="motivos" class="input-motivo" placeholder="Ej. Caducado, golpeado..." required>
+            <datalist id="motivos">
+                <option value="Madurez">
+                <option value="Golpeado o dañado">
+                <option value="Caducado">
+                <option value="Error de empaque">
+                <option value="Extravío">
+            </datalist>
         </div>
 
         <button type="submit" class="btn-registrar">
@@ -448,7 +625,6 @@
             <i class="fas fa-sort-alpha-up"></i> Z → A
         </button>
 
-        <!-- Buscador en historial -->
         <div class="buscador-tabla-wrapper" style="margin-left: auto; width: 220px; margin-bottom:0;">
             <i class="fas fa-search" style="position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#999; font-size:0.82rem;"></i>
             <input type="text" class="buscador-tabla-input" id="buscadorHistorial" placeholder="Buscar en historial...">
@@ -491,7 +667,7 @@
         </div>
     </div>
 
-    <!-- Tu gráfica igual -->
+    <!-- GRÁFICA DINÁMICA -->
     <?php if (!empty($grafica_labels)): ?>
     <div class="chart-container">
         <h3><i class="fas fa-chart-line"></i> Comparativo: Entradas vs Mermas</h3>
@@ -505,7 +681,7 @@
 <script>
 
 // ============================================================
-// BUSCADOR CON DROPDOWN EN EL FORMULARIO (SIN ICONO DE MANZANA)
+// BUSCADOR CON DROPDOWN EN EL FORMULARIO
 // ============================================================
 const productos = <?= json_encode($productos_merma) ?>;
 const inputBuscador   = document.getElementById('buscador_producto');
@@ -515,7 +691,7 @@ let indiceActivo = -1;
 
 inputBuscador.addEventListener('input', function() {
     const texto = this.value.toLowerCase().trim();
-    inputIdProducto.value = ''; // limpiar selección al escribir
+    inputIdProducto.value = '';
     indiceActivo = -1;
 
     if (texto.length === 0) {
@@ -530,7 +706,6 @@ inputBuscador.addEventListener('input', function() {
     if (filtrados.length === 0) {
         dropdown.innerHTML = '<div class="sugerencia-empty"><i class="fas fa-search"></i> Sin resultados</div>';
     } else {
-        // Renderizar sugerencias SIN el ícono de manzana
         dropdown.innerHTML = filtrados.map((p, i) => `
             <div class="sugerencia-item" 
                  data-id="${p.id_p}" 
@@ -545,13 +720,11 @@ inputBuscador.addEventListener('input', function() {
     dropdown.style.display = 'block';
 });
 
-// Resalta el texto buscado
 function resaltarTexto(nombre, texto) {
     const regex = new RegExp(`(${texto})`, 'gi');
     return nombre.replace(regex, '<strong style="color:var(--primary-orange)">$1</strong>');
 }
 
-// Click en sugerencia
 dropdown.addEventListener('click', function(e) {
     const item = e.target.closest('.sugerencia-item');
     if (!item) return;
@@ -565,7 +738,6 @@ function seleccionarProducto(id, nombre) {
     indiceActivo = -1;
 }
 
-// Navegación con teclado ↑ ↓ Enter
 inputBuscador.addEventListener('keydown', function(e) {
     const items = dropdown.querySelectorAll('.sugerencia-item');
     if (!items.length) return;
@@ -596,7 +768,6 @@ function actualizarActivo(items) {
     }
 }
 
-// Cerrar dropdown al hacer click fuera
 document.addEventListener('click', function(e) {
     if (!inputBuscador.contains(e.target) && !dropdown.contains(e.target)) {
         dropdown.style.display = 'none';
@@ -619,7 +790,6 @@ function filtrar(categoria, btn) {
 
 function ordenar(tipo, btn) {
     ordenActual = tipo;
-    // Solo resaltar botones de orden
     document.querySelectorAll('.filtro-btn').forEach(b => {
         if (b.onclick && (b.getAttribute('onclick').includes('ordenar'))) {
             b.classList.remove('activo');
@@ -638,39 +808,33 @@ function aplicarFiltros() {
     const filas = Array.from(document.querySelectorAll('.fila-merma'));
     let visibles = filas;
 
-    // Filtro por categoría
     if (filtroActual !== 'todos') {
         visibles = visibles.filter(f => f.dataset.categoria === filtroActual);
     }
 
-    // Filtro por búsqueda
     if (busquedaActual) {
         visibles = visibles.filter(f => f.dataset.nombre.includes(busquedaActual));
     }
 
-    // Ocultar todas
     filas.forEach(f => f.style.display = 'none');
 
-    // Ordenar
     if (ordenActual === 'az') {
         visibles.sort((a, b) => a.dataset.nombre.localeCompare(b.dataset.nombre));
     } else if (ordenActual === 'za') {
         visibles.sort((a, b) => b.dataset.nombre.localeCompare(a.dataset.nombre));
     }
 
-    // Mostrar y reordenar en DOM
     const tbody = document.getElementById('tablaHistorial');
     visibles.forEach(f => {
         f.style.display = '';
-        tbody.appendChild(f); // reordena visualmente
+        tbody.appendChild(f);
     });
 
-    // Mensaje sin resultados
     document.getElementById('sinResultados').style.display = visibles.length === 0 ? 'block' : 'none';
 }
 
 // ============================================================
-// GRÁFICA (igual que antes)
+// GRÁFICA DINÁMICA
 // ============================================================
 <?php if (!empty($grafica_labels)): ?>
 const labels   = <?= json_encode($grafica_labels) ?>;
@@ -678,19 +842,107 @@ const entradas = <?= json_encode($grafica_entradas) ?>;
 const mermas   = <?= json_encode($grafica_mermas) ?>;
 
 const ctx = document.getElementById('graficaEntradaMerma').getContext('2d');
+
+// Crear gradientes para las barras
+const gradientEntradas = ctx.createLinearGradient(0, 0, 0, 400);
+gradientEntradas.addColorStop(0, 'rgba(29, 74, 39, 0.9)');
+gradientEntradas.addColorStop(0.5, 'rgba(42, 94, 53, 0.7)');
+gradientEntradas.addColorStop(1, 'rgba(29, 74, 39, 0.3)');
+
+const gradientMermas = ctx.createLinearGradient(0, 0, 0, 400);
+gradientMermas.addColorStop(0, 'rgba(241, 110, 31, 0.9)');
+gradientMermas.addColorStop(0.5, 'rgba(211, 84, 0, 0.7)');
+gradientMermas.addColorStop(1, 'rgba(241, 110, 31, 0.3)');
+
 new Chart(ctx, {
     type: 'bar',
     data: {
         labels,
         datasets: [
-            { label: 'Entradas', data: entradas, backgroundColor: 'rgba(29,74,39,0.7)', borderColor: '#1d4a27', borderWidth: 1, borderRadius: 8 },
-            { label: 'Merma',   data: mermas,   backgroundColor: 'rgba(241,110,31,0.7)', borderColor: '#f16e1f', borderWidth: 1, borderRadius: 8 }
+            {
+                label: 'Entradas',
+                data: entradas,
+                backgroundColor: gradientEntradas,
+                borderColor: '#1d4a27',
+                borderWidth: 2,
+                borderRadius: 10,
+                borderSkipped: false,
+                hoverBackgroundColor: 'rgba(29, 74, 39, 1)',
+                hoverBorderWidth: 3
+            },
+            {
+                label: 'Merma',
+                data: mermas,
+                backgroundColor: gradientMermas,
+                borderColor: '#f16e1f',
+                borderWidth: 2,
+                borderRadius: 10,
+                borderSkipped: false,
+                hoverBackgroundColor: 'rgba(241, 110, 31, 1)',
+                hoverBorderWidth: 3
+            }
         ]
     },
     options: {
         responsive: true,
-        plugins: { legend: { position: 'top' } },
-        scales: { y: { beginAtZero: true } }
+        animation: {
+            duration: 1200,
+            easing: 'easeOutQuart'
+        },
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    pointStyle: 'rectRounded',
+                    padding: 20,
+                    font: {
+                        size: 13,
+                        weight: '600',
+                        family: 'Inter'
+                    },
+                    color: '#333'
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(29, 74, 39, 0.95)',
+                titleFont: { size: 14, weight: '700', family: 'Inter' },
+                bodyFont: { size: 13, family: 'Inter' },
+                padding: 12,
+                cornerRadius: 10,
+                displayColors: true,
+                boxPadding: 6,
+                callbacks: {
+                    label: function(context) {
+                        return ` ${context.dataset.label}: ${context.parsed.y.toLocaleString()}`;
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.05)',
+                    drawBorder: false
+                },
+                ticks: {
+                    font: { family: 'Inter', size: 12 },
+                    color: '#666'
+                }
+            },
+            x: {
+                grid: { display: false },
+                ticks: {
+                    font: { family: 'Inter', size: 12, weight: '500' },
+                    color: '#555'
+                }
+            }
+        }
     }
 });
 <?php endif; ?>
