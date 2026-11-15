@@ -626,6 +626,7 @@ class RutaRepartidorService
             'paradas'          => $detalle,
             'regreso_km'       => round($regreso, 2),
             'km_total'         => round($total, 2),
+            'combustible'      => $this->estimarCombustible($total),
             'fuente_distancia' => $this->fuenteDistancia,
             'geometria'        => $geometria,
             'arbol_minimo'     => ['km_total' => round($arbol['km_total'], 2), 'aristas' => $arbol['aristas']],
@@ -794,6 +795,25 @@ class RutaRepartidorService
             $grupos[$buscar($i)][] = $i + 1;
         }
         return array_values($grupos);
+    }
+
+    /**
+     * Gasolina aproximada para recorrer $km: litros = km / rendimiento y costo = litros * precio.
+     * Es una estimación; el consumo real cambia con tráfico, carga y estilo de manejo.
+     * Rendimiento y precio se editan en ruta_configuracion (rendimiento_km_l, precio_litro).
+     */
+    private function estimarCombustible(float $km): array
+    {
+        $rendimiento = max(1.0, (float) ($this->config['rendimiento_km_l'] ?? 10));
+        $precio      = max(0.0, (float) ($this->config['precio_litro'] ?? 24));
+        $litros      = $km / $rendimiento;
+
+        return [
+            'litros'           => round($litros, 2),
+            'costo'            => round($litros * $precio, 2),
+            'rendimiento_km_l' => $rendimiento,
+            'precio_litro'     => $precio,
+        ];
     }
 
     private function umbralLejaniaKm(): float

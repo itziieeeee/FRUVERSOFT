@@ -110,6 +110,7 @@ function renderPrevia(p){
   box.innerHTML = `<div class="card" style="border-top:5px solid #f16b1a">
     <b>🚚 Listo para salir</b>
     <div class="nota" style="margin:6px 0">${p.en_este_recorrido} entrega(s) · ${km(p.km_total)} km ida y vuelta (incluye el regreso al local)</div>
+    ${p.combustible ? `<div class="nota" style="margin:6px 0">⛽ Gasolina aprox.: ${Number(p.combustible.litros).toFixed(1)} L · $${Number(p.combustible.costo).toFixed(2)}</div>` : ''}
     <ol class="orden">${orden}</ol>
     ${extra}
     <div class="row"><button id="btnIniciar" class="btn start" ${bloqueado ? 'disabled' : ''} onclick="iniciarRecorrido()">▶ Iniciar recorrido</button></div>

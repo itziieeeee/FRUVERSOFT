@@ -1,0 +1,121 @@
+diff --git a/app/Database/Migrations/2026-11-16-100000_combustible_ruta.php b/app/Database/Migrations/2026-11-16-100000_combustible_ruta.php
+new file mode 100644
+index 0000000..b46471b
+--- /dev/null
++++ b/app/Database/Migrations/2026-11-16-100000_combustible_ruta.php
+@@ -0,0 +1,36 @@
++<?php
++
++namespace App\Database\Migrations;
++
++use CodeIgniter\Database\Migration;
++
++/**
++ * Parámetros para estimar la gasolina de una salida de reparto.
++ * Se guardan en ruta_configuracion y se pueden ajustar con UPDATE sin tocar el código.
++ */
++class CombustibleRuta extends Migration
++{
++    public function up()
++    {
++        $db = \Config\Database::connect();
++
++        $filas = [
++            ['clave' => 'rendimiento_km_l', 'valor' => '10',   'descripcion' => 'Rendimiento promedio de la unidad de reparto (km por litro).'],
++            ['clave' => 'precio_litro',     'valor' => '24.00', 'descripcion' => 'Precio de la gasolina por litro (MXN). Actualizar cuando cambie.'],
++        ];
++
++        foreach ($filas as $fila) {
++            $existe = $db->table('ruta_configuracion')->where('clave', $fila['clave'])->countAllResults();
++            if ($existe === 0) {
++                $db->table('ruta_configuracion')->insert($fila);
++            }
++        }
++    }
++
++    public function down()
++    {
++        \Config\Database::connect()->table('ruta_configuracion')
++            ->whereIn('clave', ['rendimiento_km_l', 'precio_litro'])
++            ->delete();
++    }
++}
+diff --git a/app/Services/RutaRepartidorService.php b/app/Services/RutaRepartidorService.php
+index 45f87a6..85afee5 100644
+--- a/app/Services/RutaRepartidorService.php
++++ b/app/Services/RutaRepartidorService.php
+@@ -626,6 +626,7 @@ class RutaRepartidorService
+             'paradas'          => $detalle,
+             'regreso_km'       => round($regreso, 2),
+             'km_total'         => round($total, 2),
++            'combustible'      => $this->estimarCombustible($total),
+             'fuente_distancia' => $this->fuenteDistancia,
+             'geometria'        => $geometria,
+             'arbol_minimo'     => ['km_total' => round($arbol['km_total'], 2), 'aristas' => $arbol['aristas']],
+@@ -796,6 +797,25 @@ class RutaRepartidorService
+         return array_values($grupos);
+     }
+ 
++    /**
++     * Gasolina aproximada para recorrer $km: litros = km / rendimiento y costo = litros * precio.
++     * Es una estimación; el consumo real cambia con tráfico, carga y estilo de manejo.
++     * Rendimiento y precio se editan en ruta_configuracion (rendimiento_km_l, precio_litro).
++     */
++    private function estimarCombustible(float $km): array
++    {
++        $rendimiento = max(1.0, (float) ($this->config['rendimiento_km_l'] ?? 10));
++        $precio      = max(0.0, (float) ($this->config['precio_litro'] ?? 24));
++        $litros      = $km / $rendimiento;
++
++        return [
++            'litros'           => round($litros, 2),
++            'costo'            => round($litros * $precio, 2),
++            'rendimiento_km_l' => $rendimiento,
++            'precio_litro'     => $precio,
++        ];
++    }
++
+     private function umbralLejaniaKm(): float
+     {
+         return max(1.0, (float) ($this->config['umbral_lejania_km'] ?? 80));
+diff --git a/app/Services/SalidasRepartoService.php b/app/Services/SalidasRepartoService.php
+index beaa2db..ba3c5a7 100644
+--- a/app/Services/SalidasRepartoService.php
++++ b/app/Services/SalidasRepartoService.php
+@@ -54,6 +54,7 @@ class SalidasRepartoService
+             'para_despues'      => count($listos) - count($lote),
+             'km_total'          => $plan['km_total'],
+             'regreso_km'        => $plan['regreso_km'],
++            'combustible'       => $plan['combustible'],
+             'fuente_distancia'  => $plan['fuente_distancia'],
+             'paradas'           => $plan['paradas'],
+             'sin_ubicacion'     => $plan['sin_ubicacion'],
+diff --git a/app/Views/Repartidor/app_movil.php b/app/Views/Repartidor/app_movil.php
+index 9ff802f..483a5f6 100644
+--- a/app/Views/Repartidor/app_movil.php
++++ b/app/Views/Repartidor/app_movil.php
+@@ -110,6 +110,7 @@ function renderPrevia(p){
+   box.innerHTML = `<div class="card" style="border-top:5px solid #f16b1a">
+     <b>🚚 Listo para salir</b>
+     <div class="nota" style="margin:6px 0">${p.en_este_recorrido} entrega(s) · ${km(p.km_total)} km ida y vuelta (incluye el regreso al local)</div>
++    ${p.combustible ? `<div class="nota" style="margin:6px 0">⛽ Gasolina aprox.: ${Number(p.combustible.litros).toFixed(1)} L · $${Number(p.combustible.costo).toFixed(2)}</div>` : ''}
+     <ol class="orden">${orden}</ol>
+     ${extra}
+     <div class="row"><button id="btnIniciar" class="btn start" ${bloqueado ? 'disabled' : ''} onclick="iniciarRecorrido()">▶ Iniciar recorrido</button></div>
+diff --git a/app/Views/pantalla_ventas.php b/app/Views/pantalla_ventas.php
+index deca6c8..b18d164 100644
+--- a/app/Views/pantalla_ventas.php
++++ b/app/Views/pantalla_ventas.php
+@@ -612,7 +612,11 @@ function dibujarPlanRuta(plan) {
+ 
+     // --- Resumen (columna izquierda) ---
+     let html = '<strong>' + escaparHtml(plan.repartidor.nombre) + '</strong><br>' + plan.paradas.length + ' entrega(s) · <strong>' +
+-        Number(plan.km_total).toFixed(1) + ' km</strong> ida y vuelta<br><small style="color:#666;">' +
++        Number(plan.km_total).toFixed(1) + ' km</strong> ida y vuelta' +
++        (plan.combustible ? '<br>⛽ ≈ <strong>' + Number(plan.combustible.litros).toFixed(1) + ' L</strong> de gasolina · ≈ $' +
++            Number(plan.combustible.costo).toFixed(2) +
++            ' <small style="color:#666;">(' + Number(plan.combustible.rendimiento_km_l) + ' km/L a $' + Number(plan.combustible.precio_litro).toFixed(2) + '/L)</small>' : '') +
++        '<br><small style="color:#666;">' +
+         (fuentes[plan.fuente_distancia] || 'km calculados') + ' · ' +
+         (ultima ? 'última ubicación ' + textoHace(ultima.minutos) : 'sin ubicación enviada') + '</small>';
+     (plan.advertencias || []).forEach(aviso => {

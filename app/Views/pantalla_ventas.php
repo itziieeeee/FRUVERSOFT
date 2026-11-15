@@ -612,7 +612,11 @@ function dibujarPlanRuta(plan) {
 
     // --- Resumen (columna izquierda) ---
     let html = '<strong>' + escaparHtml(plan.repartidor.nombre) + '</strong><br>' + plan.paradas.length + ' entrega(s) · <strong>' +
-        Number(plan.km_total).toFixed(1) + ' km</strong> ida y vuelta<br><small style="color:#666;">' +
+        Number(plan.km_total).toFixed(1) + ' km</strong> ida y vuelta' +
+        (plan.combustible ? '<br>⛽ ≈ <strong>' + Number(plan.combustible.litros).toFixed(1) + ' L</strong> de gasolina · ≈ $' +
+            Number(plan.combustible.costo).toFixed(2) +
+            ' <small style="color:#666;">(' + Number(plan.combustible.rendimiento_km_l) + ' km/L a $' + Number(plan.combustible.precio_litro).toFixed(2) + '/L)</small>' : '') +
+        '<br><small style="color:#666;">' +
         (fuentes[plan.fuente_distancia] || 'km calculados') + ' · ' +
         (ultima ? 'última ubicación ' + textoHace(ultima.minutos) : 'sin ubicación enviada') + '</small>';
     (plan.advertencias || []).forEach(aviso => {

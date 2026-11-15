@@ -54,6 +54,7 @@ class SalidasRepartoService
             'para_despues'      => count($listos) - count($lote),
             'km_total'          => $plan['km_total'],
             'regreso_km'        => $plan['regreso_km'],
+            'combustible'       => $plan['combustible'],
             'fuente_distancia'  => $plan['fuente_distancia'],
             'paradas'           => $plan['paradas'],
             'sin_ubicacion'     => $plan['sin_ubicacion'],
