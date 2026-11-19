@@ -620,7 +620,11 @@
             <div class="cat-controles">
                 <div class="cat-barra">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="catBuscador" placeholder="Buscar producto por nombre o código..." autocomplete="off">
+                    <input type="text" id="catBuscador" placeholder="Buscar por nombre, o escanea el código..." autocomplete="off">
+                    <button type="button" id="btnEscanearEntrada" title="Escanear con la cámara" aria-label="Escanear con la cámara"
+                            style="border:0; background:#1d4a27; color:#fff; border-radius:8px; padding:6px 12px; cursor:pointer;">
+                        <i class="fas fa-camera"></i>
+                    </button>
                 </div>
                 <select id="catFiltroCategoria" class="cat-filtro" aria-label="Filtrar por categoría">
                     <option value="">Todas las categorías</option>
@@ -744,6 +748,8 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= base_url('js/vendor/html5-qrcode.min.js') ?>"></script>
+<script src="<?= base_url('js/escaner.js') ?>?v=2"></script>
 
 <script>
 $(function () {
@@ -801,6 +807,34 @@ $(function () {
 
     $('#catBuscador').on('input', filtrarCatalogo);
     $('#catFiltroCategoria').on('change', filtrarCatalogo);
+
+    // ===== ESCÁNER: el producto leído abre su tarjeta de entrada =====
+    const URL_ESCANER = '<?= base_url('escaner') ?>';
+
+    async function entradaPorCodigo(codigo) {
+        const { producto: p } = await FruverEscaner.buscar(URL_ESCANER, codigo);
+        if (!CATALOGO[p.id]) throw new Error(p.nombre + ' no está en el catálogo de entradas.');
+        FruverEscaner.cerrar();
+        $('#catBuscador').val('').trigger('input');
+        abrirTarjeta(p.id);
+        return p.nombre;
+    }
+
+    // Lector USB: escribe el código y da Enter dentro del buscador.
+    // Si no es un código conocido, el buscador sigue funcionando como filtro normal.
+    $('#catBuscador').on('keydown', async function (e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const codigo = $(this).val().trim();
+        if (codigo === '') return;
+        try {
+            await entradaPorCodigo(codigo);
+        } catch (err) { /* no era un código: se queda el filtro por nombre */ }
+    });
+
+    $('#btnEscanearEntrada').on('click', function () {
+        FruverEscaner.abrirCamara({ titulo: 'Escanear producto que llega', onCodigo: entradaPorCodigo });
+    });
 
     // ===== CATÁLOGO: SELECCIÓN =====
     $('#catalogo').on('click', '.cat-card', function () { abrirTarjeta($(this).data('id')); });

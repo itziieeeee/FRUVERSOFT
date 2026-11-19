@@ -74,7 +74,7 @@ class Status extends BaseController
         if ($montoPagado < 0)     $montoPagado = 0;
         if ($montoPagado > $total) $montoPagado = $total;
 
-        $result = $model->actualizarPago($id, $montoPagado, $total);
+        $result = $model->actualizarPago($id, $montoPagado, $total, (string) $this->request->getPost('metodo'));
         return $this->response->setJSON([
             'success' => (bool) $result,
             'message' => $result ? '' : ($model->ultimoError ?: 'No se pudo registrar el pago'),
@@ -188,6 +188,15 @@ class Status extends BaseController
             }
 
             $db->transCommit();
+
+            \App\Services\AuditoriaService::registrar(
+                'pedido.precios', 'pedido', $idPedido,
+                \App\Services\AuditoriaService::folio($idPedido) . ': total $' . number_format((float) $pedido['total'], 2) . ' → $' . number_format($totalNuevo, 2),
+                [
+                    'antes'   => array_column($productos, 'precio_venta', 'id'),
+                    'despues' => array_map('floatval', $precios),
+                ]
+            );
 
             return $this->response->setJSON([
                 'success' => true,

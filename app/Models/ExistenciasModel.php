@@ -130,9 +130,10 @@ public function getInventario($perPage = 10)
     public function descontarStock($productos)
     {
         foreach ($productos as $prod) {
+            // GREATEST: aunque otro proceso haya bajado el stock entre la validación y este descuento, nunca queda en negativo
             $this->db->table('existencias')
                 ->where('id_producto', (int) $prod['id_producto'])
-                ->set('e_total', 'e_total - ' . (float) $prod['cantidad'], false)
+                ->set('e_total', 'GREATEST(e_total - ' . (float) $prod['cantidad'] . ', 0)', false)
                 ->update();
         }
         return true;
@@ -181,29 +182,39 @@ public function getInventario($perPage = 10)
             ->getResultArray();
 
         foreach ($caducados as $fila) {
-            $cantidad_mermar = $fila['cantidad_venta'];
-
-            $this->db->table('merma')->insert([
-                'id_entrada' => $fila['id'],
-                'cantidad'   => $cantidad_mermar,
-                'motivo'     => 'SISTEMA: CADUCIDAD AUTOMÁTICA (5 DÍAS)',
-                'fecha'      => $hoy
-            ]);
-
             $existencia = $this->db->table('existencias')
                 ->where('id_producto', $fila['id_producto'])
                 ->get()
                 ->getRowArray();
 
-            if ($existencia) {
+            // Las ventas no descuentan el lote, así que cantidad_venta puede ser mayor a lo que de verdad queda.
+            // Nunca se manda a merma más de lo que hay en existencias: así el stock no queda en negativo.
+            $disponible      = $existencia ? max(0.0, (float) $existencia['e_total']) : 0.0;
+            $cantidad_mermar = min((float) $fila['cantidad_venta'], $disponible);
+
+            if ($cantidad_mermar > 0) {
+                $this->db->table('merma')->insert([
+                    'id_entrada' => $fila['id'],
+                    'cantidad'   => $cantidad_mermar,
+                    'motivo'     => 'SISTEMA: CADUCIDAD AUTOMÁTICA (5 DÍAS)',
+                    'fecha'      => $hoy
+                ]);
+
                 $this->db->table('existencias')
                     ->where('id_producto', $fila['id_producto'])
                     ->update([
                         'e_total' => $existencia['e_total'] - $cantidad_mermar,
                         'e_merma' => $existencia['e_merma'] + $cantidad_mermar
                     ]);
+
+                \App\Services\AuditoriaService::registrar(
+                    'stock.caducidad', 'producto', $fila['id_producto'],
+                    'Caducó el lote #' . $fila['id'] . ': ' . rtrim(rtrim(number_format($cantidad_mermar, 2, '.', ''), '0'), '.') . ' pasan a merma',
+                    ['lote' => (int) $fila['id'], 'merma' => $cantidad_mermar, 'stock_antes' => (float) $existencia['e_total']]
+                );
             }
 
+            // El lote ya caducó: se cierra aunque ya no quedara producto
             $this->db->table('entrada')
                 ->where('id', $fila['id'])
                 ->update(['cantidad_venta' => 0]);

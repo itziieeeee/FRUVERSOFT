@@ -90,6 +90,26 @@
                                   maxlength="500"><?= old('descripcion') ?></textarea>
                     </div>
 
+                    <!-- Código de barras del empaque (opcional) -->
+                    <div class="campo campo-full">
+                        <label for="codigo_barras">
+                            <i class="fas fa-barcode"></i> Código de barras del empaque
+                        </label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" id="codigo_barras" name="codigo_barras"
+                                   value="<?= esc(old('codigo_barras')) ?>"
+                                   placeholder="Escanéalo con el lector o la cámara" maxlength="32"
+                                   autocomplete="off" inputmode="text" style="flex:1;">
+                            <button type="button" id="btnEscanearCodigo" class="btn-secundario" style="white-space:nowrap;">
+                                <i class="fas fa-camera"></i> Cámara
+                            </button>
+                        </div>
+                        <small class="hint">
+                            Solo para productos empacados (abarrotes). Si no tiene código, déjalo vacío:
+                            el sistema le asigna un identificador propio (PRD-XXXXXX) que se imprime como etiqueta.
+                        </small>
+                    </div>
+
                     <!-- Imagen -->
                     <div class="campo campo-full">
                         <label for="foto">
@@ -124,7 +144,23 @@
         </div>
     </main>
 
+    <script src="<?= base_url('js/vendor/html5-qrcode.min.js') ?>"></script>
+    <script src="<?= base_url('js/escaner.js') ?>?v=2"></script>
     <script>
+        // Código de barras del empaque: lector USB (Enter no envía el formulario) o cámara
+        const campoCodigo = document.getElementById('codigo_barras');
+        campoCodigo.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+        document.getElementById('btnEscanearCodigo').addEventListener('click', () => {
+            FruverEscaner.abrirCamara({
+                titulo: 'Escanear código del empaque',
+                onCodigo: async codigo => {
+                    campoCodigo.value = codigo;
+                    FruverEscaner.cerrar();
+                    return codigo;
+                }
+            });
+        });
+
         // Vista previa de imagen
         document.getElementById('foto').addEventListener('change', function(e) {
             const file = e.target.files[0];

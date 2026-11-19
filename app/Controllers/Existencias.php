@@ -50,7 +50,35 @@ class Existencias extends BaseController
                 'existencias_totales'    => $this->request->getPost('existencias_totales'),
                 'existencias_bloqueadas' => $this->request->getPost('existencias_bloqueadas'),
             ];
+
+            // Las existencias nunca pueden ser negativas ni quedar menos que lo bloqueado
+            foreach (['existencias_totales', 'existencias_bloqueadas'] as $campo) {
+                if ($datos[$campo] !== null && $datos[$campo] !== '' && (!is_numeric($datos[$campo]) || (float) $datos[$campo] < 0)) {
+                    echo json_encode(['success' => false, 'message' => 'Las existencias no pueden ser negativas.']);
+                    die();
+                }
+            }
+            if ($datos['existencias_totales'] !== null && $datos['existencias_totales'] !== ''
+                && $datos['existencias_bloqueadas'] !== null && $datos['existencias_bloqueadas'] !== ''
+                && (float) $datos['existencias_bloqueadas'] > (float) $datos['existencias_totales']) {
+                echo json_encode(['success' => false, 'message' => 'Lo bloqueado no puede ser mayor que las existencias totales.']);
+                die();
+            }
+
+            $antes = $model->getProductoById($id);
             $model->actualizarExistencia($id, $datos);
+
+            if ($antes) {
+                \App\Services\AuditoriaService::registrar(
+                    'stock.ajuste', 'producto', $id,
+                    ($antes['nombre'] ?? 'Producto #' . $id) . ': existencias ' . (float) $antes['existencias_totales'] . ' → ' . (float) ($datos['existencias_totales'] ?? $antes['existencias_totales'])
+                        . ', bloqueadas ' . (float) $antes['existencias_bloqueadas'] . ' → ' . (float) ($datos['existencias_bloqueadas'] ?? $antes['existencias_bloqueadas']),
+                    [
+                        'antes'   => ['totales' => (float) $antes['existencias_totales'], 'bloqueadas' => (float) $antes['existencias_bloqueadas'], 'nombre' => $antes['nombre']],
+                        'despues' => ['totales' => $datos['existencias_totales'], 'bloqueadas' => $datos['existencias_bloqueadas'], 'nombre' => $datos['nombre']],
+                    ]
+                );
+            }
             echo json_encode(['success' => true, 'message' => 'Actualizado correctamente']);
         } catch (\Exception $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -75,7 +103,14 @@ class Existencias extends BaseController
                 die();
             }
 
+            $antes = $model->getProductoById($id);
             $model->eliminarProductoCompleto($id);
+
+            \App\Services\AuditoriaService::registrar(
+                'stock.eliminar', 'producto', $id,
+                'Se quitó del inventario: ' . ($antes['nombre'] ?? 'producto #' . $id) . ' (existencias ' . (float) ($antes['existencias_totales'] ?? 0) . ')',
+                $antes ?: null
+            );
 
             echo json_encode([
                 'success' => true,

@@ -356,6 +356,12 @@
         <div id="grupoRepartidor" class="asignacion-ruta" style="display:none;">
             <div class="subtitulo-seccion"><i class="fa-solid fa-motorcycle"></i> Repartidor y ruta de entrega</div>
 
+            <label for="chkUrgente" style="display:flex; align-items:center; gap:8px; margin:6px 0 10px; padding:8px 12px; border:2px solid #f16b1a; border-radius:10px; background:#fff7f1; cursor:pointer; font-weight:600; color:#c2410c;">
+                <input type="checkbox" id="chkUrgente" style="width:18px; height:18px; accent-color:#f16b1a;">
+                <i class="fa-solid fa-bolt"></i> Pedido urgente
+                <small style="font-weight:400; color:#64748b;">(se entrega primero en la ruta)</small>
+            </label>
+
             <select id="selectRepartidor" name="id_repartidor" style="display:none;">
                 <option value="">Seleccione repartidor...</option>
                 <?php foreach($repartidores as $repartidor): ?>
@@ -462,9 +468,13 @@ selectEntrega.addEventListener('change', function() {
         listaAlternativasRepartidor.innerHTML = '';
         panelSugerenciaRepartidor.style.display = 'none';
         panelSugerenciaRepartidor.innerHTML = '';
+        document.getElementById('chkUrgente').checked = false;
         ocultarMapaRuta();
     }
 });
+
+// Marcar o quitar "urgente" recalcula la ruta (el pedido urgente pasa primero)
+document.getElementById('chkUrgente').addEventListener('change', cargarPlanSalida);
 
 selectCliente.addEventListener('change', function() {
     if (selectEntrega.value === 'domicilio') {
@@ -565,7 +575,8 @@ async function cargarPlanSalida() {
     }
 
     const token = ++tokenPlan;
-    const clave = idRepartidor + ':' + idCliente;
+    const urgente = document.getElementById('chkUrgente').checked;
+    const clave = idRepartidor + ':' + idCliente + ':' + (urgente ? 1 : 0);
     if (cachePlanes.has(clave)) {
         dibujarPlanRuta(cachePlanes.get(clave));
         return;
@@ -580,7 +591,7 @@ async function cargarPlanSalida() {
         const respuesta = await fetch('<?= base_url("pedido/plan_salida") ?>', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ id_repartidor: idRepartidor, id_cliente: idCliente })
+            body: JSON.stringify({ id_repartidor: idRepartidor, id_cliente: idCliente, prioritario: urgente })
         });
         const textoRespuesta = await respuesta.text();
         let resultado;
@@ -634,7 +645,9 @@ function dibujarPlanRuta(plan) {
         const lugar = String(p.direccion || '').split(',').slice(-3).join(',').trim();
         items += '<li data-orden="' + p.orden + '" class="' + (p.es_nuevo ? 'nuevo' : '') + '" title="Clic para ver en el mapa">' +
             '<span class="num">' + p.orden + '</span>' +
-            '<span><strong>' + (p.es_nuevo ? 'Esta venta' : 'Pedido #' + p.id_pedido) + '</strong><br><small>' + escaparHtml(lugar) + '</small></span>' +
+            '<span><strong>' + (p.es_nuevo ? 'Esta venta' : 'Pedido #' + p.id_pedido) + '</strong>' +
+            (p.prioritario ? ' <span style="background:#dc2626;color:#fff;font-size:.65rem;font-weight:700;padding:1px 7px;border-radius:50px;">URGENTE</span>' : '') +
+            '<br><small>' + escaparHtml(lugar) + '</small></span>' +
             '<span class="km">+' + Number(p.km_desde_anterior).toFixed(1) + ' km</span></li>';
     });
     if (plan.paradas.length) {
@@ -1104,6 +1117,7 @@ async function enviarPedido() {
         tipo_venta: tipoVenta,
         tipo_entrega: tipoEntrega,
         id_repartidor: idRepartidor,
+        prioritario: tipoEntrega === 'domicilio' && document.getElementById('chkUrgente').checked,
         productos: productos
     };
 

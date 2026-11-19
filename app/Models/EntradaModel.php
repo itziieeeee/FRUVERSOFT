@@ -144,6 +144,17 @@ class EntradaModel extends Model
             }
 
             $this->db->transCommit();
+
+            // Historial de cambios: una línea por producto que entró
+            foreach ($filas as $fila) {
+                $nombre = $this->db->table('producto')->select('nombre')->where('id', $fila['id_producto'])->get()->getRowArray()['nombre'] ?? ('producto #' . $fila['id_producto']);
+                \App\Services\AuditoriaService::registrar(
+                    'entrada.crear', 'producto', $fila['id_producto'],
+                    'Entrada de ' . $nombre . ': ' . rtrim(rtrim(number_format((float) $fila['cantidad_compra'], 2, '.', ''), '0'), '.') . ' ' . $fila['unidad_compra']
+                        . ' a $' . number_format((float) $fila['precio_compra'], 2) . ' c/u (' . rtrim(rtrim(number_format((float) $fila['cantidad_venta'], 2, '.', ''), '0'), '.') . ' ' . $fila['unidad_venta'] . ' para vender)',
+                    ['precio_compra' => (float) $fila['precio_compra'], 'precio_sugerido' => (float) $fila['precio_sugerido'], 'cantidad_venta' => (float) $fila['cantidad_venta']]
+                );
+            }
             return true;
         } catch (\Throwable $e) {
             $this->db->transRollback();

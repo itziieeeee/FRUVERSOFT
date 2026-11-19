@@ -9,7 +9,7 @@ class ProductoModel extends Model
     protected $primaryKey = 'id';
 
     // 2. Campos que permiten que se guarden desde formularios
-     protected $allowedFields = ['codigo', 'nombre', 'descripcion', 'imagen', 'e_total', 'precio']; 
+     protected $allowedFields = ['codigo', 'codigo_barras', 'nombre', 'descripcion', 'imagen', 'e_total', 'precio']; 
 
     // 3. Retorno de datos
     protected $returnType = 'array';
@@ -58,6 +58,51 @@ class ProductoModel extends Model
         return $this->db->table('producto_pedido')
                         ->where('id_producto', $id)
                         ->countAllResults();
+    }
+
+    // ------- Escáner -------
+
+    /** ¿Ese código ya lo usa otro producto (como identificador PRD o como código de barras)? */
+    public function codigoEnUso(string $codigo, ?int $exceptoId = null): bool
+    {
+        $builder = $this->db->table('producto')
+            ->groupStart()
+                ->where('codigo', $codigo)
+                ->orWhere('codigo_barras', $codigo)
+            ->groupEnd();
+
+        if ($exceptoId !== null) {
+            $builder->where('id !=', $exceptoId);
+        }
+
+        return $builder->countAllResults() > 0;
+    }
+
+    /**
+     * Busca un producto por lo que se escaneó: el código de barras del empaque (EAN/UPC)
+     * o su identificador propio (PRD-XXXXXX). Devuelve también stock, unidad y precio.
+     */
+    public function buscarPorCodigo(string $codigo): ?array
+    {
+        $fila = $this->db->table('producto p')
+            ->select("
+                p.id, p.codigo, p.codigo_barras, p.nombre, p.descripcion, p.imagen,
+                (SELECT ent.unidad_venta FROM entrada ent WHERE ent.id_producto = p.id ORDER BY ent.id DESC LIMIT 1) AS unidad_venta,
+                (SELECT ent.precio_sugerido FROM entrada ent WHERE ent.id_producto = p.id ORDER BY ent.id DESC LIMIT 1) AS precio_sugerido,
+                COALESCE(SUM(ex.e_total), 0) AS existencias_totales,
+                COALESCE(SUM(ex.e_bloqueo), 0) AS existencias_bloqueadas,
+                COALESCE(SUM(ex.e_total - ex.e_bloqueo), 0) AS stock_disponible
+            ", false)
+            ->join('existencias ex', 'ex.id_producto = p.id', 'left')
+            ->groupStart()
+                ->where('p.codigo_barras', $codigo)
+                ->orWhere('p.codigo', $codigo)
+            ->groupEnd()
+            ->groupBy('p.id, p.codigo, p.codigo_barras, p.nombre, p.descripcion, p.imagen')
+            ->get()
+            ->getRowArray();
+
+        return $fila ?: null;
     }
 
     // ------- Consultas para entradas de inventario -------

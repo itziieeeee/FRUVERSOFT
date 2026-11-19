@@ -28,6 +28,7 @@
             </form>
         </div>
         <div class="user-actions">
+            <a href="<?= base_url('productos/etiquetas') ?>" target="_blank" class="btn-user"><i class="fas fa-print"></i> Etiquetas</a>
             <a href="#" class="btn-user"><i class="fas fa-user-shield"></i> Admin</a>
             <a href="<?= base_url('menusolo') ?>" class="btn-user"><i class="fas fa-sign-out-alt"></i> Regresar</a>
         </div>
@@ -88,6 +89,11 @@
         <div style="color: #f16b1a; font-size: 0.8rem; font-weight: 800; margin-bottom: 5px; text-transform: uppercase;">
             <i class="fas fa-barcode"></i> <?= esc($prod['codigo'] ?? 'S/N') ?>
         </div>
+        <?php if (!empty($prod['codigo_barras'])): ?>
+            <div style="color:#64748b; font-size:.75rem; margin-bottom:5px;" title="Código de barras del empaque">
+                <i class="fas fa-box"></i> <?= esc($prod['codigo_barras']) ?>
+            </div>
+        <?php endif; ?>
         
         <div class="product-name">
             <?= esc($prod['nombre']) ?>
@@ -100,7 +106,7 @@
     <div class="card-actions">
         <!-- Botón Editar -->
         <button class="btn-card btn-edit"
-            onclick="abrirEditar(<?= $prod['id'] ?>, '<?= esc($prod['nombre'], 'js') ?>', '<?= esc($prod['descripcion'], 'js') ?>')">
+            onclick="abrirEditar(<?= $prod['id'] ?>, '<?= esc($prod['nombre'], 'js') ?>', '<?= esc($prod['descripcion'], 'js') ?>', '<?= esc($prod['codigo_barras'] ?? '', 'js') ?>')">
             <i class="fas fa-pen"></i> Editar
         </button>
         <!-- Botón Eliminar -->
@@ -141,6 +147,14 @@
                 <label>Descripción</label>
                 <textarea name="descripcion" id="edit_descripcion"></textarea>
             </div>
+            <div class="form-group">
+                <label>Código de barras del empaque <small style="color:#64748b;">(opcional)</small></label>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" name="codigo_barras" id="edit_codigo_barras" maxlength="32" autocomplete="off"
+                           placeholder="Escanéalo o déjalo vacío" style="flex:1;">
+                    <button type="button" class="btn-modal btn-cancel" id="btnEscanearEditar"><i class="fas fa-camera"></i></button>
+                </div>
+            </div>
             <div class="modal-footer">
                 <button type="button" class="btn-modal btn-cancel" onclick="cerrarEditar()">Cancelar</button>
                 <button type="submit" class="btn-modal btn-save"><i class="fas fa-save"></i> Guardar</button>
@@ -165,13 +179,29 @@
     </div>
 </div>
 
+<script src="<?= base_url('js/vendor/html5-qrcode.min.js') ?>"></script>
+<script src="<?= base_url('js/escaner.js') ?>?v=2"></script>
 <script>
     const BASE = '<?= base_url() ?>';
 
+    // Código de barras del empaque: el lector USB no debe enviar el formulario con su Enter
+    document.getElementById('edit_codigo_barras').addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+    document.getElementById('btnEscanearEditar').addEventListener('click', () => {
+        FruverEscaner.abrirCamara({
+            titulo: 'Escanear código del empaque',
+            onCodigo: async codigo => {
+                document.getElementById('edit_codigo_barras').value = codigo;
+                FruverEscaner.cerrar();
+                return codigo;
+            }
+        });
+    });
+
     // ===== EDITAR =====
-    function abrirEditar(id, nombre, descripcion) {
+    function abrirEditar(id, nombre, descripcion, codigoBarras) {
         document.getElementById('edit_nombre').value      = nombre;
         document.getElementById('edit_descripcion').value = descripcion;
+        document.getElementById('edit_codigo_barras').value = codigoBarras || '';
         document.getElementById('formEditar').action      = BASE + 'producto/editar/' + id;
         document.getElementById('modalEditar').classList.add('open');
     }

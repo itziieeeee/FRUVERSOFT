@@ -103,7 +103,10 @@ class SalidasRepartoService
     }
 
     /** Marca una parada como entregada y cierra la salida cuando no quedan pendientes. */
-    public function entregar(int $idRepartidor, int $idPedido, ?float $lat = null, ?float $lng = null, ?string $nota = null): array
+    /**
+     * @param array $extra evidencia y cobro: foto, firma (nombres de archivo ya guardados), cobro (monto), metodo
+     */
+    public function entregar(int $idRepartidor, int $idPedido, ?float $lat = null, ?float $lng = null, ?string $nota = null, array $extra = []): array
     {
         $salida = $this->db->table('salida s')
             ->select('s.*')
@@ -123,16 +126,32 @@ class SalidasRepartoService
 
         $this->db->transBegin();
         try {
+            $cobro  = round((float) ($extra['cobro'] ?? 0), 2);
+            $metodo = PagoService::metodoValido($extra['metodo'] ?? 'efectivo');
+
+            $datosEntrega = [
+                'estado'       => 'entregado',
+                'entregado_at' => $ahora,
+                'entrega_lat'  => $lat,
+                'entrega_lng'  => $lng,
+                'nota'         => $nota,
+            ];
+            if ($this->db->fieldExists('foto_entrega', 'salida_pedido')) {
+                $datosEntrega['foto_entrega']  = $extra['foto'] ?? null;
+                $datosEntrega['firma_entrega'] = $extra['firma'] ?? null;
+                $datosEntrega['monto_cobrado'] = $cobro > 0 ? $cobro : null;
+                $datosEntrega['metodo_cobro']  = $cobro > 0 ? $metodo : null;
+            }
+
             $this->db->table('salida_pedido')
                 ->where('id_salida', $salida['id'])
                 ->where('id_pedido', $idPedido)
-                ->update([
-                    'estado'       => 'entregado',
-                    'entregado_at' => $ahora,
-                    'entrega_lat'  => $lat,
-                    'entrega_lng'  => $lng,
-                    'nota'         => $nota,
-                ]);
+                ->update($datosEntrega);
+
+            // El dinero que el repartidor cobró entra al pedido y a la caja. Si no cuadra (por ejemplo, más que el saldo), se cancela toda la entrega.
+            if ($cobro > 0) {
+                (new PagoService($this->db))->cobrar($idPedido, $cobro, $metodo, 'entrega', 'Cobrado por el repartidor al entregar');
+            }
 
             if (!$status->actualizarEstado($idPedido, 'Venta confirmada')) {
                 throw new RuntimeException($status->ultimoError ?: 'No se pudo confirmar la entrega del pedido.');
@@ -156,6 +175,14 @@ class SalidasRepartoService
             throw $e;
         }
 
+        AuditoriaService::registrar(
+            'entrega.registrar', 'pedido', $idPedido,
+            AuditoriaService::folio($idPedido) . ' entregado'
+                . (!empty($extra['foto']) ? ' con foto' : '') . (!empty($extra['firma']) ? ' con firma' : '')
+                . ($cobro > 0 ? ', cobró $' . number_format($cobro, 2) . ' (' . $metodo . ')' : ''),
+            ['repartidor' => $idRepartidor, 'cobro' => $cobro, 'metodo' => $metodo, 'foto' => !empty($extra['foto']), 'firma' => !empty($extra['firma']), 'nota' => $nota]
+        );
+
         return $this->detalle((int) $salida['id']);
     }
 
@@ -178,7 +205,7 @@ class SalidasRepartoService
 
         $ids = array_map(static fn (array $s): int => (int) $s['id'], $salidas);
         $paradas = $this->db->table('salida_pedido sp')
-            ->select("sp.id_salida, sp.id_pedido, sp.orden, sp.estado, sp.direccion, sp.lat, sp.lng, sp.km_desde_anterior, sp.entregado_at, CONCAT_WS(' ', c.nombre, c.apellido_paterno) AS cliente", false)
+            ->select("sp.id_salida, sp.id_pedido, sp.orden, sp.estado, sp.direccion, sp.lat, sp.lng, sp.km_desde_anterior, sp.entregado_at, p.prioritario, CONCAT_WS(' ', c.nombre, c.apellido_paterno) AS cliente", false)
             ->join('pedido p', 'p.id = sp.id_pedido')
             ->join('clientes c', 'c.id_cliente = p.id_cliente', 'left')
             ->whereIn('sp.id_salida', $ids)
@@ -503,7 +530,7 @@ class SalidasRepartoService
     private function paradas(int $idSalida): array
     {
         return $this->db->table('salida_pedido sp')
-            ->select('sp.*, p.estado_actual, c.nombre AS cliente, c.apellido_paterno, c.tel')
+            ->select('sp.*, p.estado_actual, p.prioritario, p.total AS pedido_total, p.monto_pagado AS pedido_pagado, p.tipo_pago, c.nombre AS cliente, c.apellido_paterno, c.tel')
             ->join('pedido p', 'p.id = sp.id_pedido')
             ->join('clientes c', 'c.id_cliente = p.id_cliente')
             ->where('sp.id_salida', $idSalida)
@@ -514,11 +541,13 @@ class SalidasRepartoService
     private function pedidosDisponibles(int $idRepartidor, ?array $idsPedidos): array
     {
         $builder = $this->db->table('pedido p')
-            ->select('p.id, p.estado_actual')
+            ->select('p.id, p.estado_actual, p.prioritario')
             ->where('p.id_repartidor', $idRepartidor)
             ->where('p.tipo_entrega', 'domicilio')
             ->whereIn('p.estado_actual', self::ESTADOS_LISTOS)
             ->where($this->sinSalidaActiva(), null, false)
+            // Los urgentes primero: así entran en el recorrido aunque ya haya más de 6 pedidos listos
+            ->orderBy('p.prioritario', 'DESC')
             ->orderBy('p.id', 'ASC');
 
         if ($idsPedidos !== null) {

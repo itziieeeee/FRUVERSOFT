@@ -532,7 +532,7 @@ class RutaRepartidorService
      * - Si se manda $idClienteNuevo, su entrega entra como una parada más (la venta que se captura).
      * - La última ubicación del repartidor solo se devuelve para mostrarla; no entra al cálculo.
      */
-    public function planSalida(int $idRepartidor, ?int $idClienteNuevo = null, ?array $idsPedidos = null): array
+    public function planSalida(int $idRepartidor, ?int $idClienteNuevo = null, ?array $idsPedidos = null, bool $nuevoPrioritario = false): array
     {
         $coordLocal = $this->coordenadasLocal();
         if ($coordLocal === null) {
@@ -557,7 +557,12 @@ class RutaRepartidorService
                 $sinUbicacion[] = ['id_pedido' => (int) $pedido['id'], 'direccion' => $direccion];
                 continue;
             }
-            $paradas[] = $ubicacion + ['id_pedido' => (int) $pedido['id'], 'es_nuevo' => false, 'direccion' => $direccion];
+            $paradas[] = $ubicacion + [
+                'id_pedido'   => (int) $pedido['id'],
+                'es_nuevo'    => false,
+                'prioritario' => (int) ($pedido['prioritario'] ?? 0) === 1,
+                'direccion'   => $direccion,
+            ];
         }
 
         if ($idClienteNuevo !== null) {
@@ -569,16 +574,17 @@ class RutaRepartidorService
                 throw new RuntimeException('El cliente de esta venta no tiene ubicación. Pon su pin en el mapa.');
             }
             $paradas[] = $ubicacionNueva + [
-                'id_pedido' => null,
-                'es_nuevo'  => true,
-                'direccion' => $this->textoDireccion($direccionNueva),
+                'id_pedido'   => null,
+                'es_nuevo'    => true,
+                'prioritario' => $nuevoPrioritario,
+                'direccion'   => $this->textoDireccion($direccionNueva),
             ];
         }
 
         // Una sola consulta a OSRM trae todas las distancias entre el local y las paradas.
         $this->prepararDistancias(array_merge([$coordLocal], $paradas));
 
-        $orden   = $this->mejorOrden($coordLocal, $paradas);
+        $orden   = $this->ordenarConPrioridad($coordLocal, $paradas);
         $detalle = [];
         $anterior = $coordLocal;
         $total = 0.0;
@@ -589,6 +595,7 @@ class RutaRepartidorService
                 'orden'             => $indice + 1,
                 'id_pedido'         => $parada['id_pedido'],
                 'es_nuevo'          => $parada['es_nuevo'],
+                'prioritario'       => !empty($parada['prioritario']),
                 'direccion'         => $parada['direccion'],
                 'lat'               => $parada['lat'],
                 'lng'               => $parada['lng'],
@@ -637,6 +644,32 @@ class RutaRepartidorService
             'sin_ubicacion'    => $sinUbicacion,
             'google_maps_url'  => $this->urlGoogleMaps($coordLocal, $orden),
         ];
+    }
+
+    /**
+     * Los pedidos urgentes van primero (entre ellos, en el orden más corto); después van los demás.
+     * Los demás se recorren en el sentido que empiece más cerca de la última entrega urgente.
+     * Sin urgentes (o si todos lo son) funciona igual que mejorOrden().
+     */
+    private function ordenarConPrioridad(array $local, array $paradas): array
+    {
+        $urgentes = array_values(array_filter($paradas, static fn (array $p): bool => !empty($p['prioritario'])));
+        $normales = array_values(array_filter($paradas, static fn (array $p): bool => empty($p['prioritario'])));
+
+        if (!$urgentes || !$normales) {
+            return $this->mejorOrden($local, $paradas);
+        }
+
+        $ordenUrgentes = $this->mejorOrden($local, $urgentes);
+        $ordenNormales = $this->mejorOrden($local, $normales);
+
+        $ultimaUrgente = $ordenUrgentes[count($ordenUrgentes) - 1];
+        $invertido     = array_reverse($ordenNormales);
+        if ($this->distanciaCoordenadas($ultimaUrgente, $invertido[0]) < $this->distanciaCoordenadas($ultimaUrgente, $ordenNormales[0])) {
+            $ordenNormales = $invertido;
+        }
+
+        return array_merge($ordenUrgentes, $ordenNormales);
     }
 
     /**
@@ -991,7 +1024,7 @@ class RutaRepartidorService
     private function obtenerPedidosActivos(int $idRepartidor, ?array $idsPedidos = null): array
     {
         $builder = $this->db->table('pedido p')
-            ->select('p.id, p.estado_actual, d.calle, d.numero, d.colonia, d.municipio, d.estado, d.lat, d.lng')
+            ->select('p.id, p.estado_actual, p.prioritario, d.calle, d.numero, d.colonia, d.municipio, d.estado, d.lat, d.lng')
             // Una sola dirección por cliente (la más reciente), para no duplicar pedidos.
             ->join('direccion d', 'd.id = (SELECT MAX(d2.id) FROM direccion d2 WHERE d2.id_cliente = p.id_cliente)', 'left', false)
             ->where('p.id_repartidor', $idRepartidor)

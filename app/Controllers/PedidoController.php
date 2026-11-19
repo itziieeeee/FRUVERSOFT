@@ -105,7 +105,12 @@ public function pedidos_vendedor()
         }
 
         try {
-            $plan = (new RutaRepartidorService())->planSalida($idRepartidor, $idCliente > 0 ? $idCliente : null);
+            $plan = (new RutaRepartidorService())->planSalida(
+                $idRepartidor,
+                $idCliente > 0 ? $idCliente : null,
+                null,
+                !empty($json['prioritario'])
+            );
             return $this->response->setJSON(['status' => 'success', 'data' => $plan]);
         } catch (\Throwable $e) {
             return $this->response->setJSON(['status' => 'error', 'message' => $e->getMessage()]);
@@ -143,10 +148,10 @@ public function guardar_productos_pedido()
 {
     $json = $this->request->getJSON(true);
 
+    // monto_pagado es opcional: la venta del administrador no lo manda (el pago se registra después)
     if (
         empty($json['productos']) ||
-        !isset($json['id_cliente']) ||
-        !isset($json['monto_pagado'])
+        !isset($json['id_cliente'])
     ) {
         return $this->response->setJSON([
             'status'  => 'error',
@@ -160,7 +165,7 @@ public function guardar_productos_pedido()
     $idCliente    = (int) $json['id_cliente'];
     $tipoVenta    = $json['tipo_venta'] ?? 'contado';
     $tipoEntrega  = $json['tipo_entrega'] ?? 'tienda';
-    $montoPagado  = (float) $json['monto_pagado'];
+    $montoPagado  = (float) ($json['monto_pagado'] ?? 0);
 
     $idRepartidor = (
         $tipoEntrega === 'domicilio' &&
@@ -280,16 +285,21 @@ public function guardar_productos_pedido()
         ? $pedidoModel->getNombreRepartidor($idRepartidor)
         : null;
 
+    // Urgente: solo tiene sentido en una entrega a domicilio
+    $prioritario = ($tipoEntrega === 'domicilio' && !empty($json['prioritario'])) ? 1 : 0;
+
     // Datos del pedido
     $pedidoData = [
         'fecha'         => date('Y-m-d H:i:s'),
-        'id_cliente'    => $idCliente,
+        // "Público general" (0) se guarda con un cliente real del sistema: pedido.id_cliente tiene llave foránea
+        'id_cliente'    => $idCliente === 0 ? $pedidoModel->idClientePublicoGeneral() : $idCliente,
         'id_repartidor' => $idRepartidor,
         'tipo_entrega'  => $tipoEntrega,
         'total'         => $totalGeneral,
         'estado_actual' => $estadoInicial,
         'tipo_pago'     => $tipoVenta,
         'monto_pagado'  => min($montoPagado, $totalGeneral),
+        'prioritario'   => $prioritario,
     ];
 
     // Guardar pedido
@@ -300,14 +310,35 @@ public function guardar_productos_pedido()
     );
 
     if (empty($resultado['ok'])) {
+        $detalle = trim((string) ($resultado['error']['message'] ?? ''));
+        log_message('error', 'No se pudo registrar el pedido: ' . ($detalle !== '' ? $detalle : 'sin detalle de la base de datos'));
+
         return $this->response->setJSON([
             'status'  => 'error',
-            'message' => 'No se pudo registrar el pedido.',
+            'message' => 'No se pudo registrar el pedido.' . ($detalle !== '' ? ' (' . $detalle . ')' : ''),
             'debug'   => $resultado['error'] ?? null
         ]);
     }
 
     $idPedido = $resultado['idPedido'];
+
+    // Lo que el cliente pagó al momento de la venta entra a caja
+    $pagadoAhora = min($montoPagado, $totalGeneral);
+    if ($pagadoAhora > 0) {
+        (new \App\Services\PagoService())->registrar(
+            (int) $idPedido,
+            $pagadoAhora,
+            \App\Services\PagoService::metodoValido($json['metodo_pago'] ?? 'efectivo'),
+            'venta'
+        );
+    }
+
+    \App\Services\AuditoriaService::registrar(
+        'pedido.crear', 'pedido', $idPedido,
+        \App\Services\AuditoriaService::folio($idPedido) . ' para ' . $nombreCliente . ': $' . number_format($totalGeneral, 2)
+            . ' (' . ($tipoVenta === 'credito' ? 'crédito' : 'contado') . ', ' . ($tipoEntrega === 'domicilio' ? 'domicilio' : 'tienda') . ')',
+        ['total' => $totalGeneral, 'pagado' => $pagadoAhora, 'productos' => count($json['productos'])]
+    );
 
     // Validar y descontar inventario usando el mecanismo existente
     $statusModel = new \App\Models\StatusModel();
@@ -403,6 +434,9 @@ public function guardar_productos_pedido()
         $pedidoModel = new PedidoModel();
 
         try {
+            // Se guarda cómo era el pedido antes de borrarlo, para el historial de cambios
+            $antes = \Config\Database::connect()->table('pedido')->select('total, monto_pagado, estado_actual, id_cliente')->where('id', $id)->get()->getRowArray();
+
             $ok = $pedidoModel->eliminarPedidoCompleto($id);
 
             if (!$ok) {
@@ -411,6 +445,13 @@ public function guardar_productos_pedido()
                     'message' => 'Error al eliminar el pedido'
                 ]);
             }
+
+            \App\Services\AuditoriaService::registrar(
+                'pedido.eliminar', 'pedido', $id,
+                \App\Services\AuditoriaService::folio($id) . ' eliminado (total $' . number_format((float) ($antes['total'] ?? 0), 2)
+                    . ', ' . ($antes['estado_actual'] ?? 'sin estado') . ')',
+                $antes ?: null
+            );
 
             return $this->response->setJSON([
                 'success' => true,

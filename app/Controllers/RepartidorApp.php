@@ -54,6 +54,47 @@ class RepartidorApp extends BaseController
         }
     }
 
+    /** Carpeta privada de las fotos y firmas de entrega (fuera de public: solo se ven con sesión de administrador) */
+    public static function carpetaEvidencias(): string
+    {
+        return WRITEPATH . 'uploads' . DIRECTORY_SEPARATOR . 'entregas' . DIRECTORY_SEPARATOR;
+    }
+
+    /**
+     * Guarda una imagen subida (foto o firma) con un nombre al azar.
+     * @return string|null nombre del archivo, o null si no se mandó nada
+     * @throws \RuntimeException si el archivo no es una imagen válida
+     */
+    private function guardarImagen(string $campo): ?string
+    {
+        $archivo = $this->request->getFile($campo);
+        if (!$archivo || $archivo->getError() === UPLOAD_ERR_NO_FILE) {
+            return null;
+        }
+        if (!$archivo->isValid() || $archivo->hasMoved()) {
+            throw new \RuntimeException('No se pudo recibir la imagen (' . $campo . '). Intenta de nuevo.');
+        }
+        if ($archivo->getSize() > 4 * 1024 * 1024) {
+            throw new \RuntimeException('La imagen es muy pesada (máximo 4 MB).');
+        }
+
+        // Se revisa el contenido real, no solo la extensión
+        $info = @getimagesize($archivo->getTempName());
+        $tipos = [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp'];
+        if (!$info || !isset($tipos[$info[2]])) {
+            throw new \RuntimeException('El archivo no es una imagen válida (JPG, PNG o WEBP).');
+        }
+
+        $carpeta = self::carpetaEvidencias();
+        if (!is_dir($carpeta) && !mkdir($carpeta, 0775, true) && !is_dir($carpeta)) {
+            throw new \RuntimeException('No se pudo preparar la carpeta de evidencias.');
+        }
+
+        $nombre = bin2hex(random_bytes(16)) . '.' . $tipos[$info[2]];
+        $archivo->move($carpeta, $nombre);
+        return $nombre;
+    }
+
     public function entregarSalidaPedido($idPedido)
     {
         $lat = $this->request->getPost('lat');
@@ -62,16 +103,41 @@ class RepartidorApp extends BaseController
         $lng = is_numeric($lng) ? (float) $lng : null;
         $nota = trim((string) $this->request->getPost('nota'));
 
+        $cobro        = (float) $this->request->getPost('cobro');
+        $metodo       = (string) $this->request->getPost('metodo');
+        $sinEvidencia = $this->request->getPost('sin_evidencia') === '1';
+
+        $guardados = [];
         try {
+            if ($cobro < 0) {
+                throw new \RuntimeException('El monto cobrado no puede ser negativo.');
+            }
+
+            $foto  = $this->guardarImagen('foto');
+            $firma = $this->guardarImagen('firma');
+            $guardados = array_filter([$foto, $firma]);
+
+            // La entrega necesita prueba: foto o firma. Si no se puede, debe explicarse en la nota.
+            if (!$foto && !$firma) {
+                if (!$sinEvidencia || mb_strlen($nota) < 5) {
+                    throw new \RuntimeException('Toma una foto o pide la firma del cliente. Si no es posible, marca "Sin evidencia" y explica el motivo en la nota.');
+                }
+            }
+
             $data = (new SalidasRepartoService())->entregar(
                 $this->idRep(),
                 (int) $idPedido,
                 $lat,
                 $lng,
-                $nota !== '' ? $nota : null
+                $nota !== '' ? $nota : null,
+                ['foto' => $foto, 'firma' => $firma, 'cobro' => $cobro, 'metodo' => $metodo]
             );
             return $this->response->setJSON(['success' => true, 'data' => $data]);
         } catch (\Throwable $e) {
+            // Si la entrega no se pudo guardar, no quedan archivos huérfanos
+            foreach ($guardados as $nombre) {
+                @unlink(self::carpetaEvidencias() . $nombre);
+            }
             return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $e->getMessage()]);
         }
     }
@@ -79,7 +145,7 @@ class RepartidorApp extends BaseController
     public function pedidos()
     {
         $rows = \Config\Database::connect()->query("
-            SELECT p.id, p.total, p.monto_pagado, p.tipo_pago, p.estado_actual,
+            SELECT p.id, p.total, p.monto_pagado, p.tipo_pago, p.estado_actual, p.prioritario,
                    CONCAT(c.nombre, ' ', IFNULL(c.apellido_paterno, '')) AS cliente,
                    c.tel, d.calle, d.numero, d.colonia, d.municipio, d.estado AS estado_dir
             FROM pedido p
@@ -89,7 +155,7 @@ class RepartidorApp extends BaseController
             WHERE p.id_repartidor = ?
               AND p.tipo_entrega = 'domicilio'
               AND p.estado_actual NOT IN ('Pedido', 'Venta confirmada', 'Pedido cancelado')
-            ORDER BY p.id DESC", [$this->idRep()])->getResultArray();
+            ORDER BY p.prioritario DESC, p.id DESC", [$this->idRep()])->getResultArray();
 
         return $this->response->setJSON(['data' => $rows]);
     }

@@ -47,12 +47,29 @@ class Producto extends BaseController
                      ->withInput();
 }
 
-// 1. GENERAR CÓDIGO ÚNICO (Ejemplo: PRD-A1B2C3)
-            $codigoUnico = 'PRD-' . strtoupper(bin2hex(random_bytes(3)));
+// Código de barras del empaque (opcional): solo para productos que ya lo traen de fábrica
+        $codigoBarras = $this->limpiarCodigoBarras($this->request->getPost('codigo_barras'));
+        if ($codigoBarras === false) {
+            return redirect()->back()
+                ->with('error', 'El código de barras solo puede tener letras, números y guiones (de 4 a 32 caracteres).')
+                ->withInput();
+        }
+        if ($codigoBarras !== null && $model->codigoEnUso($codigoBarras)) {
+            return redirect()->back()
+                ->with('error', 'Ese código de barras ya pertenece a otro producto.')
+                ->withInput();
+        }
+
+// 1. GENERAR CÓDIGO ÚNICO (Ejemplo: PRD-A1B2C3). Es el identificador propio de TODO producto
+//    (también de los que no traen código de barras) y se imprime como etiqueta.
+            do {
+                $codigoUnico = 'PRD-' . strtoupper(bin2hex(random_bytes(3)));
+            } while ($model->codigoEnUso($codigoUnico));
 
 // 2. AGREGARLO AL ARREGLO DE DATOS
             $data = [
-            'codigo'      => $codigoUnico,
+            'codigo'        => $codigoUnico,
+            'codigo_barras' => $codigoBarras,
             'nombre'      => $nombreNormalizado,
             'descripcion' => $this->request->getPost('descripcion'),
             'imagen'      => $nombreImagen
@@ -60,8 +77,40 @@ class Producto extends BaseController
 
         $model->insert($data);
 
+        \App\Services\AuditoriaService::registrar(
+            'producto.crear', 'producto', $model->getInsertID(),
+            'Producto nuevo: ' . $nombreNormalizado . ' (' . $codigoUnico . ')' . ($codigoBarras ? ', código de barras ' . $codigoBarras : '')
+        );
+
         return redirect()->to(base_url('pantalla_productos'))
                          ->with('mensaje', 'Producto guardado correctamente.');
+    }
+
+    /**
+     * Normaliza el código de barras escrito o escaneado.
+     * Devuelve null si viene vacío, false si no es válido, o el código limpio.
+     */
+    private function limpiarCodigoBarras($valor)
+    {
+        $valor = strtoupper(preg_replace('/\s+/', '', (string) $valor));
+        if ($valor === '') {
+            return null;
+        }
+        return preg_match('/^[A-Z0-9\-]{4,32}$/', $valor) ? $valor : false;
+    }
+
+    /** Hoja imprimible con la etiqueta (Code128) de cada producto: sirve para lo que no trae código de fábrica */
+    public function etiquetas()
+    {
+        $ids = array_filter(array_map('intval', explode(',', (string) $this->request->getGet('ids'))));
+
+        $model = new ProductoModel();
+        $model->select('id, codigo, codigo_barras, nombre')->orderBy('nombre', 'ASC');
+        if ($ids) {
+            $model->whereIn('id', $ids);
+        }
+
+        return view('etiquetas_productos', ['productos' => $model->findAll()]);
     }
 
     //  LISTADO CON PAGINACIÓN
@@ -107,10 +156,35 @@ class Producto extends BaseController
                              ->with('error', "Ya existe otro producto con el nombre \"$nombre\".");
         }
 
-        $model->update($id, [
+        $cambios = [
             'nombre'      => $nombre,
             'descripcion' => $descripcion,
-        ]);
+        ];
+
+        // Código de barras del empaque: solo se toca si el formulario lo trae
+        if ($this->request->getPost('codigo_barras') !== null) {
+            $codigoBarras = $this->limpiarCodigoBarras($this->request->getPost('codigo_barras'));
+            if ($codigoBarras === false) {
+                return redirect()->to(base_url('pantalla_productos'))
+                                 ->with('error', 'El código de barras solo puede tener letras, números y guiones (de 4 a 32 caracteres).');
+            }
+            if ($codigoBarras !== null && $model->codigoEnUso($codigoBarras, (int) $id)) {
+                return redirect()->to(base_url('pantalla_productos'))
+                                 ->with('error', 'Ese código de barras ya pertenece a otro producto.');
+            }
+            $cambios['codigo_barras'] = $codigoBarras;
+        }
+
+        $model->update($id, $cambios);
+
+        \App\Services\AuditoriaService::registrar(
+            'producto.editar', 'producto', $id,
+            'Producto editado: ' . $producto['nombre'] . ($producto['nombre'] !== $nombre ? ' → ' . $nombre : ''),
+            [
+                'antes'   => ['nombre' => $producto['nombre'], 'descripcion' => $producto['descripcion'], 'codigo_barras' => $producto['codigo_barras'] ?? null],
+                'despues' => $cambios,
+            ]
+        );
 
         return redirect()->to(base_url('pantalla_productos'))
                          ->with('mensaje', "Producto \"$nombre\" actualizado correctamente.");
@@ -149,6 +223,11 @@ class Producto extends BaseController
         }
 
         $model->delete($id);
+
+        \App\Services\AuditoriaService::registrar(
+            'producto.eliminar', 'producto', $id,
+            'Producto eliminado: ' . $producto['nombre'] . ' (' . ($producto['codigo'] ?? '') . ')'
+        );
 
         return redirect()->to(base_url('pantalla_productos'))
                          ->with('mensaje', "Producto \"" . $producto['nombre'] . "\" eliminado correctamente.");

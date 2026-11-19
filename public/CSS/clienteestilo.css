@@ -534,3 +534,51 @@
             .buscador-header-wrap { max-width: 100%; }
         }
     
+
+/* ===== Editar cliente con mapa e historial de compras ===== */
+.modal-box.modal-ancho { width: min(760px, 94vw); max-height: 92vh; overflow-y: auto; }
+.seccion-modal { margin: 1.4rem 0 .8rem; font-weight: 800; font-size: .8rem; text-transform: uppercase; letter-spacing: .5px; color: var(--primary-green); display: flex; gap: 8px; align-items: center; }
+.seccion-modal i { color: var(--primary-orange); }
+.select-modal, .fecha-modal { padding: 12px 14px; border: 1.5px solid #e2e8e2; border-radius: 24px; font-size: .9rem; background: #fff; font-family: inherit; }
+.select-modal:focus, .fecha-modal:focus { border-color: var(--primary-orange); outline: none; box-shadow: 0 0 0 3px rgba(241,107,26,.2); }
+
+#mapaEditar { width: 100%; height: 300px; border-radius: 16px; border: 1.5px solid #e0e0e0; margin-top: 10px; z-index: 0; }
+.acciones-mapa { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-mapa { background: #fff; color: #2d5a33; border: 1.5px solid #2d5a33; padding: 9px 16px; border-radius: 50px; font-weight: 700; font-size: .82rem; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+.btn-mapa:hover { background: #e8f3e6; }
+.btn-mapa.sec { color: #b45309; border-color: #e0b27a; }
+.btn-mapa.sec:hover { background: #fff7ed; }
+.btn-mapa:disabled { opacity: .6; cursor: wait; }
+.mensaje-mapa { margin-top: 10px; font-size: .85rem; color: #666; }
+.mensaje-mapa.ok { color: #1d4a27; font-weight: 600; }
+.mensaje-mapa.aviso { color: #b45309; font-weight: 600; }
+
+.hist-filtros { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.hist-busca { flex: 1 1 220px; display: flex; align-items: center; gap: 8px; border: 1.5px solid #e2e8e2; border-radius: 24px; padding: 0 14px; background: #fff; }
+.hist-busca i { color: #94a3b8; }
+.hist-busca input { flex: 1; border: 0; outline: none; padding: 12px 0; font-size: .9rem; background: transparent; }
+.hist-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.chip { border: 1.5px solid #dde6df; background: #f3f6f4; color: #2b4b32; border-radius: 50px; padding: 6px 14px; font-weight: 700; font-size: .78rem; cursor: pointer; }
+.chip:hover { background: #e6f0e3; }
+.chip.activo { background: var(--primary-green); color: #fff; border-color: var(--primary-green); }
+.hist-resumen { font-size: .88rem; color: #334155; margin-bottom: 10px; min-height: 20px; }
+.hist-resumen small { color: #94a3b8; }
+.hist-tabla-wrap { max-height: 46vh; overflow: auto; border: 1px solid #eef2f6; border-radius: 14px; }
+.hist-tabla { width: 100%; border-collapse: collapse; font-size: .85rem; min-width: 640px; }
+.hist-tabla th { position: sticky; top: 0; background: var(--primary-green); color: #fff; text-align: left; padding: 10px; font-size: .7rem; text-transform: uppercase; letter-spacing: .4px; }
+.hist-tabla td { padding: 10px; border-bottom: 1px solid #eef2f6; vertical-align: top; }
+.hist-tabla .r, .hist-tabla th.r { text-align: right; }
+.hist-tabla .prods { max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #475569; }
+.hist-tabla .acc { white-space: nowrap; }
+.hist-tabla .acc a { color: var(--primary-green); font-weight: 700; text-decoration: none; margin-right: 10px; font-size: .8rem; }
+.hist-tabla .acc a:hover { color: var(--primary-orange); }
+.hist-tabla .fila-cancelada td { color: #94a3b8; text-decoration: line-through; }
+.hist-tabla .fila-cancelada td.acc, .hist-tabla .fila-cancelada td:nth-child(5) { text-decoration: none; }
+.hist-vacio { text-align: center; color: #94a3b8; padding: 2rem !important; }
+.est { font-size: .68rem; font-weight: 700; padding: 3px 9px; border-radius: 50px; white-space: nowrap; background: #e2e8f0; color: #334155; }
+.est.ok { background: #dcfce7; color: #15803d; }
+.est.credito { background: #fef3c7; color: #b45309; }
+.est.proceso { background: #dbeafe; color: #1d4ed8; }
+.est.cancelado { background: #fee2e2; color: #b91c1c; }
+.tag-urg { background: #dc2626; color: #fff; font-size: .6rem; font-weight: 700; padding: 1px 6px; border-radius: 50px; }
+@media (max-width: 600px) { #mapaEditar { height: 240px; } .modal-box.modal-ancho .form-grid { grid-template-columns: 1fr; } }

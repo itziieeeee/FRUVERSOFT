@@ -36,6 +36,7 @@ class Filters extends BaseFilters
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
         'authFilter'    => \App\Filters\AuthFilter::class,
+        'modoOscuro'    => \App\Filters\ModoOscuro::class,
     ];
 
     /**
@@ -81,6 +82,7 @@ class Filters extends BaseFilters
         'after' => [
             // 'honeypot',
             // 'secureheaders',
+            'modoOscuro',   // botón de modo oscuro en todas las pantallas HTML
         ],
     ];
 

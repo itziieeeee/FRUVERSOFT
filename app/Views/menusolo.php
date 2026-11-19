@@ -421,9 +421,37 @@ h1 {
             <span class="module-title">Costos y ganancias</span>
         </a>
 
+        <a href="<?= base_url('cobranza') ?>" class="module-card">
+            <div class="card-icon-wrapper">
+                <img src="<?= base_url('img/PAGOS1.png') ?>" alt="Cobranza de créditos" class="module-img">
+            </div>
+            <span class="module-title">Cobranza de créditos</span>
+        </a>
+
+        <a href="<?= base_url('corte') ?>" class="module-card">
+            <div class="card-icon-wrapper">
+                <img src="<?= base_url('img/PRECIOS1.png') ?>" alt="Corte de caja" class="module-img">
+            </div>
+            <span class="module-title">Corte de caja</span>
+        </a>
+
+        <a href="<?= base_url('devoluciones') ?>" class="module-card">
+            <div class="card-icon-wrapper">
+                <img src="<?= base_url('img/PEDIDOSPE.png') ?>" alt="Devoluciones" class="module-img">
+            </div>
+            <span class="module-title">Devoluciones</span>
+        </a>
+
+        <a href="<?= base_url('auditoria') ?>" class="module-card">
+            <div class="card-icon-wrapper">
+                <img src="<?= base_url('img/FAC.png') ?>" alt="Historial de cambios" class="module-img">
+            </div>
+            <span class="module-title">Historial de cambios</span>
+        </a>
+
         <a href="<?= base_url('seguimiento') ?>" class="module-card">
             <div class="card-icon-wrapper">
-                <img src="<?= base_url('img/REPARTIDORES.png') ?>" alt="Seguimiento repartidor" class="module-img">
+                <img src="<?= base_url('img/RUTAS.png') ?>" alt="Seguimiento repartidor" class="module-img">
             </div>
             <span class="module-title">Seguimiento repartidor</span>
         </a>

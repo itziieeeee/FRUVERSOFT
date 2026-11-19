@@ -59,6 +59,7 @@
     .parada .info small { color: #64748b; display: block; }
     .tag { font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 50px; background: #dcfce7; color: #15803d; white-space: nowrap; }
     .tag.cerca { background: #ffedd5; color: #c2410c; }
+    .tag.urgente { background: #dc2626; color: #fff; }
 
     .pin-repartidor { background: var(--naranja); border: 3px solid #fff; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,.4); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 15px; }
     .pin-cliente { background: var(--verde); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,.35); color: #fff; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; }
@@ -208,8 +209,9 @@ function listarSalidas(datos) {
                 const cerca = p.distancia_km * 1000 <= datos.radio_m;
                 etiqueta = '<span class="tag ' + (cerca ? 'cerca' : '') + '">' + (p.distancia_km < 1 ? Math.round(p.distancia_km * 1000) + ' m' : p.distancia_km.toFixed(1) + ' km') + '</span>';
             }
+            const urg = (Number(p.prioritario) === 1 && !ok) ? ' <span class="tag urgente">URGENTE</span>' : '';
             return '<div class="parada"><div class="n ' + (ok ? 'ok' : '') + '">' + esc(p.orden) + '</div>'
-                 + '<div class="info">' + esc(p.cliente || 'Cliente') + '<small>' + esc(p.direccion || '') + '</small></div>' + etiqueta + '</div>';
+                 + '<div class="info">' + esc(p.cliente || 'Cliente') + urg + '<small>' + esc(p.direccion || '') + '</small></div>' + etiqueta + '</div>';
         }).join('');
         return '<div class="salida"><div class="rep"><i class="fas fa-motorcycle"></i> ' + esc(s.repartidor) + '</div>'
              + '<div class="sub">' + esc(s.entregadas) + ' de ' + esc(s.total_paradas) + ' entregas · ' + esc(ubic) + '</div>' + paradas + '</div>';

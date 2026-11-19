@@ -118,6 +118,13 @@ class MermaModel extends Model
 
         $this->descontarEntrada($entrada['id'], $entrada['cantidad_venta'] - $cantidad_mermar);
 
+        $nombreProducto = $this->db->table('producto')->select('nombre')->where('id', $id_producto)->get()->getRowArray()['nombre'] ?? ('producto #' . $id_producto);
+        \App\Services\AuditoriaService::registrar(
+            'merma.crear', 'producto', $id_producto,
+            'Merma de ' . rtrim(rtrim(number_format((float) $cantidad_mermar, 2, '.', ''), '0'), '.') . ' de ' . $nombreProducto . ($motivo ? ': ' . $motivo : ''),
+            ['cantidad' => (float) $cantidad_mermar, 'motivo' => $motivo, 'lote' => (int) $entrada['id']]
+        );
+
         $existencia = $this->getExistencia($id_producto);
 
         if ($existencia) {

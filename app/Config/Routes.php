@@ -88,6 +88,7 @@ $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
     $routes->post('clientes/registrar', 'Clientes::registrar');
     $routes->get('pantalla_clientes', 'Clientes::pantalla_clientes');
     $routes->get('clientes/detalle/(:num)', 'Clientes::detalle/$1');
+    $routes->get('clientes/historial/(:num)', 'Clientes::historial/$1');
     $routes->post('clientes/actualizar', 'Clientes::actualizar');
     $routes->post('clientes/eliminar/(:num)', 'Clientes::eliminar/$1');
 
@@ -123,10 +124,36 @@ $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
     $routes->get('salidas/lista', 'SalidasController::lista');
     $routes->get('salidas/detalle/(:num)', 'SalidasController::detalle/$1');
 
+    // Escáner de códigos (cámara o lector USB) y etiquetas imprimibles de productos
+    $routes->get('escaner', 'Escaner::buscar');
+    $routes->get('productos/etiquetas', 'Producto::etiquetas');
+
     // Seguimiento en vivo del repartidor y aviso "ya está cerca"
     $routes->get('seguimiento', 'SalidasController::seguimiento');
     $routes->get('seguimiento/datos', 'SalidasController::seguimientoDatos');
     $routes->post('seguimiento/avisado/(:num)', 'SalidasController::avisado/$1');
+
+    // Historial de cambios
+    $routes->get('auditoria', 'Auditoria::index');
+
+    // Corte de caja
+    $routes->get('corte', 'Corte::index');
+    $routes->post('corte/guardar', 'Corte::guardar');
+
+    // Devoluciones de clientes
+    $routes->get('devoluciones', 'Devoluciones::index');
+    $routes->get('devoluciones/pedido/(:num)', 'Devoluciones::pedido/$1');
+    $routes->post('devoluciones/guardar', 'Devoluciones::guardar');
+
+    // Evidencia de entrega (foto, firma y cobro del repartidor)
+    $routes->get('entrega/(:num)', 'Entregas::ver/$1');
+    $routes->get('entrega/archivo/(:segment)', 'Entregas::archivo/$1');
+
+    // Cobranza de créditos: recordatorios de pago por WhatsApp
+    $routes->get('cobranza', 'Cobranza::index');
+    $routes->post('cobranza/vencimiento', 'Cobranza::vencimiento');
+    $routes->post('cobranza/recordado', 'Cobranza::recordado');
+    $routes->post('cobranza/configuracion', 'Cobranza::configuracion');
 
     // Costos, ganancias y variación de costos
     $routes->get('costos', 'Costos::index');
@@ -167,6 +194,7 @@ $routes->group('vendedor', ['filter' => 'authFilter:vendedor'], function($routes
     $routes->get('panel', 'FRUVER::pantalla_vendedor');
 
     $routes->get('buscar-producto', 'FRUVER::buscar_producto');
+    $routes->get('escaner', 'Escaner::buscar');
 
     $routes->get('pedidos', 'PedidoController::pedidos_vendedor');
 
@@ -191,11 +219,12 @@ $routes->post('api/estado', 'RepartidorApp::estado');
 $routes->post('api/incidencia', 'RepartidorApp::incidencia');
 $routes->post('api/ubicacion', 'RepartidorApp::ubicacion');
 $routes->get('api/respuestas', 'RepartidorApp::respuestas');
+$routes->get('api/escaner', 'Escaner::buscar');
 $routes->post('api/respuestas/leer', 'RepartidorApp::respuestasLeer');
 $routes->get('api/recorrido/previa', 'RepartidorApp::recorridoPrevia');
 $routes->post('api/recorrido/iniciar', 'RepartidorApp::recorridoIniciar');
 $routes->get('api/salida-activa', 'RepartidorApp::salidaActiva');
-$routes->post('api/salida/pedido/entregar/(:num)', 'RepartidorApp::entregarSalidaPedido');
+$routes->post('api/salida/pedido/entregar/(:num)', 'RepartidorApp::entregarSalidaPedido/$1');
     // marquen como entregado
     $routes->post('cambiar_estado', 'PanelRepartidorController::cambiar_estado');
 });

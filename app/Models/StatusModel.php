@@ -1,5 +1,7 @@
 <?php
 namespace App\Models;
+use App\Services\AuditoriaService;
+use App\Services\PagoService;
 use CodeIgniter\Model;
 
 class StatusModel extends Model
@@ -65,7 +67,8 @@ class StatusModel extends Model
     {
         $this->ultimoError = '';
 
-        if (!$this->find($id)) {
+        $antes = $this->find($id);
+        if (!$antes) {
             $this->ultimoError = 'Pedido no encontrado';
             return false;
         }
@@ -75,6 +78,14 @@ class StatusModel extends Model
         }
 
         $this->update($id, ['estado_actual' => $estado]);
+
+        if ($antes['estado_actual'] !== $estado) {
+            AuditoriaService::registrar(
+                'pedido.estado', 'pedido', $id,
+                AuditoriaService::folio($id) . ': ' . $antes['estado_actual'] . ' → ' . $estado,
+                ['antes' => $antes['estado_actual'], 'despues' => $estado]
+            );
+        }
 
         $this->db->table('status')
             ->where('id_pedido', $id)
@@ -128,7 +139,11 @@ public function getProductosDePedido($id)
 
     
 
-    public function actualizarPago($id, $montoPagado, $total)
+    /**
+     * Fija cuánto lleva pagado un pedido. La diferencia contra lo que llevaba queda en la tabla `pago`
+     * (entrada si subió, salida si bajó) para que el corte de caja cuadre.
+     */
+    public function actualizarPago($id, $montoPagado, $total, string $metodo = 'efectivo')
     {
         $tipoPago    = ($montoPagado >= $total) ? 'contado' : 'credito';
         $estadoNuevo = ($montoPagado >= $total) ? 'Pedido pagado' : 'Pedido a crédito';
@@ -138,11 +153,25 @@ public function getProductosDePedido($id)
             return false;
         }
 
+        $antes = $this->db->table('pedido')->select('monto_pagado, estado_actual')->where('id', $id)->get()->getRowArray();
+        $pagadoAntes = (float) ($antes['monto_pagado'] ?? 0);
+        $diferencia  = round((float) $montoPagado - $pagadoAntes, 2);
+
         $this->update($id, [
             'monto_pagado'  => $montoPagado,
             'tipo_pago'     => $tipoPago,
             'estado_actual' => $estadoNuevo,
         ]);
+
+        if (abs($diferencia) >= 0.005) {
+            (new PagoService($this->db))->registrar((int) $id, $diferencia, $metodo, $diferencia > 0 ? 'abono' : 'ajuste');
+            AuditoriaService::registrar(
+                'pedido.pago', 'pedido', $id,
+                AuditoriaService::folio($id) . ': pagado $' . number_format($pagadoAntes, 2) . ' → $' . number_format((float) $montoPagado, 2)
+                    . ' (' . PagoService::metodoValido($metodo) . ')',
+                ['antes' => $pagadoAntes, 'despues' => (float) $montoPagado, 'metodo' => PagoService::metodoValido($metodo)]
+            );
+        }
 
         $this->db->table('status')->insert([
             'id_pedido' => $id,
@@ -193,13 +222,23 @@ public function getProductosDePedido($id)
             'fecha'     => date('Y-m-d H:i:s'),
         ]);
 
+        AuditoriaService::registrar(
+            'pedido.estado', 'pedido', $idPedido,
+            AuditoriaService::folio($idPedido) . ': ' . ($fila['estado_actual'] ?? 'Pedido') . ' → Pedido confirmado (se descontó el stock)',
+            ['antes' => $fila['estado_actual'] ?? null, 'despues' => 'Pedido confirmado']
+        );
+
         return ['success' => true, 'estado' => 'Pedido confirmado'];
     }
 
     public function obtenerPedidos()
     {
+        $evidencia = $this->db->fieldExists('foto_entrega', 'salida_pedido')
+            ? ", (SELECT COUNT(*) FROM salida_pedido sp WHERE sp.id_pedido = pedido.id AND (sp.foto_entrega IS NOT NULL OR sp.firma_entrega IS NOT NULL OR sp.monto_cobrado IS NOT NULL)) AS tiene_evidencia"
+            : '';
+
         return $this->db->table('pedido')
-            ->select('pedido.*, CONCAT(clientes.nombre, " ", clientes.apellido_paterno, " ", clientes.apellido_materno) AS nombre_cliente')
+            ->select('pedido.*, CONCAT(clientes.nombre, " ", clientes.apellido_paterno, " ", clientes.apellido_materno) AS nombre_cliente' . $evidencia, false)
             ->join('clientes', 'clientes.id_cliente = pedido.id_cliente', 'left')
             ->get()
             ->getResultArray();

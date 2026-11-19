@@ -97,7 +97,7 @@
                 <?php foreach($sp as $pedido):
                     $totalPedido = $pedido['total'];
                     $tipoPago    = $pedido['tipo_pago']  ?? 'contado';
-                    $montoPagado = $pedido['monto_pago'] ?? 0;
+                    $montoPagado = $pedido['monto_pagado'] ?? 0;
                     $estadoPago  = ($tipoPago === 'credito') ? 'credito' : 'pagado';
                     $estadoActual = $pedido['estado_actual'];
 
@@ -139,7 +139,11 @@
                             <i class="fas fa-chevron-down"></i>
                         </button>
                     </td>
-                    <td><strong>#<?= str_pad($pedido['id'], 5, '0', STR_PAD_LEFT) ?></strong></td>
+                    <td><strong>#<?= str_pad($pedido['id'], 5, '0', STR_PAD_LEFT) ?></strong>
+                        <?php if (!empty($pedido['prioritario'])): ?>
+                            <span title="Pedido urgente" style="display:inline-block; background:#dc2626; color:#fff; font-size:.62rem; font-weight:700; padding:1px 7px; border-radius:50px; vertical-align:middle;"><i class="fas fa-bolt"></i> URGENTE</span>
+                        <?php endif; ?>
+                    </td>
                     <td><?= date('d/m/Y H:i', strtotime($pedido['fecha'])) ?></td>
                     <td class="clase-nombre"><?= htmlspecialchars($pedido['nombre_cliente'] ?? 'Sin nombre') ?></td>
                     <td><strong style="color:var(--primary-orange);">$<?= number_format($totalPedido, 2) ?></strong></td>
@@ -203,6 +207,29 @@
             )">
             <i class="fas fa-edit"></i> Editar precios
         </button>
+    <?php endif; ?>
+
+    <?php if (in_array($estadoActual, [
+        'Pedido confirmado',
+        'Pedido en tránsito',
+        'Venta confirmada',
+        'Pedido a crédito',
+        'Pedido pagado'
+    ], true)): ?>
+        <button
+            type="button"
+            class="btn-actualizar"
+            title="El cliente regresa producto"
+            onclick="abrirDevolucion(<?= (int) $pedido['id'] ?>)">
+            <i class="fas fa-rotate-left"></i> Devolución
+        </button>
+    <?php endif; ?>
+
+    <?php if (!empty($pedido['tiene_evidencia'])): ?>
+        <a class="btn-actualizar" style="text-decoration:none;" target="_blank" title="Foto, firma y cobro de la entrega"
+           href="<?= base_url('entrega/' . (int) $pedido['id']) ?>">
+            <i class="fas fa-camera"></i> Evidencia
+        </a>
     <?php endif; ?>
 
     <button
@@ -282,6 +309,14 @@
                         <label><i class="fas fa-dollar-sign"></i> Monto Pagado ($):</label>
                         <input type="number" id="modalPagado" step="0.01" min="0" class="editable-pagado" placeholder="0.00">
                     </div>
+                    <div class="campo-pago">
+                        <label><i class="fas fa-wallet"></i> Método de pago:</label>
+                        <select id="modalMetodo" class="editable-pagado">
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="tarjeta">Tarjeta</option>
+                        </select>
+                    </div>
                     <div class="restante">
                         <i class="fas fa-chart-line"></i> Restante por pagar: <span id="modalRestante">$0.00</span>
                     </div>
@@ -293,6 +328,180 @@
         </div>
     </div>
 </div>
+
+<!-- MODAL DEVOLUCIÓN -->
+<style>
+    #modalDev { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 3000; align-items: center; justify-content: center; padding: 1rem; }
+    #modalDev.activo { display: flex; }
+    #modalDev .dev-caja { background: #fff; border-radius: 18px; width: min(780px, 100%); max-height: 92vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+    #modalDev .dev-cab { background: #1d4a27; color: #fff; padding: 1rem 1.3rem; display: flex; justify-content: space-between; align-items: center; border-radius: 18px 18px 0 0; }
+    #modalDev .dev-cab h3 { font-size: 1.1rem; display: flex; gap: 8px; align-items: center; }
+    #modalDev .dev-x { background: rgba(255,255,255,.2); border: 0; color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; }
+    #modalDev .dev-cuerpo { padding: 1.2rem 1.3rem; }
+    #modalDev table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+    #modalDev th { text-align: left; font-size: .7rem; text-transform: uppercase; color: #64748b; padding: 6px 8px; border-bottom: 2px solid #e2e8f0; }
+    #modalDev td { padding: 8px; border-bottom: 1px solid #eef2f6; vertical-align: middle; }
+    #modalDev td.r, #modalDev th.r { text-align: right; }
+    #modalDev input[type=number], #modalDev select, #modalDev input[type=text] { padding: 7px 9px; border: 1.5px solid #cbd5e1; border-radius: 9px; font: inherit; font-size: .88rem; }
+    #modalDev input[type=number] { width: 84px; text-align: right; }
+    #modalDev .dev-resumen { background: #f1f5f9; border-radius: 12px; padding: .8rem 1rem; margin-top: 1rem; font-size: .9rem; }
+    #modalDev .dev-resumen div { display: flex; justify-content: space-between; padding: 3px 0; }
+    #modalDev .dev-resumen .grande { font-weight: 700; font-size: 1rem; border-top: 1px dashed #cbd5e1; margin-top: 4px; padding-top: 8px; }
+    #modalDev .dev-aviso { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; border-radius: 10px; padding: .7rem .9rem; font-size: .85rem; margin-bottom: .8rem; }
+    #modalDev .dev-pie { display: flex; justify-content: flex-end; gap: .6rem; margin-top: 1rem; }
+    #modalDev .dev-btn { border: 0; border-radius: 10px; padding: 10px 18px; font-weight: 700; cursor: pointer; font-family: inherit; background: #e2e8f0; color: #334155; }
+    #modalDev .dev-btn.ok { background: #f16b1a; color: #fff; }
+    #modalDev .dev-btn:disabled { opacity: .6; cursor: wait; }
+</style>
+<div id="modalDev">
+    <div class="dev-caja">
+        <div class="dev-cab">
+            <h3><i class="fas fa-rotate-left"></i> <span id="devTitulo">Devolución</span></h3>
+            <button type="button" class="dev-x" onclick="cerrarDevolucion()">&times;</button>
+        </div>
+        <div class="dev-cuerpo" id="devCuerpo"></div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+//  DEVOLUCIONES DE CLIENTES
+// ============================================================
+let devPedido = null;
+const devDinero = n => '$' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const devEsc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+function abrirDevolucion(id) {
+    const cuerpo = document.getElementById('devCuerpo');
+    cuerpo.innerHTML = '<p style="color:#64748b;">Cargando...</p>';
+    document.getElementById('devTitulo').textContent = 'Devolución';
+    document.getElementById('modalDev').classList.add('activo');
+
+    fetch("<?= base_url('devoluciones/pedido') ?>/" + id)
+        .then(r => r.json())
+        .then(d => {
+            if (!d.success) { cuerpo.innerHTML = '<p>' + devEsc(d.message) + '</p>'; return; }
+            devPedido = d.pedido;
+            dibujarDevolucion();
+        })
+        .catch(() => { cuerpo.innerHTML = '<p>No se pudo cargar el pedido.</p>'; });
+}
+
+function dibujarDevolucion() {
+    const p = devPedido;
+    document.getElementById('devTitulo').textContent = 'Devolución · ' + p.folio + ' · ' + p.cliente;
+    const cuerpo = document.getElementById('devCuerpo');
+
+    if (p.bloqueado) {
+        cuerpo.innerHTML = '<div class="dev-aviso">' + devEsc(p.bloqueado) + '</div><div class="dev-pie"><button class="dev-btn" onclick="cerrarDevolucion()">Cerrar</button></div>';
+        return;
+    }
+
+    const filas = p.lineas.map((l, i) => `
+        <tr>
+            <td><strong>${devEsc(l.nombre)}</strong></td>
+            <td>${l.cantidad} ${devEsc(l.unidad)} × ${devDinero(l.precio_venta)}</td>
+            <td><input type="number" min="0" max="${l.cantidad}" step="0.01" value="0" data-i="${i}" class="dev-cant"></td>
+            <td>
+                <select data-i="${i}" class="dev-destino">
+                    <option value="inventario">Regresa al inventario</option>
+                    <option value="merma">A merma (ya no sirve)</option>
+                </select>
+            </td>
+            <td class="r" id="devSub${i}">$0.00</td>
+        </tr>`).join('');
+
+    cuerpo.innerHTML = `
+        <div style="font-size:.85rem; color:#64748b; margin-bottom:.7rem;">
+            Total del pedido <strong>${devDinero(p.total)}</strong> · pagado <strong>${devDinero(p.pagado)}</strong>
+            ${p.saldo > 0.009 ? ' · debe <strong style="color:#b45309;">' + devDinero(p.saldo) + '</strong>' : ''}
+        </div>
+        <div style="overflow-x:auto;">
+        <table>
+            <thead><tr><th>Producto</th><th>Vendido</th><th>Cantidad a devolver</th><th>¿A dónde va?</th><th class="r">Valor</th></tr></thead>
+            <tbody>${filas}</tbody>
+        </table>
+        </div>
+        <div style="margin-top:.9rem;">
+            <input type="text" id="devMotivo" placeholder="Motivo (ej. llegó golpeado, se pasó de maduro...)" maxlength="300" style="width:100%;">
+        </div>
+        <div class="dev-resumen" id="devResumen"></div>
+        <div class="dev-pie">
+            <button class="dev-btn" onclick="cerrarDevolucion()">Cancelar</button>
+            <button class="dev-btn ok" id="devGuardar" onclick="guardarDevolucion()"><i class="fas fa-check"></i> Registrar devolución</button>
+        </div>`;
+
+    cuerpo.querySelectorAll('.dev-cant').forEach(el => el.addEventListener('input', calcularDevolucion));
+    calcularDevolucion();
+}
+
+function leerDevolucion() {
+    return devPedido.lineas.map((l, i) => {
+        const cant = Math.min(l.cantidad, Math.max(0, parseFloat(document.querySelector(`.dev-cant[data-i="${i}"]`).value) || 0));
+        return { l, i, cant, destino: document.querySelector(`.dev-destino[data-i="${i}"]`).value };
+    });
+}
+
+function calcularDevolucion() {
+    const p = devPedido;
+    let total = 0;
+    leerDevolucion().forEach(x => {
+        const sub = Math.round(x.cant * x.l.precio_venta * 100) / 100;
+        total += sub;
+        document.getElementById('devSub' + x.i).textContent = devDinero(sub);
+    });
+    total = Math.round(total * 100) / 100;
+    const nuevoTotal = Math.round((p.total - total) * 100) / 100;
+    const exceso = Math.max(0, Math.round((p.pagado - nuevoTotal) * 100) / 100);
+
+    let html = `<div><span>Valor que se devuelve</span><strong>${devDinero(total)}</strong></div>
+                <div><span>Nuevo total del pedido</span><strong>${devDinero(nuevoTotal)}</strong></div>`;
+    if (total <= 0) {
+        html += '<div class="grande"><span>Escribe la cantidad de lo que regresa el cliente</span><span></span></div>';
+    } else if (exceso > 0.004) {
+        html += `<div class="grande"><span>Reembolso al cliente</span><span style="color:#b91c1c;">${devDinero(exceso)}</span></div>
+                 <div><span>¿Con qué se le regresa?</span>
+                     <select id="devMetodo"><option value="efectivo">Efectivo (sale de caja)</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option></select></div>`;
+    } else {
+        const saldoNuevo = Math.max(0, Math.round((nuevoTotal - p.pagado) * 100) / 100);
+        html += `<div class="grande"><span>No hay reembolso: el saldo que debe baja a</span><span>${devDinero(saldoNuevo)}</span></div>`;
+    }
+    if (nuevoTotal <= 0.004 && total > 0) html += '<div style="color:#b45309; font-size:.82rem;">Se devuelve todo: el pedido quedará cancelado.</div>';
+    document.getElementById('devResumen').innerHTML = html;
+}
+
+function cerrarDevolucion() { document.getElementById('modalDev').classList.remove('activo'); }
+
+function guardarDevolucion() {
+    const items = leerDevolucion().filter(x => x.cant > 0).map(x => ({ id_linea: x.l.id_linea, cantidad: x.cant, destino: x.destino }));
+    if (!items.length) { toast('Escribe la cantidad de al menos un producto.', 'error'); return; }
+
+    const boton = document.getElementById('devGuardar');
+    boton.disabled = true;
+    fetch("<?= base_url('devoluciones/guardar') ?>", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            id_pedido: devPedido.id,
+            items: items,
+            motivo: document.getElementById('devMotivo').value,
+            metodo: (document.getElementById('devMetodo') || {}).value || 'efectivo'
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            toast('Devolución registrada', 'success');
+            cerrarDevolucion();
+            setTimeout(() => location.reload(), 900);
+        } else {
+            boton.disabled = false;
+            toast(d.message || 'No se pudo registrar la devolución', 'error');
+        }
+    })
+    .catch(() => { boton.disabled = false; toast('Error de conexión', 'error'); });
+}
+</script>
 
 <script>
 
@@ -749,7 +958,7 @@ function guardarPago() {
     fetch("<?= base_url('pedido/actualizar_pago') ?>", {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `id=${currentPedidoId}&monto_pagado=${nuevoPagado}`
+        body: `id=${currentPedidoId}&monto_pagado=${nuevoPagado}&metodo=${encodeURIComponent(document.getElementById('modalMetodo').value)}`
     })
     .then(res => res.json())
     .then(data => {

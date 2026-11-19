@@ -78,6 +78,18 @@
 
         <h5>Agregar productos</h5>
 
+        <!-- Escáner: lector USB (escribe el código y da Enter) o cámara del celular -->
+        <div class="barra-escaner mb-3" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 12px; border:2px dashed #1d4a27; border-radius:12px; background:#f4f8f2;">
+            <i class="fas fa-barcode" style="font-size:1.4rem; color:#1d4a27;"></i>
+            <input type="text" id="campoEscaner" class="form-control" style="flex:1; min-width:180px;"
+                   placeholder="Escanea con el lector o escribe el código y presiona Enter"
+                   autocomplete="off" autocapitalize="characters" inputmode="text">
+            <button type="button" class="btn btn-verde" id="btnCamara">
+                <i class="fas fa-camera"></i> Cámara
+            </button>
+        </div>
+        <div id="resultadoEscaner" class="mb-3" style="display:none;"></div>
+
         <div class="row g-3 align-items-end">
             <div class="col-md-5">
                 <label class="form-label">Producto</label>
@@ -142,6 +154,13 @@
                 <span class="fw-bold">Total del pedido:</span>
                 <span class="total" id="total">$0.00</span>
             </div>
+
+            <label class="form-label fw-bold">Método de pago</label>
+            <select id="metodoPago" class="form-select mb-3">
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="tarjeta">Tarjeta</option>
+            </select>
 
             <label class="form-label fw-bold">¿Cuánto pagó el cliente?</label>
             <input
@@ -215,9 +234,93 @@
 
 </div>
 
+<script src="<?= base_url('js/vendor/html5-qrcode.min.js') ?>"></script>
+<script src="<?= base_url('js/escaner.js') ?>?v=2"></script>
 <script>
 window.URL_GUARDAR_PEDIDO = "<?= site_url('vendedor/guardar-pedido') ?>";
+const URL_ESCANER = "<?= site_url('vendedor/escaner') ?>";
+const URL_TICKET_PDF = "<?= site_url('ticket/pdf') ?>";
+
+/* Comparte el PDF del ticket como archivo (celular: WhatsApp, correo...). En PC abre el PDF. */
+async function compartirTicketPDF(idPedido) {
+    const url = URL_TICKET_PDF + '/' + idPedido;
+
+    try {
+        const respuesta = await fetch(url);
+        if (!respuesta.ok) throw new Error('No se pudo obtener el ticket PDF.');
+
+        const blob = await respuesta.blob();
+        if (blob.type.includes('application/pdf')) {
+            const archivo = new File(
+                [blob],
+                'Ticket-PED-' + String(idPedido).padStart(5, '0') + '.pdf',
+                { type: 'application/pdf' }
+            );
+
+            if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+                await navigator.share({ files: [archivo], text: 'Tu ticket de compra - FRUVER' });
+                return;
+            }
+        }
+    } catch (error) {
+        if (error.name === 'AbortError') return;   // el usuario cerró el menú de compartir
+        console.error('Error al compartir el ticket:', error);
+    }
+
+    window.open(url, '_blank');   // respaldo: abrir el PDF para verlo o descargarlo
+}
 let carrito = [];
+
+/* ---------- Escáner: cada lectura agrega 1 unidad del producto al pedido ---------- */
+async function agregarPorCodigo(codigo) {
+    const { producto: p } = await FruverEscaner.buscar(URL_ESCANER, codigo);
+    const op = [...document.getElementById('producto').options].find(o => Number(o.value) === p.id);
+
+    if (!op) throw new Error(p.nombre + ' no está disponible para la venta.');
+
+    const stock = Number(op.dataset.stock);
+    const existente = carrito.find(x => x.id_producto === p.id);
+    const nueva = (existente ? existente.cantidad : 0) + 1;
+
+    if (nueva > stock) {
+        throw new Error('No hay suficiente stock de ' + p.nombre + ' (disponible: ' + stock + ').');
+    }
+
+    if (existente) {
+        existente.cantidad = nueva;
+    } else {
+        carrito.push({
+            id_producto: p.id,
+            nombre: op.dataset.nombre,
+            unidad: op.dataset.unidad,
+            cantidad: 1,
+            precio_venta: Number(op.dataset.precio)
+        });
+    }
+    dibujarProductos();
+
+    const aviso = document.getElementById('resultadoEscaner');
+    aviso.style.display = 'block';
+    aviso.innerHTML = '<div class="alert alert-success py-2 mb-0">Agregado: <strong>' + escapar(p.nombre) +
+        '</strong> (x' + nueva + ')</div>';
+
+    return 'Agregado: ' + p.nombre + ' (x' + nueva + ')';
+}
+
+FruverEscaner.vincularCampo(document.getElementById('campoEscaner'), async codigo => {
+    try {
+        await agregarPorCodigo(codigo);
+    } catch (e) {
+        const aviso = document.getElementById('resultadoEscaner');
+        aviso.style.display = 'block';
+        aviso.innerHTML = '<div class="alert alert-danger py-2 mb-0">' + escapar(e.message) + '</div>';
+        throw e;
+    }
+});
+
+document.getElementById('btnCamara').addEventListener('click', () => {
+    FruverEscaner.abrirCamara({ titulo: 'Escanear productos', onCodigo: agregarPorCodigo });
+});
 
 const formato = n => '$' + Number(n).toFixed(2);
 
@@ -349,6 +452,7 @@ async function enviarPedido() {
         tipo_entrega: tipoEntrega,
         id_repartidor: repartidor || null,
         monto_pagado: Number(document.getElementById('montoPagado').value) || 0,
+        metodo_pago: document.getElementById('metodoPago').value,
         productos: carrito.map(p => ({
             id_producto: p.id_producto,
             unidad: p.unidad,
@@ -386,6 +490,8 @@ async function enviarPedido() {
 
         const pedido = resultado.data;
 
+        // El ticket es un PDF (igual que en la venta del administrador): se puede ver, compartir o mandar por WhatsApp
+        const urlPdf = URL_TICKET_PDF + '/' + pedido.id_pedido;
         mensaje.innerHTML = `
             <div class="alert alert-success">
                 <strong>¡Pedido registrado correctamente!</strong>
@@ -394,18 +500,23 @@ async function enviarPedido() {
                 <br>Pago: ${formato(pedido.monto_pagado)}
                 <br>Cambio: ${formato(pedido.cambio)}
                 <br>Saldo: ${formato(pedido.saldo)}
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <a href="${escapar(urlPdf)}" target="_blank" rel="noopener" class="btn btn-danger">
+                        <i class="fas fa-file-pdf"></i> Ticket PDF
+                    </a>
+                    <button type="button" class="btn btn-verde" onclick="compartirTicketPDF(${Number(pedido.id_pedido)})">
+                        <i class="fas fa-share-alt"></i> Compartir PDF
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
+                        <i class="fas fa-plus"></i> Nuevo pedido
+                    </button>
+                </div>
             </div>
         `;
 
         carrito = [];
         dibujarProductos();
         document.getElementById('montoPagado').value = 0;
-
-        if (pedido.whatsapp_url) {
-            window.open(pedido.whatsapp_url, '_blank');
-        }
-
-        setTimeout(() => location.reload(), 2500);
 
     } catch (error) {
         mensaje.innerHTML = `

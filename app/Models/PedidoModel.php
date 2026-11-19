@@ -25,6 +25,7 @@ class PedidoModel extends Model {
         'estado_actual',
         'monto_pagado',
         'tipo_pago',
+        'prioritario',
     ];
 
     // ------- Consultas para pantalla_ventas() -------
@@ -67,6 +68,7 @@ class PedidoModel extends Model {
     {
         return $this->db->table('clientes')
             ->select('id_cliente, nombre, apellido_paterno, apellido_materno, tipo_cliente')
+            ->groupStart()->where('tipo_cliente IS NULL', null, false)->orWhere('tipo_cliente !=', 'publico')->groupEnd()
             ->get()
             ->getResultArray();
     }
@@ -158,8 +160,11 @@ class PedidoModel extends Model {
     public function crearPedidoCompleto($pedidoData, array $productos, $productoPedModel)
     {
         $this->db->transStart();
+        $errorDb = null;
 
-        $this->insert($pedidoData);
+        if ($this->insert($pedidoData) === false) {
+            $errorDb = $this->db->error();
+        }
         $idPedido = $this->db->insertID();
 
         foreach ($productos as $prod) {
@@ -167,7 +172,7 @@ class PedidoModel extends Model {
             $precio   = (float) $prod['precio_venta'];
             $subtotal = $cantidad * $precio;
 
-            $productoPedModel->insert([
+            $guardado = $productoPedModel->insert([
                 'id_pedido'    => $idPedido,
                 'id_producto'  => (int) $prod['id_producto'],
                 'cantidad'     => $cantidad,
@@ -177,17 +182,48 @@ class PedidoModel extends Model {
                 'subtotal'     => $subtotal,
                 'total'        => $subtotal,
             ]);
+
+            if ($guardado === false && $errorDb === null) {
+                $errorDb = $this->db->error();
+            }
         }
 
         $this->insertarStatus($idPedido, $pedidoData['estado_actual']);
 
         $this->db->transComplete();
 
+        $ok = $this->db->transStatus() !== false;
+
         return [
-            'ok'       => $this->db->transStatus() !== false,
+            'ok'       => $ok,
             'idPedido' => $idPedido,
-            'error'    => $this->db->error(),
+            // El motivo real del fallo (por ejemplo, una columna que falta o una llave foránea)
+            'error'    => $ok ? null : ($errorDb ?: $this->db->error()),
         ];
+    }
+
+    /**
+     * Cliente real que representa al "Público general" (ventas sin cliente registrado).
+     * pedido.id_cliente tiene llave foránea, así que no se puede guardar el 0.
+     * Se crea una sola vez y no aparece en las listas de clientes (tipo_cliente = 'publico').
+     */
+    public function idClientePublicoGeneral(): int
+    {
+        $fila = $this->db->table('clientes')->select('id_cliente')->where('tipo_cliente', 'publico')->get()->getRowArray();
+        if ($fila) {
+            return (int) $fila['id_cliente'];
+        }
+
+        $this->db->table('clientes')->insert([
+            'nombre'           => 'Público general',
+            'apellido_paterno' => null,
+            'apellido_materno' => '',
+            'rfc'              => null,
+            'tipo_cliente'     => 'publico',
+            'tel'              => null,
+        ]);
+
+        return (int) $this->db->insertID();
     }
 
     // ------- Consultas para eliminarPedido() -------

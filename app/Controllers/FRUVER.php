@@ -303,6 +303,11 @@ public function guardarvendedor()
         ]);
     }
 
+    \App\Services\AuditoriaService::registrar(
+        'vendedor.crear', 'usuario', $usuario,
+        'Vendedor nuevo: ' . $nombre . ' (' . $usuario . ')'
+    );
+
     return $this->response->setJSON([
         'success' => true,
         'credenciales' => [
@@ -387,6 +392,12 @@ public function guardarvendedor()
             ];
         }
 
+        \App\Services\AuditoriaService::registrar(
+            'repartidor.crear', 'repartidor', $idRepartidor,
+            'Repartidor nuevo: ' . trim($data['nombre'] . ' ' . $data['ap_p']) . ($credenciales ? ' (con acceso a la app)' : ''),
+            ['tel' => $data['tel'], 'con_acceso' => (bool) $credenciales]
+        );
+
         return $this->response->setJSON([
             'success'      => true,
             'credenciales' => $credenciales,
@@ -432,7 +443,13 @@ public function guardarvendedor()
             $data['foto'] = $nombreFoto;
         }
 
+        $antes = $model->find($id);
         if ($model->update($id, $data)) {
+            \App\Services\AuditoriaService::registrar(
+                'repartidor.editar', 'repartidor', $id,
+                'Repartidor editado: ' . trim(($data['nombre'] ?? '') . ' ' . ($data['ap_p'] ?? '')),
+                ['antes' => $antes ? array_intersect_key($antes, array_flip(['nombre', 'ap_p', 'ap_m', 'tel', 'direccion', 'zona_base_id'])) : null]
+            );
             return $this->response->setJSON(['success' => true]);
         } else {
             return $this->response->setJSON(['success' => false, 'error' => $model->errors()]);
@@ -452,6 +469,10 @@ public function guardarvendedor()
             $model->desasignarPedidos($id);
 
             if ($model->delete($id)) {
+                \App\Services\AuditoriaService::registrar(
+                    'repartidor.eliminar', 'repartidor', $id,
+                    'Repartidor eliminado: ' . trim(($repartidor['nombre'] ?? '') . ' ' . ($repartidor['ap_p'] ?? ''))
+                );
                 return $this->response->setJSON(['success' => true]);
             } else {
                 return $this->response->setJSON(['success' => false, 'error' => $model->errors()]);
