@@ -121,12 +121,26 @@ class FRUVER extends BaseController
     // ==========================
     // 5. VENDEDOR
     // ==========================
-    public function pantalla_vendedor()
-    {
-        $data['productos'] = []; 
-        $data['termino'] = "";
-        return view('vendedor/panel_principal', $data);
+    
+
+public function pantalla_vendedor()
+{
+    $existenciasModel = new \App\Models\ExistenciasModel();
+
+    $productos = $existenciasModel->getInventario(100);
+
+    foreach ($productos as &$producto) {
+        $producto['stock_disponible'] =
+            (float) $producto['existencias_totales']
+            - (float) $producto['existencias_bloqueadas'];
     }
+
+    unset($producto);
+
+    return view('vendedor/panel_principal', [
+        'productos' => $productos
+    ]);
+}
 
     public function buscar_producto()
     {
@@ -211,6 +225,94 @@ class FRUVER extends BaseController
             'zonas'                   => $model->getZonasDisponibles(),
         ]);
     } 
+
+public function mostrar_vendedores()
+{
+    $db = \Config\Database::connect();
+
+    $vendedores = $db->table('usuarios')
+        ->select('id, nombre, usuario, correo, activo, debe_cambiar_password, created_at')
+        ->where('rol', 'vendedor')
+        ->orderBy('id', 'DESC')
+        ->get()
+        ->getResultArray();
+
+    return view('pantalla_vendedores', [
+        'vendedores' => $vendedores
+    ]);
+}
+
+public function guardarvendedor()
+{
+    $db = \Config\Database::connect();
+
+    $nombre = trim((string) $this->request->getPost('nombre'));
+    $correo = strtolower(trim((string) $this->request->getPost('correo')));
+
+    if ($nombre === '') {
+        return $this->response->setJSON([
+            'success' => false,
+            'error' => 'El nombre es obligatorio.'
+        ]);
+    }
+
+    if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+        return $this->response->setJSON([
+            'success' => false,
+            'error' => 'Escribe un correo válido.'
+        ]);
+    }
+
+    if ($db->table('usuarios')->where('correo', $correo)->countAllResults() > 0) {
+        return $this->response->setJSON([
+            'success' => false,
+            'error' => 'Ese correo ya está registrado.'
+        ]);
+    }
+
+    $ultimo = $db->table('usuarios')
+        ->selectMax('id')
+        ->get()
+        ->getRowArray();
+
+    $siguiente = ((int) ($ultimo['id'] ?? 0)) + 1;
+    $usuario = 'ven_' . str_pad((string) $siguiente, 4, '0', STR_PAD_LEFT);
+
+    while ($db->table('usuarios')->where('usuario', $usuario)->countAllResults() > 0) {
+        $siguiente++;
+        $usuario = 'ven_' . str_pad((string) $siguiente, 4, '0', STR_PAD_LEFT);
+    }
+
+    $passwordTemporal = 'Ve-' . strtoupper(bin2hex(random_bytes(4)));
+
+    $insertado = $db->table('usuarios')->insert([
+        'nombre' => $nombre,
+        'usuario' => $usuario,
+        'correo' => $correo,
+        'password' => password_hash($passwordTemporal, PASSWORD_DEFAULT),
+        'rol' => 'vendedor',
+        'debe_cambiar_password' => 1,
+        'activo' => 1,
+        'id_repartidor' => null
+    ]);
+
+    if (!$insertado) {
+        return $this->response->setJSON([
+            'success' => false,
+            'error' => 'No se pudo crear la cuenta del vendedor.'
+        ]);
+    }
+
+    return $this->response->setJSON([
+        'success' => true,
+        'credenciales' => [
+            'usuario' => $usuario,
+            'correo' => $correo,
+            'password' => $passwordTemporal
+        ]
+    ]);
+}
+
 
     public function guardarrepartidor()
     {

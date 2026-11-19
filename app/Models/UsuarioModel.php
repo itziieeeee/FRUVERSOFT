@@ -4,13 +4,22 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class UsuarioModel extends Model {
-    protected $table      = 'userregistrado'; // Asegúrate de que así se llame en tu BD
+class UsuarioModel extends Model
+{
+    protected $table      = 'usuarios';
     protected $primaryKey = 'id';
-    
-    // Estos campos DEBEN coincidir con los nombres de las columnas en tu base de datos
-    protected $allowedFields = ['nombre_completo', 'nusuario', 'contrasena','apellido1','apellido2']; 
 
-    // Opcional: Esto ayuda a que CodeIgniter maneje las fechas automáticamente
-    protected $useTimestamps = false; 
+    protected $allowedFields = [
+        'nombre',
+        'usuario',
+        'correo',
+        'password',
+        'rol',
+        'debe_cambiar_password',
+        'activo',
+        'password_actualizado_at',
+        'id_repartidor'
+    ];
+
+    protected $useTimestamps = false;
 }

@@ -8,38 +8,41 @@ class ExistenciasModel extends Model
     protected $primaryKey = 'id';
     protected $allowedFields = ['e_total', 'e_bloqueo', 'e_merma', 'id_producto'];
 
-    public function getInventario($perPage = 10)
-    {
-        $builder = $this->db->table('existencias e')
-            ->select('
-                e.id_producto,
-                p.codigo,
-                p.nombre,
-                p.descripcion,
-                (SELECT ent2.precio_sugerido FROM entrada ent2
-                 WHERE ent2.id_producto = e.id_producto
-                 ORDER BY ent2.id DESC LIMIT 1) AS precio_venta,
-                (SELECT ent2.unidad_venta FROM entrada ent2
-                 WHERE ent2.id_producto = e.id_producto
-                 ORDER BY ent2.id DESC LIMIT 1) AS unidad_venta,
-                (SELECT ent2.categoria FROM entrada ent2
-                 WHERE ent2.id_producto = e.id_producto
-                 ORDER BY ent2.id DESC LIMIT 1) AS categoria,
-                SUM(e.e_total)   AS existencias_totales,
-                SUM(e.e_bloqueo) AS existencias_bloqueadas
-            ')
-            ->join('producto p', 'p.id = e.id_producto')
-            ->groupBy('e.id_producto, p.nombre, p.descripcion')
-            ->orderBy('p.nombre', 'ASC');
+    
+public function getInventario($perPage = 10)
+{
+    $builder = $this->db->table('existencias e')
+        ->select('
+            e.id_producto,
+            p.codigo,
+            p.nombre,
+            p.descripcion,
+            p.imagen,
+            (SELECT ent2.precio_sugerido FROM entrada ent2
+             WHERE ent2.id_producto = e.id_producto
+             ORDER BY ent2.id DESC LIMIT 1) AS precio_venta,
+            (SELECT ent2.unidad_venta FROM entrada ent2
+             WHERE ent2.id_producto = e.id_producto
+             ORDER BY ent2.id DESC LIMIT 1) AS unidad_venta,
+            (SELECT ent2.categoria FROM entrada ent2
+             WHERE ent2.id_producto = e.id_producto
+             ORDER BY ent2.id DESC LIMIT 1) AS categoria,
+            SUM(e.e_total) AS existencias_totales,
+            SUM(e.e_bloqueo) AS existencias_bloqueadas
+        ')
+        ->join('producto p', 'p.id = e.id_producto')
+        ->groupBy('e.id_producto, p.codigo, p.nombre, p.descripcion, p.imagen')
+        ->orderBy('p.nombre', 'ASC');
 
-        $this->pager = \Config\Services::pager();
-        $page   = (int)($_GET['page'] ?? 1);
-        $offset = ($page - 1) * $perPage;
-        $total  = $builder->countAllResults(false);
-        $this->pager->makeLinks($page, $perPage, $total);
+    $this->pager = \Config\Services::pager();
+    $page = (int)($_GET['page'] ?? 1);
+    $offset = ($page - 1) * $perPage;
+    $total = $builder->countAllResults(false);
+    $this->pager->makeLinks($page, $perPage, $total);
 
-        return $builder->limit($perPage, $offset)->get()->getResultArray();
-    }
+    return $builder->limit($perPage, $offset)->get()->getResultArray();
+}
+
 
     public function getProductoById($id)
     {

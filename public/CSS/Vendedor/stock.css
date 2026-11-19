@@ -1,0 +1,280 @@
+/* =========================================
+   FRUVERSOFT - CATÁLOGO / INVENTARIO VISTA
+========================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+:root {
+    --verde: #26532b;
+    --verde-oscuro: #1b3d1f;
+    --verde-claro: #eaf3eb;
+    --naranja: #f37021;
+    --naranja-hover: #d95d12;
+    --fondo: #eef1f5;
+    --superficie: #f8f9fb;
+    --blanco: #ffffff;
+    --texto: #101722;
+    --texto-secundario: #475569;
+    --gris: #64748b;
+    --borde: #dce3ec;
+    --shadow-pill: 0 8px 24px rgba(38, 83, 43, 0.20);
+    --shadow-card: 0 6px 20px rgba(15, 23, 42, 0.05);
+    --shadow-card-hover: 0 14px 30px rgba(15, 23, 42, 0.10);
+    --font-heading: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    --font-body: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--fondo);
+    color: var(--texto);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding-bottom: 3.5rem;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* =========================================
+   1. ENCABEZADO FLOTANTE TIPO CÁPSULA
+========================================= */
+.encabezado {
+    max-width: 1320px;
+    width: calc(100% - 3rem);
+    margin: 1.5rem auto 2rem auto;
+    padding: 0.85rem 2rem;
+    background: linear-gradient(135deg, var(--verde) 0%, var(--verde-oscuro) 100%);
+    color: var(--blanco);
+    border-radius: 9999px;
+    box-shadow: var(--shadow-pill);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.encabezado img {
+    width: 68px;
+    height: auto;
+    background: var(--blanco);
+    padding: 4px 8px;
+    border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.encabezado h2 {
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.encabezado a {
+    color: var(--blanco);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.6rem 1.35rem;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.2s ease;
+}
+
+.encabezado a:hover {
+    background: rgba(255, 255, 255, 0.28);
+    transform: translateY(-1px);
+}
+
+/* =========================================
+   2. CONTENEDORES Y FILTROS
+========================================= */
+.filtros,
+.productos {
+    max-width: 1320px;
+    width: calc(100% - 3rem);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.filtros {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.85rem;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+}
+
+.filtros select,
+.filtros input {
+    min-height: 44px;
+    padding: 0.55rem 1.2rem;
+    background-color: var(--blanco);
+    color: var(--texto);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    font-weight: 600;
+    border: 1.5px solid var(--borde);
+    border-radius: 9999px;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filtros select:hover,
+.filtros input:hover {
+    border-color: #cbd5e1;
+}
+
+.filtros select:focus,
+.filtros input:focus {
+    border-color: var(--naranja);
+    box-shadow: 0 0 0 4px rgba(243, 112, 33, 0.14);
+}
+
+/* =========================================
+   3. GRID Y TARJETAS DE PRODUCTOS
+========================================= */
+.productos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 1.65rem;
+}
+
+.producto {
+    background: var(--blanco);
+    padding: 1.65rem;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-top: 4px solid var(--verde);
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.25s ease;
+}
+
+.producto:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-card-hover);
+    border-top-color: var(--naranja);
+}
+
+/* Badge del código */
+.codigo {
+    display: inline-block;
+    align-self: flex-start;
+    background: var(--superficie);
+    color: var(--gris);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.73rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.28rem 0.7rem;
+    border-radius: 8px;
+}
+
+/* Título del producto */
+.producto h4 {
+    font-family: var(--font-heading);
+    color: var(--texto);
+    font-size: 1.28rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Descripción en caja suave */
+.producto p {
+    color: var(--texto-secundario);
+    background: var(--superficie);
+    font-size: 0.86rem;
+    line-height: 1.45;
+    padding: 0.75rem 0.95rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    min-height: 46px;
+}
+
+/* Filas de datos */
+.dato {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 0.55rem 0.25rem;
+    font-size: 0.86rem;
+    color: var(--gris);
+    border-bottom: 1px dashed #e2e8f0;
+    font-variant-numeric: tabular-nums;
+}
+
+.dato strong,
+.dato span:last-child {
+    color: var(--texto);
+    font-weight: 700;
+}
+
+/* Fila final destacada de disponible */
+.disponible {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-top: auto;
+    padding: 0.75rem 1rem;
+    background: var(--verde-claro);
+    color: var(--verde);
+    border-radius: 14px;
+    border-bottom: none;
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+/* =========================================
+   4. RESPONSIVO
+========================================= */
+@media (max-width: 768px) {
+    .encabezado,
+    .filtros,
+    .productos {
+        width: calc(100% - 1.5rem);
+    }
+
+    .encabezado {
+        border-radius: 26px;
+        padding: 1rem 1.25rem;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .filtros {
+        justify-content: stretch;
+        flex-direction: column;
+    }
+
+    .filtros select,
+    .filtros input {
+        width: 100%;
+    }
+}

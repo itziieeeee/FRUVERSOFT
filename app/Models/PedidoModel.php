@@ -36,6 +36,32 @@ class PedidoModel extends Model {
             ->join('clientes', 'clientes.id_cliente = pedido.id_cliente')
             ->findAll();
     }
+    public function getPedidosVendedor()
+{
+    return $this->select("
+            pedido.*,
+            COALESCE(
+                CONCAT(clientes.nombre, ' ', clientes.apellido_paterno),
+                'Público general'
+            ) AS nombre_cliente,
+            COALESCE(
+                CONCAT(repartidor.nombre, ' ', repartidor.ap_p),
+                'Sin asignar'
+            ) AS nombre_repartidor
+        ")
+        ->join(
+            'clientes',
+            'clientes.id_cliente = pedido.id_cliente',
+            'left'
+        )
+        ->join(
+            'repartidor',
+            'repartidor.id = pedido.id_repartidor',
+            'left'
+        )
+        ->orderBy('pedido.fecha', 'DESC')
+        ->findAll();
+}
 
     public function getClientes()
     {
@@ -44,16 +70,42 @@ class PedidoModel extends Model {
             ->get()
             ->getResultArray();
     }
-
     public function getProductosConPrecio()
-    {
-        return $this->db->table('producto p')
-            ->select('p.id, p.nombre, MAX(e.unidad_venta) as unidad_venta, MAX(e.precio_sugerido) as precio_sugerido')
-            ->join('entrada e', 'e.id_producto = p.id', 'left')
-            ->groupBy('p.id, p.nombre')
-            ->get()
-            ->getResultArray();
-    }
+{
+    return $this->db->table('producto p')
+        ->select("
+            p.id,
+            p.codigo,
+            p.nombre,
+            p.descripcion,
+            p.imagen,
+
+            (
+                SELECT ent.unidad_venta
+                FROM entrada ent
+                WHERE ent.id_producto = p.id
+                ORDER BY ent.id DESC
+                LIMIT 1
+            ) AS unidad_venta,
+
+            (
+                SELECT ent.precio_sugerido
+                FROM entrada ent
+                WHERE ent.id_producto = p.id
+                ORDER BY ent.id DESC
+                LIMIT 1
+            ) AS precio_sugerido,
+
+            COALESCE(SUM(ex.e_total), 0) AS existencias_totales,
+            COALESCE(SUM(ex.e_bloqueo), 0) AS existencias_bloqueadas,
+            COALESCE(SUM(ex.e_total - ex.e_bloqueo), 0) AS stock_disponible
+        ")
+        ->join('existencias ex', 'ex.id_producto = p.id', 'left')
+        ->groupBy('p.id, p.codigo, p.nombre, p.descripcion, p.imagen')
+        ->orderBy('p.nombre', 'ASC')
+        ->get()
+        ->getResultArray();
+}
 
     public function getUnidadesEnum()
     {
@@ -199,4 +251,15 @@ class PedidoModel extends Model {
         }
         return $rotacion;
     }
+    public function stock_vendedor()
+{
+    $pedidoModel = new \App\Models\PedidoModel();
+
+    $productos = $pedidoModel->getProductosConPrecio();
+
+    return view('vendedor/stock', [
+        'productos' => $productos
+    ]);
+}
+  
 }
