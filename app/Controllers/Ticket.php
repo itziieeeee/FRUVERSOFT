@@ -2,7 +2,6 @@
 
 namespace App\Controllers;
 
-
 class Ticket extends BaseController
 {
     /**
@@ -55,7 +54,7 @@ class Ticket extends BaseController
     }
 
     /**
-     * Logo en Base64.
+     * Obtiene el logo en Base64.
      */
     private function logo(): string
     {
@@ -92,18 +91,7 @@ class Ticket extends BaseController
                 ->setBody('Pedido no encontrado');
         }
 
-        // URL pública configurada en .env
-        $basePublica = rtrim(
-            (string) env('FRUVER_PUBLIC_URL', ''),
-            '/'
-        );
-
-        // Enlace público al PDF
-        $urlPdfPublica = '';
-
-        if ($basePublica !== '') {
-            $urlPdfPublica = $basePublica . '/ticket/pdf/' . $id;
-        }
+        helper('whatsapp');
 
         // Teléfono del cliente
         $telefono = preg_replace(
@@ -112,29 +100,8 @@ class Ticket extends BaseController
             (string) ($datos['pedido']['tel'] ?? '')
         );
 
-        // Código de país de México
-        if (strlen($telefono) === 10) {
-            $telefono = '52' . $telefono;
-        }
-
-        // Crear enlace de WhatsApp
-        $urlWhatsApp = '';
-
-        if ($urlPdfPublica !== '') {
-
-            $folio = 'PED-' . str_pad($id, 5, '0', STR_PAD_LEFT);
-
-            $mensaje = "Hola, te comparto tu ticket de compra "
-                . $folio
-                . " de FRUVER:\n"
-                . $urlPdfPublica;
-
-            $destino = $telefono !== ''
-                ? 'https://wa.me/' . $telefono
-                : 'https://wa.me/';
-
-            $urlWhatsApp = $destino . '?text=' . rawurlencode($mensaje);
-        }
+        // Preparar enlace para compartir el PDF por WhatsApp
+        $urlWhatsApp = generar_link_pdf_wa($telefono, $id);
 
         return view('ticket', $datos + [
             'esPdf'       => false,
@@ -163,17 +130,11 @@ class Ticket extends BaseController
             return redirect()->to(base_url('ticket/ver/' . $id));
         }
 
-        // Preparar información para el PDF
-        $datosPdf = $datos;
-        $datosPdf['logo'] = $this->logo();
-
-        $html = view('ticket', $datosPdf + [
+        $html = view('ticket', $datos + [
             'esPdf' => true
         ]);
 
-        // Configuración de Dompdf
         $opciones = new \Dompdf\Options();
-
         $opciones->set('defaultFont', 'DejaVu Sans');
         $opciones->set('isRemoteEnabled', false);
         $opciones->set('isHtml5ParserEnabled', true);
@@ -182,17 +143,15 @@ class Ticket extends BaseController
 
         $dompdf->loadHtml($html, 'UTF-8');
 
-        // HOJA TAMAÑO CARTA
+        // Hoja tamaño carta
         $dompdf->setPaper('letter', 'portrait');
 
-        // Generar documento
         $dompdf->render();
 
         $folio = 'PED-' . str_pad($id, 5, '0', STR_PAD_LEFT);
 
         $pdf = $dompdf->output();
 
-        // Entregar PDF al navegador
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')
             ->setHeader(

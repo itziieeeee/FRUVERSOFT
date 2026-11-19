@@ -23,16 +23,34 @@ $routes->post('cuenta/cambiar-password', 'AuthController::guardarPassword', ['fi
 
 // Redirección inteligente para el botón "INGRESAR" de la portada
 $routes->get('ingresar_portal', function() {
+
     if (!session()->get('isLoggedIn')) {
         return redirect()->to(base_url('login'));
     }
-    if (session()->get('rol') === 'admin') return redirect()->to(base_url('menusolo'));
-    if (session()->get('rol') === 'repartidor') return redirect()->to(base_url('repartidor/app'));
+
+    $rol = session()->get('rol');
+
+    if ($rol === 'admin') {
+        return redirect()->to(base_url('menusolo'));
+    }
+
+    if ($rol === 'repartidor') {
+        return !empty(session()->get('debe_cambiar_password'))
+            ? redirect()->to(base_url('cuenta/cambiar-password'))
+            : redirect()->to(base_url('repartidor/app'));
+    }
+
+    if ($rol === 'vendedor') {
+        return !empty(session()->get('debe_cambiar_password'))
+            ? redirect()->to(base_url('cuenta/cambiar-password'))
+            : redirect()->to(base_url('vendedor/panel'));
+    }
+
     return redirect()->to(base_url('cliente/menu'));
 });
 
-
 // 2. RUTAS PROTEGIDAS DEL ADMINISTRADOR (admin)
+
 
 $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
 
@@ -120,6 +138,9 @@ $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
     $routes->post('FRUVER/guardarrepartidor', 'FRUVER::guardarrepartidor');
     $routes->post('FRUVER/editarrepartidor/(:num)', 'FRUVER::editarrepartidor/$1');
     $routes->post('FRUVER/eliminarrepartidor/(:num)', 'FRUVER::eliminarrepartidor/$1');
+        // Vendedores
+    $routes->get('pantalla_vendedores', 'FRUVER::mostrar_vendedores');
+    $routes->post('FRUVER/guardarvendedor', 'FRUVER::guardarvendedor');
 });
 // ==========================================
 // 3. RUTAS PROTEGIDAS DEL CLIENTE (cliente)
@@ -139,6 +160,24 @@ $routes->post('carrito/actualizar/(:num)', 'Catalogo::actualizar/$1');
 $routes->post('carrito/quitar/(:num)', 'Catalogo::quitar/$1');
 $routes->post('carrito/vaciar', 'Catalogo::vaciar');
 $routes->get('pedidos', 'ClientePedidoController::index');
+
+// RUTAS DEL VENDEDOR
+$routes->group('vendedor', ['filter' => 'authFilter:vendedor'], function($routes) {
+
+    $routes->get('panel', 'FRUVER::pantalla_vendedor');
+
+    $routes->get('buscar-producto', 'FRUVER::buscar_producto');
+
+    $routes->get('pedidos', 'PedidoController::pedidos_vendedor');
+
+    $routes->get('nuevo-pedido', 'PedidoController::pantalla_ventas_vendedor');
+
+    $routes->get('stock', 'PedidoController::stock_vendedor');
+
+    $routes->post('guardar-pedido', 'PedidoController::guardar_productos_pedido');
+
+});
+
 
 // RUTAS DEL REPARTIDOR
 

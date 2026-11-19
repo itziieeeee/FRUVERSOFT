@@ -666,6 +666,39 @@ $domicilio = $tipoEntrega === 'domicilio'
 .modo-pdf .acciones {
     display: none !important;
 }
+.modo-pdf .ticket {
+    background: #ffffff;
+    border-top: 8px solid #1d4a27;
+    border-bottom: 8px solid #1d4a27;
+}
+
+.modo-pdf .tabla-productos thead {
+    background: #1d4a27 !important;
+    color: #ffffff !important;
+}
+
+.modo-pdf .total {
+    background: #fff4ed !important;
+    border: 1px solid #f16b1a;
+}
+
+.modo-pdf .total strong {
+    color: #f16b1a !important;
+}
+
+.modo-pdf .pago {
+    background: #f3f7f3 !important;
+}
+
+.modo-pdf .linea-naranja {
+    background: #f16b1a !important;
+}
+
+.modo-pdf .tabla-productos tr,
+.modo-pdf .total,
+.modo-pdf .pago {
+    page-break-inside: avoid;
+}
 
     </style>
 </head>

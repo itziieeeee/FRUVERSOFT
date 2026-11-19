@@ -98,4 +98,28 @@ if (!function_exists('generar_link_ticket_wa')) {
         return 'https://wa.me/' . formato_telefono_wa($telefono)
              . '?text=' . rawurlencode(armar_mensaje_ticket($pedido, $items, $cliente));
     }
+    }
+    if (!function_exists('generar_link_pdf_wa')) {
+    function generar_link_pdf_wa($telefono, int $idPedido): string
+    {
+        $telefono = formato_telefono_wa($telefono);
+
+        // Debe ser una dirección pública accesible desde el celular del cliente.
+        $basePublica = rtrim((string) env('FRUVER_PUBLIC_URL', ''), '/');
+
+        if ($basePublica === '') {
+            return '';
+        }
+
+        $urlPdf = $basePublica . '/ticket/pdf/' . $idPedido;
+
+        $folio = 'PED-' . str_pad($idPedido, 5, '0', STR_PAD_LEFT);
+
+        $mensaje = "Hola, te compartimos tu ticket de compra de FRUVER.\n"
+            . "Folio: {$folio}\n"
+            . "Puedes consultar y descargar tu ticket PDF aquí:\n"
+            . $urlPdf;
+
+        return 'https://wa.me/' . $telefono . '?text=' . rawurlencode($mensaje);
+    }
 }

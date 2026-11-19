@@ -19,7 +19,45 @@ class PedidoController extends BaseController {
         ];
 
         return view('pantalla_ventas', $datos);
+
     }
+    public function pantalla_ventas_vendedor()
+{
+    $pedidoModel = new PedidoModel();
+
+    $datos = [
+        'secc1'        => $pedidoModel->getPedidosConCliente(),
+        'productos'    => $pedidoModel->getProductosConPrecio(),
+        'unidades'     => $pedidoModel->getUnidadesEnum(),
+        'clientes'     => $pedidoModel->getClientes(),
+        'repartidores' => $pedidoModel->getRepartidores(),
+        'esVendedor'   => true
+    ];
+
+    return view('pantalla_ventas', $datos);
+}
+ 
+public function pedidos_vendedor()
+{
+    $pedidoModel = new PedidoModel();
+
+    $datos = [
+        // Pedidos registrados
+        'pedidos' => $pedidoModel->getPedidosVendedor(),
+
+        // Productos reales con precios y existencias
+        'productos' => $pedidoModel->getProductosConPrecio(),
+
+        // Clientes registrados
+        'clientes' => $pedidoModel->getClientes(),
+
+        // Repartidores disponibles
+        'repartidores' => $pedidoModel->getRepartidores()
+    ];
+
+    return view('vendedor/pedidos', $datos);
+}
+
 
     /**
      * Calcula una sugerencia de repartidor usando el grafo de rutas persistido.
@@ -101,162 +139,266 @@ class PedidoController extends BaseController {
         }
     }
 
-    public function guardar_productos_pedido() {
-        $json = $this->request->getJSON(true);
+public function guardar_productos_pedido()
+{
+    $json = $this->request->getJSON(true);
 
-        if (empty($json['productos']) || !isset($json['id_cliente']) || $json['id_cliente'] === '') {
-            return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => 'Datos incompletos.'
-            ]);
-        }
-
-        $pedidoModel      = new \App\Models\PedidoModel();
-        $productoPedModel = new \App\Models\ProductoPedidoModel();
-
-        $idCliente    = (int) $json['id_cliente'];
-        $tipoVenta    = $json['tipo_venta']   ?? 'contado';
-        $tipoEntrega  = $json['tipo_entrega'] ?? 'tienda';
-        $idRepartidor = ($tipoEntrega === 'domicilio' && !empty($json['id_repartidor']))
-                        ? (int) $json['id_repartidor']
-                        : null;
-
-        if (!in_array($tipoEntrega, ['tienda', 'domicilio'], true)) {
-            return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => 'Tipo de entrega inválido.',
-            ]);
-        }
-
-        if ($tipoEntrega === 'domicilio') {
-            if ($idCliente <= 0) {
-                return $this->response->setJSON([
-                    'status'  => 'error',
-                    'message' => 'Una entrega a domicilio requiere un cliente registrado.',
-                ]);
-            }
-
-            if (!$idRepartidor) {
-                return $this->response->setJSON([
-                    'status'  => 'error',
-                    'message' => 'Selecciona un repartidor para la entrega a domicilio.',
-                ]);
-            }
-
-            try {
-                $asignacion = (new RutaRepartidorService())->validarAsignacion($idRepartidor);
-                if (!$asignacion['ok']) {
-                    return $this->response->setJSON([
-                        'status'  => 'error',
-                        'message' => $asignacion['message'],
-                    ]);
-                }
-            } catch (\Throwable $e) {
-                return $this->response->setJSON([
-                    'status'  => 'error',
-                    'message' => 'No se pudo validar la ruta. Ejecuta la migración de rutas antes de guardar domicilios.',
-                ]);
-            }
-        } else {
-            $idRepartidor = null;
-        }
-
-        // 1. Calcular total
-        $totalGeneral = 0;
-        foreach ($json['productos'] as $prod) {
-            $totalGeneral += (float)$prod['cantidad'] * (float)$prod['precio_venta'];
-        }
-
-        // 2. Estado inicial
-        $estadoInicial = ($tipoVenta === 'credito') ? 'Pedido a crédito' : 'Pedido';
-
-        // 3. Nombre del cliente
-        $nombreCliente = ($idCliente === 0)
-            ? 'Público general'
-            : $pedidoModel->getNombreCliente($idCliente);
-
-        // 4. Nombre del repartidor
-        $nombreRepartidor = $idRepartidor ? $pedidoModel->getNombreRepartidor($idRepartidor) : null;
-
-        // 5. Transacción (pedido + productos + status)
-        $pedidoData = [
-            'fecha'         => date('Y-m-d H:i:s'),
-            'id_cliente'    => $idCliente,
-            'id_repartidor' => $idRepartidor,
-            'tipo_entrega'  => $tipoEntrega,
-            'total'         => $totalGeneral,
-            'estado_actual' => $estadoInicial,
-            'tipo_pago'     => $tipoVenta,
-            'monto_pagado'  => 0.00,
-        ];
-
-        $resultado = $pedidoModel->crearPedidoCompleto($pedidoData, $json['productos'], $productoPedModel);
-        $idPedido  = $resultado['idPedido'];
-
-        if (!$resultado['ok']) {
-            return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => json_encode($resultado['error']),
-                'debug'   => $resultado['error']
-            ]);
-        }
-
-        // 6. Validación DESPUÉS de la transacción exitosa
-        $statusModel    = new \App\Models\StatusModel();
-        $validacion     = $statusModel->validarYConfirmar($idPedido);
-        $autoConfirmado = $validacion['success'];
-        $faltantes      = $validacion['faltantes'] ?? [];
-
-        $folio = 'PED-' . str_pad($idPedido, 5, '0', STR_PAD_LEFT);
-
-$whatsappUrl = null;
-
-        // No enviar ticket al público general (id_cliente = 0)
-        if ($idCliente > 0) {
-            helper('whatsapp');
-            $db = \Config\Database::connect();
-
-            $cliente = $db->table('clientes')
-                ->select('tel, nombre, apellido_paterno')
-                ->where('id_cliente', $idCliente)
-                ->get()->getRowArray();
-
-            $pedidoRow = $db->table('pedido')->where('id', $idPedido)->get()->getRowArray();
-
-            $items = $db->table('producto_pedido pp')
-                ->select('pp.cantidad, pp.unidad_venta AS unidad, pp.precio_venta AS precio_unitario, pp.subtotal, p.nombre AS nombre_producto')
-                ->join('producto p', 'p.id = pp.id_producto')
-                ->where('pp.id_pedido', $idPedido)
-                ->get()->getResultArray();
-
-            if (!empty($cliente['tel']) && !empty($items) && $pedidoRow) {
-                $whatsappUrl = generar_link_ticket_wa(
-                    $cliente['tel'],
-                    $pedidoRow,
-                    $items,
-                    trim($cliente['nombre'] . ' ' . $cliente['apellido_paterno'])
-                );
-            }
-        }
-
+    if (
+        empty($json['productos']) ||
+        !isset($json['id_cliente']) ||
+        !isset($json['monto_pagado'])
+    ) {
         return $this->response->setJSON([
-    'status' => 'success',
-    'data'   => [
-        'folio'           => $folio,
-        'id_pedido'       => (int) $idPedido,
-        'cliente'         => $nombreCliente,
-        'tipo_venta'      => $tipoVenta,
-        'tipo_entrega'    => $tipoEntrega,
-        'repartidor'      => $nombreRepartidor,
-        'total'           => number_format($totalGeneral, 2),
-        'auto_confirmado' => $autoConfirmado,
-        'faltantes'       => $faltantes,
-        'whatsapp_url'    => $whatsappUrl,
-    ]
-]);
-
+            'status'  => 'error',
+            'message' => 'Datos incompletos.'
+        ]);
     }
 
+    $pedidoModel      = new \App\Models\PedidoModel();
+    $productoPedModel = new \App\Models\ProductoPedidoModel();
+
+    $idCliente    = (int) $json['id_cliente'];
+    $tipoVenta    = $json['tipo_venta'] ?? 'contado';
+    $tipoEntrega  = $json['tipo_entrega'] ?? 'tienda';
+    $montoPagado  = (float) $json['monto_pagado'];
+
+    $idRepartidor = (
+        $tipoEntrega === 'domicilio' &&
+        !empty($json['id_repartidor'])
+    ) ? (int) $json['id_repartidor'] : null;
+
+    // Validar datos generales
+    if (!in_array($tipoVenta, ['contado', 'credito'], true)) {
+        return $this->response->setJSON([
+            'status' => 'error',
+            'message' => 'Tipo de venta inválido.'
+        ]);
+    }
+
+    if (!in_array($tipoEntrega, ['tienda', 'domicilio'], true)) {
+        return $this->response->setJSON([
+            'status' => 'error',
+            'message' => 'Tipo de entrega inválido.'
+        ]);
+    }
+
+    if ($idCliente < 0 || $montoPagado < 0) {
+        return $this->response->setJSON([
+            'status' => 'error',
+            'message' => 'El cliente o el monto pagado no son válidos.'
+        ]);
+    }
+
+    // Validar entrega a domicilio
+    if ($tipoEntrega === 'domicilio') {
+
+        if ($idCliente <= 0) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Una entrega a domicilio requiere un cliente registrado.'
+            ]);
+        }
+
+        if (!$idRepartidor) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Selecciona un repartidor.'
+            ]);
+        }
+
+        try {
+            $asignacion = (new RutaRepartidorService())
+                ->validarAsignacion($idRepartidor);
+
+            if (!$asignacion['ok']) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => $asignacion['message']
+                ]);
+            }
+
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'No se pudo validar la ruta.'
+            ]);
+        }
+
+    } else {
+        $idRepartidor = null;
+    }
+
+    // Validar productos y calcular total
+    $totalGeneral = 0;
+
+    foreach ($json['productos'] as $prod) {
+
+        if (
+            empty($prod['id_producto']) ||
+            !isset($prod['cantidad']) ||
+            !isset($prod['precio_venta']) ||
+            (float) $prod['cantidad'] <= 0 ||
+            (float) $prod['precio_venta'] < 0
+        ) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Uno de los productos contiene datos inválidos.'
+            ]);
+        }
+
+        $totalGeneral +=
+            (float) $prod['cantidad'] *
+            (float) $prod['precio_venta'];
+    }
+
+    $totalGeneral = round($totalGeneral, 2);
+
+    // El crédito puede tener un pago parcial.
+    // El cambio solamente existe cuando el pago supera el total.
+    $cambio = max(0, round($montoPagado - $totalGeneral, 2));
+    $saldo  = max(0, round($totalGeneral - $montoPagado, 2));
+
+    // Estado inicial
+    $estadoInicial = ($tipoVenta === 'credito')
+        ? 'Pedido a crédito'
+        : 'Pedido';
+
+    // Nombre del cliente
+    $nombreCliente = ($idCliente === 0)
+        ? 'Público general'
+        : $pedidoModel->getNombreCliente($idCliente);
+
+    if (!$nombreCliente) {
+        return $this->response->setJSON([
+            'status' => 'error',
+            'message' => 'El cliente seleccionado no existe.'
+        ]);
+    }
+
+    // Nombre del repartidor
+    $nombreRepartidor = $idRepartidor
+        ? $pedidoModel->getNombreRepartidor($idRepartidor)
+        : null;
+
+    // Datos del pedido
+    $pedidoData = [
+        'fecha'         => date('Y-m-d H:i:s'),
+        'id_cliente'    => $idCliente,
+        'id_repartidor' => $idRepartidor,
+        'tipo_entrega'  => $tipoEntrega,
+        'total'         => $totalGeneral,
+        'estado_actual' => $estadoInicial,
+        'tipo_pago'     => $tipoVenta,
+        'monto_pagado'  => min($montoPagado, $totalGeneral),
+    ];
+
+    // Guardar pedido
+    $resultado = $pedidoModel->crearPedidoCompleto(
+        $pedidoData,
+        $json['productos'],
+        $productoPedModel
+    );
+
+    if (empty($resultado['ok'])) {
+        return $this->response->setJSON([
+            'status'  => 'error',
+            'message' => 'No se pudo registrar el pedido.',
+            'debug'   => $resultado['error'] ?? null
+        ]);
+    }
+
+    $idPedido = $resultado['idPedido'];
+
+    // Validar y descontar inventario usando el mecanismo existente
+    $statusModel = new \App\Models\StatusModel();
+
+    $validacion = $statusModel->validarYConfirmar($idPedido);
+
+    $autoConfirmado = $validacion['success'] ?? false;
+    $faltantes = $validacion['faltantes'] ?? [];
+
+    // Folio
+    $folio = 'PED-' . str_pad($idPedido, 5, '0', STR_PAD_LEFT);
+
+    
+    // WhatsApp: compartir enlace al ticket PDF
+    $whatsappUrl = null;
+
+    if ($idCliente > 0) {
+
+        $db = \Config\Database::connect();
+
+        $cliente = $db->table('clientes')
+            ->select('tel, nombre, apellido_paterno')
+            ->where('id_cliente', $idCliente)
+            ->get()
+            ->getRowArray();
+
+        if (!empty($cliente['tel'])) {
+
+            // Preparar teléfono mexicano
+            $telefono = preg_replace(
+                '/\D+/',
+                '',
+                (string) $cliente['tel']
+            );
+
+            if (strlen($telefono) === 10) {
+                $telefono = '52' . $telefono;
+            }
+
+            // Obtener URL base configurada en .env
+            $basePublica = rtrim(
+                (string) env('FRUVER_PUBLIC_URL', ''),
+                '/'
+            );
+
+            // Construir enlace al PDF
+            if ($basePublica !== '') {
+
+                $urlPdf = $basePublica . '/ticket/pdf/' . $idPedido;
+
+                $mensaje = "¡Hola, " .
+                    trim($cliente['nombre'] . ' ' . $cliente['apellido_paterno']) .
+                    "!\n\n";
+
+                $mensaje .= "Gracias por comprar en FRUVER.\n";
+                $mensaje .= "Tu pedido ha sido registrado correctamente.\n\n";
+                $mensaje .= "Folio: {$folio}\n";
+                $mensaje .= "Total: $" . number_format($totalGeneral, 2) . "\n\n";
+                $mensaje .= "Consulta tu ticket en PDF aquí:\n";
+                $mensaje .= $urlPdf;
+
+                $whatsappUrl = 'https://wa.me/' .
+                    $telefono .
+                    '?text=' .
+                    rawurlencode($mensaje);
+            }
+        }
+    }
+
+
+    // Respuesta
+    return $this->response->setJSON([
+        'status' => 'success',
+        'data' => [
+            'folio'           => $folio,
+            'id_pedido'       => (int) $idPedido,
+            'cliente'         => $nombreCliente,
+            'tipo_venta'      => $tipoVenta,
+            'tipo_entrega'    => $tipoEntrega,
+            'repartidor'      => $nombreRepartidor,
+            'total'           => number_format($totalGeneral, 2, '.', ''),
+            'monto_pagado'    => number_format(min($montoPagado, $totalGeneral), 2, '.', ''),
+            'cambio'          => number_format($cambio, 2, '.', ''),
+            'saldo'           => number_format($saldo, 2, '.', ''),
+            'auto_confirmado' => $autoConfirmado,
+            'faltantes'       => $faltantes,
+            'whatsapp_url'    => $whatsappUrl
+        ]
+    ]);
+
+    }
     public function eliminarPedido($id) {
         $pedidoModel = new PedidoModel();
 
@@ -416,4 +558,14 @@ $whatsappUrl = null;
             'productos' => $productos
         ]);
     }
+    public function stock_vendedor()
+{
+    $pedidoModel = new \App\Models\PedidoModel();
+
+    $productos = $pedidoModel->getProductosConPrecio();
+
+    return view('vendedor/stock', [
+        'productos' => $productos
+    ]);
+}
 }
