@@ -41,6 +41,30 @@ class SalidasController extends BaseController
         }
     }
 
+    /** Pantalla de seguimiento en vivo (mapa) */
+    public function seguimiento()
+    {
+        return view('seguimiento_repartidor');
+    }
+
+    /** JSON que consulta el mapa cada pocos segundos */
+    public function seguimientoDatos()
+    {
+        try {
+            return $this->response->setJSON(['success' => true] + (new SalidasRepartoService())->seguimiento());
+        } catch (\Throwable $e) {
+            log_message('error', 'Seguimiento: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'No se pudo cargar el seguimiento.']);
+        }
+    }
+
+    /** El administrador ya avisó al cliente: se guarda para no repetir la alerta */
+    public function avisado($idPedido)
+    {
+        $ok = (new SalidasRepartoService())->marcarAvisoCercania((int) $idPedido);
+        return $this->response->setJSON(['success' => $ok]);
+    }
+
     public function detalle($idSalida)
     {
         try {

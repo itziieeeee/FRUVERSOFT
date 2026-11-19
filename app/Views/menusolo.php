@@ -413,6 +413,20 @@ h1 {
             <span class="module-title">Productos</span>
             
         </a>
+
+        <a href="<?= base_url('costos') ?>" class="module-card">
+            <div class="card-icon-wrapper">
+                <img src="<?= base_url('img/REPORTES.png') ?>" alt="Costos y ganancias" class="module-img">
+            </div>
+            <span class="module-title">Costos y ganancias</span>
+        </a>
+
+        <a href="<?= base_url('seguimiento') ?>" class="module-card">
+            <div class="card-icon-wrapper">
+                <img src="<?= base_url('img/REPARTIDORES.png') ?>" alt="Seguimiento repartidor" class="module-img">
+            </div>
+            <span class="module-title">Seguimiento repartidor</span>
+        </a>
     </div>
 </div>
 

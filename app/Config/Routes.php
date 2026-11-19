@@ -105,6 +105,16 @@ $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
     $routes->get('salidas/lista', 'SalidasController::lista');
     $routes->get('salidas/detalle/(:num)', 'SalidasController::detalle/$1');
 
+    // Seguimiento en vivo del repartidor y aviso "ya está cerca"
+    $routes->get('seguimiento', 'SalidasController::seguimiento');
+    $routes->get('seguimiento/datos', 'SalidasController::seguimientoDatos');
+    $routes->post('seguimiento/avisado/(:num)', 'SalidasController::avisado/$1');
+
+    // Costos, ganancias y variación de costos
+    $routes->get('costos', 'Costos::index');
+    $routes->get('costos/pdf', 'Costos::pdf');
+    $routes->post('costos/conversion', 'Costos::conversion');
+
     // Repartidores
     $routes->get('pantalla_repartidores', 'FRUVER::mostrar_repartidores');
     $routes->post('FRUVER/guardarrepartidor', 'FRUVER::guardarrepartidor');

@@ -231,6 +231,114 @@ class SalidasRepartoService
             ->get()->getResultArray();
     }
 
+    /* ===================== seguimiento en vivo y aviso "ya está cerca" ===================== */
+
+    /** Radio (km) a partir del cual se considera que el repartidor ya está cerca del cliente. */
+    public const RADIO_CERCANIA_KM = 0.5;
+
+    /** Si la última ubicación es más vieja que esto (minutos), no se confía en ella para avisar. */
+    public const MAX_MINUTOS_UBICACION = 15;
+
+    /** Distancia en línea recta entre dos puntos, en km (Haversine). */
+    private function distanciaKm(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $r  = 6371.0;
+        $a1 = deg2rad($lat1);
+        $a2 = deg2rad($lat2);
+        $dLat = $a2 - $a1;
+        $dLng = deg2rad($lng2 - $lng1);
+        $h = sin($dLat / 2) ** 2 + cos($a1) * cos($a2) * sin($dLng / 2) ** 2;
+        return 2 * $r * asin(min(1.0, sqrt($h)));
+    }
+
+    /**
+     * Datos para el mapa en vivo: salidas en curso con la posición del repartidor y sus paradas,
+     * más las alertas de cercanía (paradas a menos de RADIO_CERCANIA_KM que aún no se han avisado).
+     */
+    public function seguimiento(): array
+    {
+        helper('whatsapp');
+
+        $salidas = array_values(array_filter(
+            $this->listarAdmin(),
+            static fn (array $s): bool => $s['estado'] === 'iniciada'
+        ));
+
+        // Datos de contacto y aviso de cada pedido de las paradas
+        $idsPedido = [];
+        foreach ($salidas as $s) {
+            foreach ($s['paradas'] as $p) {
+                $idsPedido[] = (int) $p['id_pedido'];
+            }
+        }
+        $contacto = [];
+        if ($idsPedido) {
+            $filas = $this->db->table('pedido p')
+                ->select("p.id, p.aviso_cercania, c.tel, c.nombre", false)
+                ->join('clientes c', 'c.id_cliente = p.id_cliente', 'left')
+                ->whereIn('p.id', $idsPedido)
+                ->get()->getResultArray();
+            foreach ($filas as $f) {
+                $contacto[(int) $f['id']] = $f;
+            }
+        }
+
+        $alertas = [];
+        foreach ($salidas as &$s) {
+            $tienePos = $s['ultima_lat'] !== null && $s['ultima_lng'] !== null;
+            $vigente  = $tienePos && $s['ultima_minutos'] !== null && $s['ultima_minutos'] <= self::MAX_MINUTOS_UBICACION;
+            $s['posicion_vigente'] = $vigente;
+
+            foreach ($s['paradas'] as &$p) {
+                $c = $contacto[(int) $p['id_pedido']] ?? null;
+                $p['avisado']  = $c ? (int) $c['aviso_cercania'] === 1 : false;
+                $p['telefono'] = $c['tel'] ?? null;
+                $p['distancia_km'] = null;
+
+                if ($vigente && $p['lat'] !== null && $p['lng'] !== null && in_array($p['estado'], ['pendiente', 'en_ruta'], true)) {
+                    $p['distancia_km'] = round($this->distanciaKm(
+                        (float) $s['ultima_lat'], (float) $s['ultima_lng'], (float) $p['lat'], (float) $p['lng']
+                    ), 2);
+
+                    if ($p['distancia_km'] <= self::RADIO_CERCANIA_KM && !$p['avisado']) {
+                        $nombre = trim((string) ($c['nombre'] ?? ''));
+                        $alertas[] = [
+                            'id_pedido'    => (int) $p['id_pedido'],
+                            'cliente'      => $p['cliente'],
+                            'repartidor'   => $s['repartidor'],
+                            'distancia_m'  => (int) round($p['distancia_km'] * 1000),
+                            'tiene_tel'    => !empty($p['telefono']),
+                            'whatsapp_url' => !empty($p['telefono'])
+                                ? 'https://wa.me/' . formato_telefono_wa($p['telefono'])
+                                    . '?text=' . rawurlencode($this->mensajeCercania($nombre, (int) $p['id_pedido']))
+                                : null,
+                        ];
+                    }
+                }
+            }
+            unset($p);
+        }
+        unset($s);
+
+        return ['salidas' => $salidas, 'alertas' => $alertas, 'radio_m' => (int) (self::RADIO_CERCANIA_KM * 1000)];
+    }
+
+    /** Texto del aviso. Sin emojis a propósito (WhatsApp para Windows los rompe en links wa.me). */
+    private function mensajeCercania(string $nombre, int $idPedido): string
+    {
+        $folio  = 'PED-' . str_pad((string) $idPedido, 5, '0', STR_PAD_LEFT);
+        $saludo = $nombre !== '' ? "Hola {$nombre}," : 'Hola,';
+        return "{$saludo} tu pedido *{$folio}* de FRUVER esta cerca. "
+             . "Nuestro repartidor llegara en unos minutos, por favor estate atento. Gracias por tu compra.";
+    }
+
+    /** Marca que ya se avisó a ese cliente (evita repetir la alerta). */
+    public function marcarAvisoCercania(int $idPedido): bool
+    {
+        $this->db->table('pedido')->where('id', $idPedido)->update(['aviso_cercania' => 1]);
+        return $this->db->affectedRows() >= 0;
+    }
+
     public function detalle(int $idSalida): array
     {
         $salida = $this->obtenerSalida($idSalida);
