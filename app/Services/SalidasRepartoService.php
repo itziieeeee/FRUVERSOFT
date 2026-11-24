@@ -186,6 +186,191 @@ class SalidasRepartoService
         return $this->detalle((int) $salida['id']);
     }
 
+    /**
+     * Motivos por los que una entrega puede no realizarse.
+     * 'incidencia' es el tipo con el que se avisa al administrador.
+     */
+    public const MOTIVOS_FALLO = [
+        'cliente_ausente'      => ['texto' => 'Cliente ausente',              'incidencia' => 'cliente_no_responde'],
+        'direccion_incorrecta' => ['texto' => 'Dirección incorrecta',         'incidencia' => 'direccion_incorrecta'],
+        'cliente_rechazo'      => ['texto' => 'El cliente rechazó el pedido', 'incidencia' => 'cliente_rechazo'],
+        'otro'                 => ['texto' => 'Otro motivo',                  'incidencia' => 'entrega_fallida'],
+    ];
+
+    /**
+     * El repartidor no pudo entregar una parada. La parada queda como "fallido", el pedido regresa a
+     * "listo" (con su stock apartado) para reintentar o que el administrador decida, y se avisa al
+     * administrador con una incidencia que lleva la ubicación del repartidor.
+     * Si era la última parada pendiente, la salida se cierra sola.
+     */
+    public function fallar(int $idRepartidor, int $idPedido, string $motivo, ?string $nota = null, ?float $lat = null, ?float $lng = null): array
+    {
+        if (!isset(self::MOTIVOS_FALLO[$motivo])) {
+            throw new RuntimeException('Elige el motivo por el que no se pudo entregar.');
+        }
+        $nota = mb_substr(trim((string) $nota), 0, 300);
+        if ($motivo === 'otro' && mb_strlen($nota) < 5) {
+            throw new RuntimeException('Explica en la nota por qué no se pudo entregar.');
+        }
+
+        $salida = $this->db->table('salida s')
+            ->select('s.*')
+            ->join('salida_pedido sp', 'sp.id_salida = s.id')
+            ->where('s.id_repartidor', $idRepartidor)
+            ->where('s.estado', 'iniciada')
+            ->where('sp.id_pedido', $idPedido)
+            ->whereIn('sp.estado', ['pendiente', 'en_ruta'])
+            ->get()->getRowArray();
+        if (!$salida) {
+            throw new RuntimeException('El pedido no pertenece a una salida activa de este repartidor.');
+        }
+
+        $pedido = $this->db->table('pedido')->select('total, monto_pagado, tipo_pago')->where('id', $idPedido)->get()->getRowArray();
+        if (!$pedido) {
+            throw new RuntimeException('El pedido no existe.');
+        }
+        $total  = (float) $pedido['total'];
+        $pagado = (float) $pedido['monto_pagado'];
+        // Vuelve al estado "listo" que le corresponde: el stock sigue apartado para el reintento
+        $estadoListo = ($total > 0 && $pagado >= $total - 0.001) ? 'Pedido pagado'
+            : (($pedido['tipo_pago'] ?? '') === 'credito' ? 'Pedido a crédito' : 'Pedido confirmado');
+
+        $info  = self::MOTIVOS_FALLO[$motivo];
+        $texto = $info['texto'] . ($nota !== '' ? ': ' . $nota : '');
+        $ahora = date('Y-m-d H:i:s');
+        $status = new StatusModel();
+
+        $this->db->transBegin();
+        try {
+            // En una parada fallida, entregado_at guarda la hora en que se cerró
+            $this->db->table('salida_pedido')
+                ->where('id_salida', $salida['id'])
+                ->where('id_pedido', $idPedido)
+                ->update([
+                    'estado'       => 'fallido',
+                    'entregado_at' => $ahora,
+                    'entrega_lat'  => $lat,
+                    'entrega_lng'  => $lng,
+                    'nota'         => mb_substr($texto, 0, 500),
+                ]);
+
+            if (!$status->actualizarEstado($idPedido, $estadoListo)) {
+                throw new RuntimeException($status->ultimoError ?: 'No se pudo regresar el pedido a su estado anterior.');
+            }
+
+            $this->db->table('incidencia')->insert([
+                'id_pedido'     => $idPedido,
+                'id_repartidor' => $idRepartidor,
+                'tipo'          => $info['incidencia'],
+                'nota'          => mb_substr('Entrega no realizada. ' . $texto, 0, 500),
+                'lat'           => $lat,
+                'lng'           => $lng,
+            ]);
+
+            $pendientes = $this->db->table('salida_pedido')
+                ->where('id_salida', $salida['id'])
+                ->whereIn('estado', ['pendiente', 'en_ruta'])
+                ->countAllResults();
+            if ($pendientes === 0) {
+                $this->db->table('salida')->where('id', $salida['id'])->update([
+                    'estado'        => 'finalizada',
+                    'finalizada_at' => $ahora,
+                ]);
+            }
+
+            $this->db->transCommit();
+        } catch (\Throwable $e) {
+            $this->db->transRollback();
+            throw $e;
+        }
+
+        AuditoriaService::registrar(
+            'entrega.fallida', 'pedido', $idPedido,
+            AuditoriaService::folio($idPedido) . ' no se pudo entregar: ' . $texto,
+            ['repartidor' => $idRepartidor, 'motivo' => $motivo, 'nota' => $nota, 'estado_nuevo' => $estadoListo]
+        );
+
+        return $this->detalle((int) $salida['id']);
+    }
+
+    /**
+     * Resumen del día (hora de México) del repartidor: entregas, no entregadas, cobrado por método,
+     * km de las rutas que inició y la lista de paradas que cerró hoy (para la tabla).
+     */
+    public function resumenDelDia(int $idRepartidor): array
+    {
+        $this->exigirRepartidor($idRepartidor);
+        [$desde, $hasta] = $this->ventanaHoy();
+
+        $columnas = $this->db->fieldExists('foto_entrega', 'salida_pedido')
+            ? 'sp.foto_entrega, sp.monto_cobrado, sp.metodo_cobro'
+            : 'NULL AS foto_entrega, NULL AS monto_cobrado, NULL AS metodo_cobro';
+
+        $filas = $this->db->query(
+            "SELECT sp.id_pedido, sp.orden, sp.estado, sp.direccion, sp.lat, sp.lng, sp.entregado_at, sp.nota, {$columnas},
+                    p.total AS pedido_total, p.monto_pagado AS pedido_pagado, p.tipo_pago, p.prioritario,
+                    c.nombre AS cliente, c.apellido_paterno, c.tel
+               FROM salida_pedido sp
+               JOIN salida s  ON s.id = sp.id_salida
+               JOIN pedido p  ON p.id = sp.id_pedido
+               JOIN clientes c ON c.id_cliente = p.id_cliente
+              WHERE s.id_repartidor = ?
+                AND sp.estado IN ('entregado', 'fallido')
+                AND sp.entregado_at >= ? AND sp.entregado_at < ?
+              ORDER BY sp.entregado_at DESC, sp.id DESC",
+            [$idRepartidor, $desde, $hasta]
+        )->getResultArray();
+
+        $cobrado = ['total' => 0.0, 'efectivo' => 0.0, 'transferencia' => 0.0, 'tarjeta' => 0.0];
+        $entregas = 0;
+        $fallidas = 0;
+        foreach ($filas as &$f) {
+            if ($f['estado'] === 'entregado') {
+                $entregas++;
+                $monto = (float) $f['monto_cobrado'];
+                if ($monto > 0) {
+                    $cobrado[PagoService::metodoValido($f['metodo_cobro'])] += $monto;
+                    $cobrado['total'] += $monto;
+                }
+            } else {
+                $fallidas++;
+            }
+            // El nombre del archivo es interno: la pantalla solo necesita saber si hay foto
+            $f['tiene_foto'] = !empty($f['foto_entrega']);
+            unset($f['foto_entrega']);
+        }
+        unset($f);
+
+        $km = (float) $this->db->query(
+            "SELECT COALESCE(SUM(km_total), 0) AS km FROM salida
+              WHERE id_repartidor = ? AND estado IN ('iniciada', 'finalizada')
+                AND iniciada_at >= ? AND iniciada_at < ?",
+            [$idRepartidor, $desde, $hasta]
+        )->getRow()->km;
+
+        return [
+            'entregas' => $entregas,
+            'fallidas' => $fallidas,
+            'cobrado'  => array_map(static fn (float $n): float => round($n, 2), $cobrado),
+            'km'       => round($km, 1),
+            'hechas'   => $filas,
+        ];
+    }
+
+    /** Inicio y fin del día de México, en la zona horaria en que se guardan las fechas. */
+    private function ventanaHoy(): array
+    {
+        $mx  = new \DateTimeZone('America/Mexico_City');
+        $bd  = new \DateTimeZone(date_default_timezone_get());
+        $ini = new \DateTime('today', $mx);
+        $fin = (clone $ini)->modify('+1 day');
+
+        return [
+            $ini->setTimezone($bd)->format('Y-m-d H:i:s'),
+            $fin->setTimezone($bd)->format('Y-m-d H:i:s'),
+        ];
+    }
+
     /* ===================== lo que usa el administrador (monitoreo) ===================== */
 
     /** Salidas en curso y recientes, con sus paradas y la última ubicación del repartidor. */

@@ -43,7 +43,7 @@ class AuthFilter implements FilterInterface
                 }
 
                 if ($rolUsuario === 'repartidor') {
-                    return redirect()->to(base_url('repartidor/app'));
+                    return redirect()->to(base_url('repartidor/panel'));
                 }
 
                 if ($rolUsuario === 'vendedor') {

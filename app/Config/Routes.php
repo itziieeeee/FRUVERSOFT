@@ -37,7 +37,7 @@ $routes->get('ingresar_portal', function() {
     if ($rol === 'repartidor') {
         return !empty(session()->get('debe_cambiar_password'))
             ? redirect()->to(base_url('cuenta/cambiar-password'))
-            : redirect()->to(base_url('repartidor/app'));
+            : redirect()->to(base_url('repartidor/panel'));
     }
 
     if ($rol === 'vendedor') {
@@ -155,6 +155,18 @@ $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
     $routes->post('cobranza/recordado', 'Cobranza::recordado');
     $routes->post('cobranza/configuracion', 'Cobranza::configuracion');
 
+    // Exportar a PDF y Excel
+    $routes->get('exportar/corte/(pdf|xlsx)', 'Exportar::corte/$1');
+    $routes->get('exportar/cobranza/(pdf|xlsx)', 'Exportar::cobranza/$1');
+    $routes->get('exportar/inventario/(pdf|xlsx)', 'Exportar::inventario/$1');
+    $routes->get('exportar/ventas/(pdf|xlsx)', 'Exportar::ventas/$1');
+
+    // Reporte de ventas con gráficas (por día y por producto)
+    $routes->get('reportes', 'Reportes::index');
+
+    // Resumen del inicio del administrador (se actualiza solo)
+    $routes->get('dashboard/datos', 'Dashboard::datos');
+
     // Costos, ganancias y variación de costos
     $routes->get('costos', 'Costos::index');
     $routes->get('costos/pdf', 'Costos::pdf');
@@ -177,6 +189,9 @@ $routes->group('cliente', ['filter' => 'authFilter:cliente'], function($routes) 
     $routes->get('historial', 'ClientePedidoController::historial');
     $routes->get('creditos', 'ClientePedidoController::creditos');
     $routes->get('estado', 'ClientePedidoController::estado');
+    // Seguimiento de un pedido (estado y posición del repartidor)
+    $routes->get('seguimiento/datos/(:num)', 'ClientePedidoController::seguimientoDatos/$1');
+    $routes->get('seguimiento/(:num)', 'ClientePedidoController::seguir/$1');
 });
 
 // Catálogo y Carrito
@@ -186,7 +201,9 @@ $routes->post('carrito/agregar', 'Catalogo::agregar');
 $routes->post('carrito/actualizar/(:num)', 'Catalogo::actualizar/$1');
 $routes->post('carrito/quitar/(:num)', 'Catalogo::quitar/$1');
 $routes->post('carrito/vaciar', 'Catalogo::vaciar');
-$routes->get('pedidos', 'ClientePedidoController::index');
+// Solo un cliente con sesión puede confirmar; si no la tiene, authFilter lo manda a iniciar sesión (el carrito se conserva)
+$routes->post('carrito/confirmar', 'Catalogo::confirmar', ['filter' => 'authFilter:cliente']);
+$routes->get('pedidos', 'ClientePedidoController::index', ['filter' => 'authFilter:cliente']);
 
 // RUTAS DEL VENDEDOR
 $routes->group('vendedor', ['filter' => 'authFilter:vendedor'], function($routes) {
@@ -209,26 +226,28 @@ $routes->group('vendedor', ['filter' => 'authFilter:vendedor'], function($routes
 
 // RUTAS DEL REPARTIDOR
 
+// El panel es la única pantalla del repartidor: catálogo de stock y recorrido con sus pedidos y evidencia.
 $routes->group('repartidor', ['filter' => 'authFilter:repartidor'], function($routes) {
     $routes->get('panel', 'PanelRepartidorController::index');
-    $routes->get('inventario', 'PanelRepartidorController::inventario');
-    $routes->get('pedidos', 'PanelRepartidorController::mis_pedidos');
+    // Enlace anterior: se conserva solo para que los accesos guardados lleguen al panel
     $routes->get('app', 'RepartidorApp::vista');
-$routes->get('api/pedidos', 'RepartidorApp::pedidos');
-$routes->post('api/estado', 'RepartidorApp::estado');
-$routes->post('api/incidencia', 'RepartidorApp::incidencia');
-$routes->post('api/ubicacion', 'RepartidorApp::ubicacion');
-$routes->get('api/respuestas', 'RepartidorApp::respuestas');
-$routes->get('api/escaner', 'Escaner::buscar');
-$routes->post('api/respuestas/leer', 'RepartidorApp::respuestasLeer');
-$routes->get('api/recorrido/previa', 'RepartidorApp::recorridoPrevia');
-$routes->post('api/recorrido/iniciar', 'RepartidorApp::recorridoIniciar');
-$routes->get('api/salida-activa', 'RepartidorApp::salidaActiva');
-$routes->post('api/salida/pedido/entregar/(:num)', 'RepartidorApp::entregarSalidaPedido/$1');
-    // marquen como entregado
-    $routes->post('cambiar_estado', 'PanelRepartidorController::cambiar_estado');
+
+    $routes->post('api/ubicacion', 'RepartidorApp::ubicacion');
+    $routes->get('api/pedidos', 'RepartidorApp::pedidos');
+    $routes->get('api/catalogo', 'RepartidorApp::catalogo');
+    $routes->get('api/resumen', 'RepartidorApp::resumen');
+    $routes->get('api/evidencia/(:num)', 'RepartidorApp::evidencia/$1');
+
+    // Ayuda al administrador: el repartidor avisa y lee su respuesta
+    $routes->post('api/incidencia', 'RepartidorApp::incidencia');
+    $routes->get('api/respuestas', 'RepartidorApp::respuestas');
+    $routes->post('api/respuestas/leer', 'RepartidorApp::respuestasLeer');
+    $routes->get('api/recorrido/previa', 'RepartidorApp::recorridoPrevia');
+    $routes->post('api/recorrido/iniciar', 'RepartidorApp::recorridoIniciar');
+    $routes->get('api/salida-activa', 'RepartidorApp::salidaActiva');
+    $routes->post('api/salida/pedido/entregar/(:num)', 'RepartidorApp::entregarSalidaPedido/$1');
+    $routes->post('api/salida/pedido/fallar/(:num)', 'RepartidorApp::noEntregado/$1');
 });
-    $routes->post('marcar_entregado', 'PanelRepartidorController::marcar_entregado');
 
 $routes->get('clientes/obtener_ultimo_pedido/(:num)', 'Clientes::obtener_ultimo_pedido/$1'); //ruta ticket ws
 $routes->group('admin_api', ['filter' => 'authFilter:admin'], function($routes) {

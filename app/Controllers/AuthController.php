@@ -18,7 +18,7 @@ class AuthController extends BaseController
         if ($rol === 'repartidor') {
             return !empty(session()->get('debe_cambiar_password'))
                 ? redirect()->to(base_url('cuenta/cambiar-password'))
-                : redirect()->to(base_url('repartidor/app'));
+                : redirect()->to(base_url('repartidor/panel'));
         }
 
         if ($rol === 'vendedor') {
@@ -90,7 +90,7 @@ class AuthController extends BaseController
             if ($usuario['rol'] === 'repartidor') {
                 return !empty($usuario['debe_cambiar_password'])
                     ? redirect()->to(base_url('cuenta/cambiar-password'))
-                    : redirect()->to(base_url('repartidor/app'));
+                    : redirect()->to(base_url('repartidor/panel'));
             }
 
             if ($usuario['rol'] === 'vendedor') {
@@ -198,7 +198,7 @@ class AuthController extends BaseController
         $rol = session()->get('rol');
 
         if ($rol === 'repartidor') {
-            $destino = 'repartidor/app';
+            $destino = 'repartidor/panel';
         } elseif ($rol === 'vendedor') {
             $destino = 'vendedor/panel';
         } else {

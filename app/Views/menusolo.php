@@ -330,6 +330,38 @@ h1 {
 ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
 ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #1e5631, #2d6a3b); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #f16b1a; }
+
+/* ===== RESUMEN DE HOY ===== */
+.resumen-hoy { margin-bottom: 36px; }
+.resumen-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; padding-left: 8px; }
+.resumen-cab h2 { font-size: 1.25rem; font-weight: 700; color: #1e5631; display: flex; align-items: center; gap: 10px; }
+.resumen-cab h2 i { color: #f16b1a; }
+.resumen-cab small { color: #64748b; font-size: 0.78rem; }
+.resumen-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; }
+.rk {
+    background: #fff; border-radius: 22px; padding: 18px 18px 16px;
+    text-decoration: none; color: inherit;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.04); border-top: 5px solid #1e5631;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex; flex-direction: column; gap: 4px;
+}
+.rk:hover { transform: translateY(-5px); box-shadow: 0 16px 28px rgba(0, 0, 0, 0.12); }
+.rk.alerta  { border-top-color: #f59e0b; }
+.rk.peligro { border-top-color: #dc2626; }
+.rk.neutro  { border-top-color: #94a3b8; }
+.rk .rk-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rk .rk-t { font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; }
+.rk .rk-i { width: 34px; height: 34px; border-radius: 50%; background: rgba(241, 107, 26, 0.12); color: #f16b1a; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+.rk .rk-v { font-size: 1.55rem; font-weight: 700; line-height: 1.2; color: #1e293b; }
+.rk .rk-v.pos { color: #15803d; }
+.rk .rk-v.neg { color: #b91c1c; }
+.rk .rk-s { font-size: 0.76rem; color: #64748b; }
+.rk .rk-s b { color: #dc2626; }
+.rk .rk-tag { align-self: flex-start; margin-top: 6px; padding: 3px 10px; border-radius: 50px; font-size: 0.68rem; font-weight: 700; background: #fef3c7; color: #b45309; }
+@media (max-width: 1200px) { .resumen-kpis { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px)  { .resumen-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px)  { .resumen-kpis { grid-template-columns: 1fr; } }
     </style>
 
 <div class="dashboard-container">
@@ -368,6 +400,15 @@ h1 {
         <h2>¡Bienvenido de vuelta!</h2>
        
     </div>
+
+    <!-- RESUMEN DE HOY -->
+    <section class="resumen-hoy" id="resumenHoy">
+        <div class="resumen-cab">
+            <h2><i class="fas fa-gauge-high"></i> Resumen de hoy</h2>
+            <small id="resumenHora"></small>
+        </div>
+        <div class="resumen-kpis" id="resumenKpis"></div>
+    </section>
 
     <!-- MÓDULOS PRINCIPALES -->
     <div class="modules-grid">
@@ -455,8 +496,104 @@ h1 {
             </div>
             <span class="module-title">Seguimiento repartidor</span>
         </a>
+
+        <a href="<?= base_url('reportes') ?>" class="module-card">
+            <div class="card-icon-wrapper">
+                <img src="<?= base_url('img/REPORTES.png') ?>" alt="Reportes de ventas" class="module-img">
+            </div>
+            <span class="module-title">Reportes de ventas</span>
+        </a>
     </div>
 </div>
+
+<script>
+(function () {
+    // Los datos de la primera carga vienen del servidor; después se refrescan solos cada 30 segundos
+    let D = <?= json_encode($resumen ?? null, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const URL_DATOS = "<?= base_url('dashboard/datos') ?>";
+    const U = {
+        corte:     "<?= base_url('corte') ?>",
+        cobranza:  "<?= base_url('cobranza') ?>",
+        alertas:   "<?= base_url('alertas') ?>",
+        salidas:   "<?= base_url('salidas') ?>"
+    };
+
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const dinero = n => (n < 0 ? '-' : '') + '$' + Math.abs(Number(n || 0)).toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const plural = (n, uno, varios) => n + ' ' + (n === 1 ? uno : varios);
+
+    function tarjeta(o) {
+        return `<a class="rk ${o.tono || ''}" href="${o.href}">
+            <div class="rk-top"><span class="rk-t">${o.titulo}</span><span class="rk-i"><i class="fas ${o.icono}"></i></span></div>
+            <div class="rk-v ${o.claseValor || ''}">${o.valor}</div>
+            <div class="rk-s">${o.sub}</div>
+            ${o.etiqueta ? `<span class="rk-tag">${o.etiqueta}</span>` : ''}
+        </a>`;
+    }
+    const noDisponible = (titulo, icono, href) =>
+        tarjeta({titulo, icono, href, valor: '—', sub: 'No disponible por ahora', tono: 'neutro'});
+
+    function pintarTarjetas() {
+        const v = D && D.ventas, c = D && D.por_cobrar, k = D && D.criticos, e = D && D.entregas, t = D && D.corte;
+        const html = [];
+
+        html.push(v ? tarjeta({
+            titulo: 'Ventas de hoy', icono: 'fa-sack-dollar', href: U.corte, valor: dinero(v.total),
+            sub: `${plural(v.n, 'pedido', 'pedidos')} · cobrado ${dinero(v.cobrado)}`
+        }) : noDisponible('Ventas de hoy', 'fa-sack-dollar', U.corte));
+
+        html.push(c ? tarjeta({
+            titulo: 'Por cobrar', icono: 'fa-hand-holding-dollar', href: U.cobranza, valor: dinero(c.total),
+            tono: c.vencido > 0 ? 'peligro' : '',
+            sub: c.vencido > 0 ? `<b>${dinero(c.vencido)}</b> vencido · ${plural(c.vencidos, 'cliente', 'clientes')}` : `${plural(c.clientes, 'cliente', 'clientes')} con saldo, nada vencido`
+        }) : noDisponible('Por cobrar', 'fa-hand-holding-dollar', U.cobranza));
+
+        html.push(k ? tarjeta({
+            titulo: 'Productos críticos', icono: 'fa-triangle-exclamation', href: U.alertas, valor: k.criticos,
+            tono: k.criticos > 0 ? 'peligro' : (k.atencion > 0 ? 'alerta' : ''),
+            sub: (k.urgentes.length ? esc(k.urgentes.join(', ')) + ' · ' : '') + `${k.atencion} en atención`
+        }) : noDisponible('Productos críticos', 'fa-triangle-exclamation', U.alertas));
+
+        html.push(e ? tarjeta({
+            titulo: 'Entregas en curso', icono: 'fa-truck-fast', href: U.salidas, valor: e.pendientes,
+            tono: e.sin_salir > 0 ? 'alerta' : '',
+            sub: `${plural(e.en_ruta, 'repartidor en ruta', 'repartidores en ruta')} · ${e.entregadas} entregadas hoy` + (e.fallidas ? ` · <b>${e.fallidas} no entregadas</b>` : ''),
+            etiqueta: e.sin_salir > 0 ? `${plural(e.sin_salir, 'pedido listo sin salir', 'pedidos listos sin salir')}` : ''
+        }) : noDisponible('Entregas en curso', 'fa-truck-fast', U.salidas));
+
+        if (t) {
+            const u = t.ultimo;
+            const dif = u ? u.diferencia : 0;
+            html.push(tarjeta({
+                titulo: 'Último corte', icono: 'fa-cash-register', href: U.corte,
+                valor: u ? (dif > 0 ? '+' : '') + dinero(dif) : 'Sin cortes',
+                claseValor: u ? (Math.abs(dif) < 0.005 ? 'pos' : (dif < 0 ? 'neg' : '')) : '',
+                tono: u && Math.abs(dif) >= 0.005 ? (dif < 0 ? 'peligro' : 'alerta') : (u ? '' : 'neutro'),
+                sub: u ? `${u.fecha} · ${Math.abs(dif) < 0.005 ? 'cuadró' : (dif < 0 ? 'faltó dinero' : 'sobró dinero')} (esperado ${dinero(u.esperado)})` : 'Todavía no se ha guardado ninguno',
+                etiqueta: t.hoy_guardado ? '' : 'Hoy aún sin corte'
+            }));
+        } else {
+            html.push(noDisponible('Último corte', 'fa-cash-register', U.corte));
+        }
+
+        document.getElementById('resumenKpis').innerHTML = html.join('');
+        document.getElementById('resumenHora').textContent = D && D.generado ? 'Actualizado a las ' + D.generado : '';
+    }
+
+    async function refrescar() {
+        if (document.hidden) return;
+        try {
+            const r = await fetch(URL_DATOS, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+            if (!r.ok) return;
+            const j = await r.json();
+            if (j && j.success) { D = j.data; pintarTarjetas(); }
+        } catch (e) { /* sin conexión o sesión vencida: se queda lo último que se mostró */ }
+    }
+
+    pintarTarjetas();
+    setInterval(refrescar, 30000);
+})();
+</script>
 
 </body>
 </html>

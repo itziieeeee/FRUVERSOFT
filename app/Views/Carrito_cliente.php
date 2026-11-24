@@ -86,12 +86,15 @@
             </table>
         </div>
 
+        <p class="texto-der" style="margin:10px 4px;color:#64748b;font-size:.9rem;">
+            <i class="fas fa-store"></i> Tu pedido se prepara para <strong>recoger en tienda</strong>. El pago se hace al recogerlo.
+        </p>
+
         <div class="carrito-acciones">
             <form action="<?= base_url('carrito/vaciar') ?>" method="post">
                 <?= csrf_field() ?>
                 <button type="submit" class="btn-modal btn-cancel">Vaciar carrito</button>
             </form>
-            <!-- Se conecta con PedidoController en el siguiente paso -->
             <form action="<?= base_url('carrito/confirmar') ?>" method="post">
                 <?= csrf_field() ?>
                 <button type="submit" class="btn-modal btn-save"><i class="fas fa-check"></i> Confirmar pedido</button>

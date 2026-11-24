@@ -24,6 +24,7 @@ class AuditoriaService
         'pedido.vencimiento'  => 'Fecha límite de crédito',
         'devolucion.crear'    => 'Devolución de cliente',
         'entrega.registrar'   => 'Entrega con evidencia',
+        'entrega.fallida'     => 'Entrega no realizada',
         'stock.ajuste'        => 'Ajuste de existencias',
         'stock.eliminar'      => 'Producto eliminado del inventario',
         'stock.caducidad'     => 'Merma por caducidad automática',

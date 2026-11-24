@@ -108,9 +108,10 @@ function pintarSalidas() {
         const abierto = abiertas.has(String(s.id));
         const paradas = (s.paradas || []).map(p => {
             const hecho = p.estado === 'entregado';
-            return '<li><span class="num ' + (hecho ? 'hecho' : 'pend') + '">' + (hecho ? '<i class="fas fa-check"></i>' : p.orden) + '</span>' +
+            const fallo = p.estado === 'fallido';   // el repartidor no pudo entregar (el motivo llega como alerta)
+            return '<li><span class="num ' + (hecho ? 'hecho' : 'pend') + '"' + (fallo ? ' style="background:#dc2626;color:#fff;"' : '') + '>' + (hecho ? '<i class="fas fa-check"></i>' : (fallo ? '<i class="fas fa-xmark"></i>' : p.orden)) + '</span>' +
                 '<span><strong>' + esc(p.cliente || 'Cliente') + '</strong> · Pedido #' + p.id_pedido + '<br><small style="color:#64748b;">' + esc(p.direccion || '') + '</small></span>' +
-                '<span style="margin-left:auto;color:#64748b;white-space:nowrap;">' + (hecho ? 'Entregado ' + hora(p.entregado_at) : '+' + km(p.km_desde_anterior) + ' km') + '</span></li>';
+                '<span style="margin-left:auto;color:#64748b;white-space:nowrap;">' + (hecho ? 'Entregado ' + hora(p.entregado_at) : (fallo ? 'No entregado ' + hora(p.entregado_at) : '+' + km(p.km_desde_anterior) + ' km')) + '</span></li>';
         }).join('');
         return '<article class="salida ' + (enRuta ? 'en-ruta' : 'fin') + '">' +
             '<div class="top"><h3>Salida #' + s.id + ' · ' + esc(s.repartidor || 'Repartidor') + '</h3>' +

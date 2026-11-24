@@ -4,7 +4,7 @@
 <style>
     /* ============ FAB DE AYUDA ============ */
     .rep-fab {
-        position: fixed; right: 16px; bottom: 16px; z-index: 900;
+        position: fixed; right: 16px; bottom: 16px; z-index: 960; /* por encima de las ventanas del panel (950) */
         background: #dc2626; color: #fff; border: 0;
         border-radius: 60px;
         height: 56px; min-width: 56px;
@@ -29,7 +29,7 @@
 
     /* ============ CHIP GPS (círculo de estado) ============ */
     .rep-gps {
-        position: fixed; left: 16px; bottom: 16px; z-index: 900;
+        position: fixed; left: 16px; bottom: 16px; z-index: 960;
         width: 56px; height: 56px;
         border-radius: 50%;
         display: inline-flex; align-items: center; justify-content: center;
@@ -398,7 +398,10 @@ const REP_TIPOS = {
     direccion_incorrecta: 'Dirección incorrecta',
     cliente_no_paga: 'El cliente no paga',
     producto_danado: 'Producto dañado',
-    problema_vehiculo: 'Problema con el vehículo'
+    problema_vehiculo: 'Problema con el vehículo',
+    cliente_rechazo: 'El cliente rechazó el pedido',
+    entrega_fallida: 'Entrega no realizada',
+    otro: 'Otro'
 };
 
 function repEsc(s) {

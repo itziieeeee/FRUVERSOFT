@@ -2,7 +2,11 @@
 
 namespace App\Controllers;
 
+use App\Models\PedidoModel;
 use App\Models\ProductoModel;
+use App\Models\ProductoPedidoModel;
+use App\Models\StatusModel;
+use App\Services\AuditoriaService;
 
 class Catalogo extends BaseController
 {
@@ -172,6 +176,146 @@ class Catalogo extends BaseController
     {
         $this->session->remove(self::CLAVE);
         return redirect()->to(base_url('carrito'))->with('mensaje', 'Carrito vaciado.');
+    }
+
+    /**
+     * Convierte el carrito en un pedido de contado para recoger en tienda.
+     * El precio y las existencias se leen otra vez de la base de datos: lo que quedó en la
+     * sesión pudo cambiar desde que el cliente agregó el producto.
+     */
+    public function confirmar()
+    {
+        $carrito = $this->session->get(self::CLAVE) ?? [];
+
+        if (!$carrito) {
+            return redirect()->to(base_url('carrito'))->with('error', 'Tu carrito está vacío.');
+        }
+
+        $productos = [];
+        $total     = 0.0;
+
+        foreach ($carrito as $id => $item) {
+            $nombre   = (string) ($item['nombre'] ?? 'Un producto');
+            $producto = $this->buscarProducto((int) $id);
+
+            if (!$producto) {
+                return redirect()->to(base_url('carrito'))->with('error', '"' . $nombre . '" ya no está disponible. Quítalo del carrito.');
+            }
+
+            $precio   = (float) ($producto['precio'] ?? 0);
+            $cantidad = (float) ($item['cantidad'] ?? 0);
+            $stock    = (float) ($producto['stock_disponible'] ?? 0);
+
+            if ($precio <= 0) {
+                return redirect()->to(base_url('carrito'))->with('error', '"' . $nombre . '" todavía no tiene precio. Quítalo del carrito.');
+            }
+            if ($cantidad <= 0 || $cantidad > $stock) {
+                $maximo = rtrim(rtrim(number_format($stock, 2, '.', ''), '0'), '.');
+                return redirect()->to(base_url('carrito'))->with('error', 'De "' . $nombre . '" solo hay ' . ($maximo === '' ? '0' : $maximo) . ' disponibles. Ajusta la cantidad.');
+            }
+
+            $productos[] = [
+                'id_producto'  => (int) $producto['id'],
+                'cantidad'     => $cantidad,
+                'precio_venta' => $precio,
+                'unidad'       => $producto['unidad_venta'] ?? 'pieza',
+            ];
+            $total += $cantidad * $precio;
+        }
+
+        $total = round($total, 2);
+
+        try {
+            $idCliente   = $this->clienteDelUsuario();
+            $pedidoModel = new PedidoModel();
+
+            $resultado = $pedidoModel->crearPedidoCompleto([
+                'fecha'         => date('Y-m-d H:i:s'),
+                'id_cliente'    => $idCliente,
+                'id_repartidor' => null,
+                'tipo_entrega'  => 'tienda',
+                'total'         => $total,
+                'estado_actual' => 'Pedido',
+                'tipo_pago'     => 'contado',
+                'monto_pagado'  => 0,
+                'prioritario'   => 0,
+            ], $productos, new ProductoPedidoModel());
+
+            if (empty($resultado['ok'])) {
+                log_message('error', 'Carrito: no se pudo registrar el pedido del cliente: ' . ($resultado['error']['message'] ?? 'sin detalle'));
+                return redirect()->to(base_url('carrito'))->with('error', 'No se pudo registrar tu pedido. Intenta de nuevo.');
+            }
+
+            $idPedido = (int) $resultado['idPedido'];
+
+            AuditoriaService::registrar(
+                'pedido.crear', 'pedido', $idPedido,
+                AuditoriaService::folio($idPedido) . ' para ' . $pedidoModel->getNombreCliente($idCliente)
+                    . ': $' . number_format($total, 2) . ' (contado, recoger en tienda, desde el carrito)',
+                ['total' => $total, 'pagado' => 0, 'productos' => count($productos), 'origen' => 'carrito']
+            );
+
+            // Mismo mecanismo que en la venta del administrador: si hay existencias, se descuentan y el pedido queda confirmado
+            $confirmacion = (new StatusModel())->validarYConfirmar($idPedido);
+        } catch (\Throwable $e) {
+            log_message('error', 'Carrito: ' . $e->getMessage());
+            return redirect()->to(base_url('carrito'))->with('error', 'No se pudo registrar tu pedido. Intenta de nuevo.');
+        }
+
+        $this->session->remove(self::CLAVE);
+
+        $folio   = AuditoriaService::folio($idPedido);
+        $mensaje = !empty($confirmacion['success'])
+            ? "Pedido {$folio} confirmado. Pasa a recogerlo y pagarlo en tienda."
+            : "Pedido {$folio} recibido. Estamos verificando las existencias.";
+
+        return redirect()->to(base_url('ticket/ver/' . $idPedido))->with('mensaje', $mensaje);
+    }
+
+    /**
+     * Ficha de cliente (tabla clientes) de la cuenta que inició sesión.
+     * Si todavía no tiene, se crea con su nombre y queda vinculada a su usuario.
+     */
+    private function clienteDelUsuario(): int
+    {
+        $db      = \Config\Database::connect();
+        $usuario = $db->table('usuarios')
+            ->select('id, nombre, id_cliente')
+            ->where('id', (int) $this->session->get('id_usuario'))
+            ->get()->getRowArray();
+
+        if (!$usuario) {
+            throw new \RuntimeException('No se encontró la cuenta del cliente.');
+        }
+
+        if (!empty($usuario['id_cliente'])
+            && $db->table('clientes')->where('id_cliente', (int) $usuario['id_cliente'])->countAllResults() > 0) {
+            return (int) $usuario['id_cliente'];
+        }
+
+        // "Gabriel Ramirez Coyotecatl" -> nombre, apellido paterno y materno
+        $partes = preg_split('/\s+/', trim((string) $usuario['nombre'])) ?: [];
+        $materno = '';
+        $paterno = null;
+        if (count($partes) >= 3) {
+            $materno = (string) array_pop($partes);
+            $paterno = (string) array_pop($partes);
+        } elseif (count($partes) === 2) {
+            $paterno = (string) array_pop($partes);
+        }
+        $nombre = implode(' ', $partes);
+
+        $db->table('clientes')->insert([
+            'nombre'           => mb_substr($nombre !== '' ? $nombre : 'Cliente', 0, 50),
+            'apellido_paterno' => $paterno !== null ? mb_substr($paterno, 0, 50) : null,
+            'apellido_materno' => mb_substr($materno, 0, 50),
+            'tipo_cliente'     => 'menudeo',
+        ]);
+        $idCliente = (int) $db->insertID();
+
+        $db->table('usuarios')->where('id', (int) $usuario['id'])->update(['id_cliente' => $idCliente]);
+
+        return $idCliente;
     }
 
     /**

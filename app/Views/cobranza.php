@@ -108,6 +108,10 @@ $textoDias = static function (int $d): string {
 <div class="contenedor">
     <div class="titulo">
         <h2><i class="fas fa-hand-holding-dollar" style="color:var(--naranja)"></i> Cobranza de créditos</h2>
+        <div class="acciones">
+            <a class="btn sec" href="<?= base_url('exportar/cobranza/pdf') ?>" target="_blank" rel="noopener" title="Descargar la cobranza en PDF"><i class="fas fa-file-pdf"></i> PDF</a>
+            <a class="btn sec" href="<?= base_url('exportar/cobranza/xlsx') ?>" title="Descargar la cobranza en Excel"><i class="fas fa-file-excel"></i> Excel</a>
+        </div>
         <form class="config" id="formConfig" onsubmit="return false;">
             Plazo del crédito <input type="number" id="cfgPlazo" min="1" max="365" value="<?= (int) $config['plazo'] ?>"> días
             · Avisar <input type="number" id="cfgAviso" min="0" max="60" value="<?= (int) $config['aviso'] ?>"> días antes

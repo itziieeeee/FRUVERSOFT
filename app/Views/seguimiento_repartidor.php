@@ -161,10 +161,11 @@ function dibujar(datos) {
         s.paradas.forEach(p => {
             if (p.lat === null || p.lng === null) return;
             const ok = p.estado === 'entregado';
-            const m = L.marker([+p.lat, +p.lng], { icon: icono('pin-cliente' + (ok ? ' ok' : ''), ok ? '<i class="fas fa-check"></i>' : esc(p.orden), 28) })
-                .bindTooltip(esc(p.cliente || 'Cliente') + (ok ? ' (entregado)' : ''))
+            const fallo = p.estado === 'fallido';   // no se pudo entregar: ya no es un destino pendiente
+            const m = L.marker([+p.lat, +p.lng], { icon: icono('pin-cliente' + (ok ? ' ok' : ''), ok ? '<i class="fas fa-check"></i>' : (fallo ? '<i class="fas fa-xmark"></i>' : esc(p.orden)), 28) })
+                .bindTooltip(esc(p.cliente || 'Cliente') + (ok ? ' (entregado)' : (fallo ? ' (no entregado)' : '')))
                 .addTo(capa);
-            if (!ok) puntos.push([+p.lat, +p.lng]);
+            if (!ok && !fallo) puntos.push([+p.lat, +p.lng]);
         });
 
         if (s.ultima_lat !== null && s.ultima_lng !== null) {
@@ -205,6 +206,7 @@ function listarSalidas(datos) {
             const ok = p.estado === 'entregado';
             let etiqueta = '';
             if (ok) etiqueta = '<span class="tag">entregado</span>';
+            else if (p.estado === 'fallido') etiqueta = '<span class="tag">no entregado</span>';
             else if (p.distancia_km !== null) {
                 const cerca = p.distancia_km * 1000 <= datos.radio_m;
                 etiqueta = '<span class="tag ' + (cerca ? 'cerca' : '') + '">' + (p.distancia_km < 1 ? Math.round(p.distancia_km * 1000) + ' m' : p.distancia_km.toFixed(1) + ' km') + '</span>';

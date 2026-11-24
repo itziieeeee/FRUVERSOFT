@@ -1,7 +1,6 @@
 <?php
 namespace App\Controllers;
 
-use App\Models\StatusModel;
 use App\Services\SalidasRepartoService;
 
 class RepartidorApp extends BaseController
@@ -11,9 +10,10 @@ class RepartidorApp extends BaseController
         return (int) session()->get('id_repartidor');
     }
 
+    /** La app del repartidor ahora vive en el panel; este enlace solo redirige. */
     public function vista()
     {
-        return view('Repartidor/app_movil');
+        return redirect()->to(base_url('repartidor/panel'));
     }
 
     /** Vista previa del recorrido con los pedidos listos del repartidor (no guarda nada). */
@@ -142,69 +142,95 @@ class RepartidorApp extends BaseController
         }
     }
 
-    public function pedidos()
+    /** El repartidor no pudo entregar una parada: se registra el motivo y se avisa al administrador. */
+    public function noEntregado($idPedido)
     {
-        $rows = \Config\Database::connect()->query("
-            SELECT p.id, p.total, p.monto_pagado, p.tipo_pago, p.estado_actual, p.prioritario,
-                   CONCAT(c.nombre, ' ', IFNULL(c.apellido_paterno, '')) AS cliente,
-                   c.tel, d.calle, d.numero, d.colonia, d.municipio, d.estado AS estado_dir
-            FROM pedido p
-            JOIN clientes c ON c.id_cliente = p.id_cliente
-            LEFT JOIN direccion d
-                   ON d.id = (SELECT MAX(id) FROM direccion WHERE id_cliente = c.id_cliente)
-            WHERE p.id_repartidor = ?
-              AND p.tipo_entrega = 'domicilio'
-              AND p.estado_actual NOT IN ('Pedido', 'Venta confirmada', 'Pedido cancelado')
-            ORDER BY p.prioritario DESC, p.id DESC", [$this->idRep()])->getResultArray();
+        $lat = $this->request->getPost('lat');
+        $lng = $this->request->getPost('lng');
 
-        return $this->response->setJSON(['data' => $rows]);
+        try {
+            $data = (new SalidasRepartoService())->fallar(
+                $this->idRep(),
+                (int) $idPedido,
+                (string) $this->request->getPost('motivo'),
+                (string) $this->request->getPost('nota'),
+                is_numeric($lat) && abs((float) $lat) <= 90 ? (float) $lat : null,
+                is_numeric($lng) && abs((float) $lng) <= 180 ? (float) $lng : null
+            );
+            return $this->response->setJSON(['success' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
-    public function estado()
+    /** Resumen del día del repartidor y las paradas que cerró hoy. */
+    public function resumen()
     {
-        $id     = (int) $this->request->getPost('id');
-        $estado = $this->request->getPost('estado');
-
-        if (!in_array($estado, ['Pedido en tránsito', 'Venta confirmada'], true)) {
-            return $this->response->setStatusCode(400)->setJSON(['success' => false]);
+        try {
+            return $this->response->setJSON([
+                'success' => true,
+                'data'    => (new SalidasRepartoService())->resumenDelDia($this->idRep()),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $db = \Config\Database::connect();
-        $esSuyo = $db->table('pedido')
-            ->where('id', $id)->where('id_repartidor', $this->idRep())
-            ->countAllResults();
-
-        if (!$esSuyo) {
-            return $this->response->setStatusCode(404)->setJSON(['success' => false]);
-        }
-
-        (new StatusModel())->actualizarEstado($id, $estado);
-
-        if ($estado === 'Venta confirmada') {
-            $db->table('pedido')->where('id', $id)->update(['entregado_at' => date('Y-m-d H:i:s')]);
-        }
-        // Aquí después: si es 'Pedido en tránsito' → link de WhatsApp "pedido en camino"
-
-        return $this->response->setJSON(['success' => true]);
     }
 
+    /** La foto de evidencia de una entrega, solo para el repartidor que la tomó. */
+    public function evidencia($idPedido)
+    {
+        $fila = \Config\Database::connect()->query(
+            'SELECT sp.foto_entrega
+               FROM salida_pedido sp
+               JOIN salida s ON s.id = sp.id_salida
+              WHERE s.id_repartidor = ? AND sp.id_pedido = ? AND sp.foto_entrega IS NOT NULL
+              ORDER BY sp.id DESC LIMIT 1',
+            [$this->idRep(), (int) $idPedido]
+        )->getRowArray();
+
+        $nombre = (string) ($fila['foto_entrega'] ?? '');
+        if (!preg_match('/^[a-f0-9]{32}\.(jpg|png|webp)$/', $nombre) || !is_file(self::carpetaEvidencias() . $nombre)) {
+            return $this->response->setStatusCode(404)->setBody('No encontrado');
+        }
+
+        $tipos = ['jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'];
+
+        return $this->response
+            ->setHeader('Content-Type', $tipos[pathinfo($nombre, PATHINFO_EXTENSION)])
+            ->setHeader('Cache-Control', 'private, max-age=3600')
+            ->setBody(file_get_contents(self::carpetaEvidencias() . $nombre));
+    }
+
+    /** Aviso de ayuda al administrador, con la ubicación del repartidor. */
     public function incidencia()
     {
-        $p = $this->request;
-        \Config\Database::connect()->table('incidencia')->insert([
-            'id_pedido'     => $p->getPost('id_pedido') ?: null,
+        $p      = $this->request;
+        $tipos  = ['cliente_no_responde', 'direccion_incorrecta', 'cliente_no_paga', 'producto_danado', 'problema_vehiculo'];
+        $tipo   = (string) $p->getPost('tipo');
+        $db     = \Config\Database::connect();
+
+        // El pedido, si se manda, debe ser de este repartidor
+        $idPedido = (int) $p->getPost('id_pedido');
+        if ($idPedido > 0 && !$db->table('pedido')->where('id', $idPedido)->where('id_repartidor', $this->idRep())->countAllResults()) {
+            $idPedido = 0;
+        }
+
+        $lat = $p->getPost('lat');
+        $lng = $p->getPost('lng');
+
+        $db->table('incidencia')->insert([
+            'id_pedido'     => $idPedido > 0 ? $idPedido : null,
             'id_repartidor' => $this->idRep(),
-            'tipo'          => $p->getPost('tipo') ?: 'otro',
-            'nota'          => $p->getPost('nota'),
-            'lat'           => $p->getPost('lat') ?: null,
-            'lng'           => $p->getPost('lng') ?: null,
+            'tipo'          => in_array($tipo, $tipos, true) ? $tipo : 'otro',
+            'nota'          => mb_substr(trim((string) $p->getPost('nota')), 0, 500) ?: null,
+            'lat'           => is_numeric($lat) && abs((float) $lat) <= 90 ? (float) $lat : null,
+            'lng'           => is_numeric($lng) && abs((float) $lng) <= 180 ? (float) $lng : null,
         ]);
+
         return $this->response->setJSON(['success' => true]);
     }
 
-    /**
-     * Respuestas del administrador a las ayudas de este repartidor, con los datos del pedido.
-     */
+    /** Respuestas del administrador a las ayudas de este repartidor, con los datos del pedido. */
     public function respuestas()
     {
         $db = \Config\Database::connect();
@@ -231,9 +257,7 @@ class RepartidorApp extends BaseController
         return $this->response->setJSON(['data' => $rows, 'no_leidas' => $noLeidas]);
     }
 
-    /**
-     * Marca como leídas todas las respuestas pendientes de este repartidor.
-     */
+    /** Marca como leídas todas las respuestas pendientes de este repartidor. */
     public function respuestasLeer()
     {
         \Config\Database::connect()->table('incidencia')
@@ -245,14 +269,67 @@ class RepartidorApp extends BaseController
         return $this->response->setJSON(['success' => true]);
     }
 
+    /** Pedidos a domicilio asignados a este repartidor que ya están listos o en camino (solo lectura). */
+    public function pedidos()
+    {
+        $rows = \Config\Database::connect()->query("
+            SELECT p.id, p.total, p.monto_pagado, p.tipo_pago, p.estado_actual, p.prioritario,
+                   CONCAT_WS(' ', c.nombre, c.apellido_paterno) AS cliente,
+                   c.tel, d.calle, d.numero, d.colonia, d.municipio, d.estado AS estado_dir, d.lat, d.lng
+            FROM pedido p
+            JOIN clientes c ON c.id_cliente = p.id_cliente
+            LEFT JOIN direccion d
+                   ON d.id = (SELECT MAX(id) FROM direccion WHERE id_cliente = c.id_cliente)
+            WHERE p.id_repartidor = ?
+              AND p.tipo_entrega = 'domicilio'
+              AND p.estado_actual NOT IN ('Pedido', 'Venta confirmada', 'Pedido cancelado')
+            ORDER BY p.prioritario DESC, p.id ASC", [$this->idRep()])->getResultArray();
+
+        return $this->response->setJSON(['data' => $rows]);
+    }
+
+    /** Catálogo de productos con su disponibilidad, solo para consultar (sin precios de costo). */
+    public function catalogo()
+    {
+        $rows = \Config\Database::connect()->query("
+            SELECT p.id, p.codigo, p.nombre, p.descripcion, p.imagen,
+                   COALESCE(SUM(e.e_total), 0)   AS total,
+                   COALESCE(SUM(e.e_bloqueo), 0) AS bloqueado,
+                   (SELECT en.precio_sugerido FROM entrada en WHERE en.id_producto = p.id ORDER BY en.fecha DESC, en.id DESC LIMIT 1) AS precio,
+                   (SELECT en.unidad_venta   FROM entrada en WHERE en.id_producto = p.id ORDER BY en.fecha DESC, en.id DESC LIMIT 1) AS unidad
+            FROM producto p
+            LEFT JOIN existencias e ON e.id_producto = p.id
+            GROUP BY p.id, p.codigo, p.nombre, p.descripcion, p.imagen
+            ORDER BY p.nombre")->getResultArray();
+
+        foreach ($rows as &$r) {
+            $r['disponible'] = max(0.0, (float) $r['total'] - (float) $r['bloqueado']);
+            $r['precio']     = $r['precio'] !== null ? (float) $r['precio'] : null;
+            unset($r['total'], $r['bloqueado']);
+        }
+        unset($r);
+
+        return $this->response->setJSON(['data' => $rows]);
+    }
+
+    /** Posición en vivo del repartidor (la usa el seguimiento del administrador). */
     public function ubicacion()
     {
+        $lat = $this->request->getPost('lat');
+        $lng = $this->request->getPost('lng');
+
+        // Sin coordenadas válidas no se toca la última posición conocida
+        if (!is_numeric($lat) || !is_numeric($lng)
+            || abs((float) $lat) > 90 || abs((float) $lng) > 180) {
+            return $this->response->setStatusCode(422)->setJSON(['success' => false]);
+        }
+
         \Config\Database::connect()->table('repartidor')
             ->where('id', $this->idRep())
             ->update([
-                'ultima_lat'            => $this->request->getPost('lat'),
-                'ultima_lng'            => $this->request->getPost('lng'),
-                'ultima_actualizacion'  => date('Y-m-d H:i:s'),
+                'ultima_lat'           => (float) $lat,
+                'ultima_lng'           => (float) $lng,
+                'ultima_actualizacion' => date('Y-m-d H:i:s'),
             ]);
         return $this->response->setJSON(['success' => true]);
     }

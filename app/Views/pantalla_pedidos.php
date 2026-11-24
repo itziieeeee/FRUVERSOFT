@@ -1116,7 +1116,8 @@ document.addEventListener('DOMContentLoaded', actualizarEstadisticas);
   };
   const TIPOS = {
     cliente_no_responde:'Cliente no responde', direccion_incorrecta:'Dirección incorrecta',
-    cliente_no_paga:'Cliente no paga', producto_danado:'Producto dañado', problema_vehiculo:'Problema con el vehículo'
+    cliente_no_paga:'Cliente no paga', producto_danado:'Producto dañado', problema_vehiculo:'Problema con el vehículo',
+    cliente_rechazo:'El cliente rechazó el pedido', entrega_fallida:'Entrega no realizada', otro:'Otro'
   };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const folioDe = id => String(id).padStart(6, '0');

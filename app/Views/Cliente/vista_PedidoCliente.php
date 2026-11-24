@@ -77,9 +77,9 @@
                                     </td>
 
                                     <td>
-                                        <button type="button" class="btn btn-fruver btn-sm">
+                                        <a href="<?= base_url('cliente/seguimiento/' . (int) ($pedido['id'] ?? 0)) ?>" class="btn btn-fruver btn-sm">
                                             Ver detalle
-                                        </button>
+                                        </a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

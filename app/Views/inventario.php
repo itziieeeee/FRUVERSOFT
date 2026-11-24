@@ -438,6 +438,8 @@
             </div>
             <div class="user-actions">
                 <a href="#" class="btn-user"><i class="fas fa-user-shield"></i> Admin</a>
+                <a href="<?= base_url('exportar/inventario/pdf') ?>" target="_blank" rel="noopener" class="btn-user" title="Descargar el inventario en PDF"><i class="fas fa-file-pdf"></i> PDF</a>
+                <a href="<?= base_url('exportar/inventario/xlsx') ?>" class="btn-user" title="Descargar el inventario en Excel"><i class="fas fa-file-excel"></i> Excel</a>
                 <a href="<?= base_url('alertas') ?>" class="btn-user"><i class="fas fa-chart-line"></i> Estado de inventario</a>
                 <a href="menusolo" class="btn-user"><i class="fas fa-arrow-right-from-bracket"></i> Regresar</a>
             </div>

@@ -37,6 +37,17 @@ class PedidoModel extends Model {
             ->join('clientes', 'clientes.id_cliente = pedido.id_cliente')
             ->findAll();
     }
+    /** Pedidos de un solo cliente, los más recientes primero (pantallas de la cuenta del cliente) */
+    public function getPedidosDeCliente(int $idCliente): array
+    {
+        return $this
+            ->select("pedido.*, CONCAT(clientes.nombre, ' ', clientes.apellido_paterno) as nombre_cliente")
+            ->join('clientes', 'clientes.id_cliente = pedido.id_cliente')
+            ->where('pedido.id_cliente', $idCliente)
+            ->orderBy('pedido.id', 'DESC')
+            ->findAll();
+    }
+
     public function getPedidosVendedor()
 {
     return $this->select("

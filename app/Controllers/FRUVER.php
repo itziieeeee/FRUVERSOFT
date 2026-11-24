@@ -61,7 +61,8 @@ class FRUVER extends BaseController
 
     public function menusolo()
     {
-        return view('menusolo');
+        // Resumen del día para el inicio del administrador (también se actualiza solo por dashboard/datos)
+        return view('menusolo', ['resumen' => (new \App\Services\DashboardService())->resumen()]);
     }
 
     public function pantalla_administrador()

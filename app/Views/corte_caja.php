@@ -107,6 +107,8 @@ $nombresOrigen = ['venta' => 'Pago en la venta', 'abono' => 'Abono / pago regist
             <input type="date" name="fecha" value="<?= esc($fecha) ?>" max="<?= esc($hoy) ?>" onchange="this.form.submit()">
             <?php if ($fecha < $hoy): ?><a class="btn sec" href="<?= base_url('corte') . '?fecha=' . $manana ?>" title="Día siguiente"><i class="fas fa-chevron-right"></i></a><?php endif; ?>
             <button type="button" class="btn sec" onclick="window.print()"><i class="fas fa-print"></i> Imprimir</button>
+            <a class="btn sec" href="<?= base_url('exportar/corte/pdf') . '?fecha=' . esc($fecha) ?>" target="_blank" rel="noopener" title="Descargar el corte en PDF"><i class="fas fa-file-pdf"></i> PDF</a>
+            <a class="btn sec" href="<?= base_url('exportar/corte/xlsx') . '?fecha=' . esc($fecha) ?>" title="Descargar el corte en Excel"><i class="fas fa-file-excel"></i> Excel</a>
         </form>
     </div>
     <p class="sub">Se arma con los cobros y reembolsos registrados ese día (hora de la Ciudad de México).</p>
