@@ -64,18 +64,10 @@ $color = static function (string $accion): string {
 
 <header class="barra-superior">
     <img src="<?= base_url('img/LOGO1.png') ?>" alt="FRUVER">
-    <a href="<?= site_url('menusolo') ?>" class="btn-user"><i class="fas fa-arrow-left"></i> Regresar</a>
+    <a href="<?= site_url('pantalla_inventario') ?>" class="btn-user"><i class="fas fa-arrow-left"></i> Regresar a inventario</a>
 </header>
 
-<nav class="menu-navegacion">
-    <div class="nav-links">
-        <a href="<?= base_url('pantalla_ventas') ?>" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
-        <a href="<?= base_url('pantalla_pedidos') ?>" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
-        <a href="<?= base_url('corte') ?>" class="nav-link"><i class="fas fa-cash-register"></i> Corte de caja</a>
-        <a href="<?= base_url('devoluciones') ?>" class="nav-link"><i class="fas fa-rotate-left"></i> Devoluciones</a>
-        <a href="<?= base_url('auditoria') ?>" class="nav-link activo"><i class="fas fa-clock-rotate-left"></i> Historial de cambios</a>
-    </div>
-</nav>
+<?= view('partials/nav_admin') ?>
 
 <div class="contenedor">
     <h2><i class="fas fa-clock-rotate-left" style="color:var(--naranja)"></i> Historial de cambios</h2>
@@ -92,11 +84,20 @@ $color = static function (string $accion): string {
                 <?php endforeach; ?>
             </select>
         </label>
-        <label>Usuario
-            <select name="usuario">
+        <label>Rol
+            <select name="rol" id="filtroRol">
                 <option value="">Todos</option>
-                <?php foreach ($usuarios as $u): ?>
-                    <option value="<?= esc($u) ?>" <?= $filtros['usuario'] === $u ? 'selected' : '' ?>><?= esc($u) ?></option>
+                <?php foreach ($roles as $clave => $texto): ?>
+                    <option value="<?= esc($clave) ?>" <?= $filtros['rol'] === $clave ? 'selected' : '' ?>><?= esc($texto) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label>Usuario
+            <select name="usuario" id="filtroUsuario">
+                <option value="">Todos</option>
+                <?php foreach ($usuarios as $nombre => $rolesUsuario): ?>
+                    <option value="<?= esc($nombre) ?>" data-roles="<?= esc(implode(' ', $rolesUsuario)) ?>"
+                        <?= $filtros['usuario'] === (string) $nombre ? 'selected' : '' ?>><?= esc($nombre) ?></option>
                 <?php endforeach; ?>
             </select>
         </label>
@@ -136,5 +137,30 @@ $color = static function (string $accion): string {
     </div>
 </div>
 
+<script>
+// Al elegir un rol, la lista de usuarios muestra solo a los de ese rol
+(function () {
+    const rol = document.getElementById('filtroRol');
+    const usuario = document.getElementById('filtroUsuario');
+    if (!rol || !usuario) return;
+
+    function filtrarUsuarios() {
+        const elegido = rol.value;
+        [...usuario.options].forEach(op => {
+            if (!op.value) return; // "Todos" siempre se ve
+            const roles = (op.dataset.roles || '').split(' ');
+            const visible = !elegido || roles.includes(elegido);
+            op.hidden = !visible;
+            op.disabled = !visible;
+        });
+        // Si el usuario elegido no es de ese rol, se vuelve a "Todos"
+        const actual = usuario.options[usuario.selectedIndex];
+        if (actual && actual.disabled) usuario.value = '';
+    }
+
+    rol.addEventListener('change', filtrarUsuarios);
+    filtrarUsuarios();
+})();
+</script>
 </body>
 </html>

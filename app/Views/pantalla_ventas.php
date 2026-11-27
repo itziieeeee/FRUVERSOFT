@@ -245,6 +245,7 @@
     from { transform: translateY(30px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+
 </style>
 <body>
 
@@ -259,16 +260,7 @@
     </div>
 </div>
 
-<nav class="menu-navegacion">
-    <div class="nav-links">
-        <a href="<?= base_url('pantalla_ventas') ?>" class="nav-link activo"><i class="fas fa-tag"></i> Ventas</a>
-        <a href="<?= base_url('pantalla_pedidos') ?>" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
-        <a href="<?= base_url('pantalla_inventario') ?>" class="nav-link"><i class="fas fa-boxes"></i> Inventario</a>
-        <a href="<?= base_url('pantalla_clientes') ?>" class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
-        <a href="<?= base_url('pantalla_repartidores') ?>" class="nav-link"><i class="fa-solid fa-dolly"></i> Repartidores</a>
-        <a href="<?= base_url('pantalla_productos') ?>" class="nav-link"><i class="fa-solid fa-apple-whole"></i> Productos</a>
-    </div>
-</nav>
+<?= view('partials/nav_admin') ?>
 
 <div class="container">
     <!-- SECCIÓN UNIFICADA: Nueva venta / pedido + Gestión de estado -->
@@ -472,16 +464,13 @@ selectEntrega.addEventListener('change', function() {
         ocultarMapaRuta();
     }
 });
-
 // Marcar o quitar "urgente" recalcula la ruta (el pedido urgente pasa primero)
 document.getElementById('chkUrgente').addEventListener('change', cargarPlanSalida);
-
 selectCliente.addEventListener('change', function() {
     if (selectEntrega.value === 'domicilio') {
         solicitarSugerenciaRepartidor();
     }
 });
-
 btnSugerirRepartidor.addEventListener('click', solicitarSugerenciaRepartidor);
 btnMostrarOtrosRepartidores.addEventListener('click', function() {
     const visible = listaAlternativasRepartidor.style.display === 'block';
@@ -616,6 +605,13 @@ async function cargarPlanSalida() {
     }
 }
 
+/* 2 h 35 min / 45 min */
+function formatoMinutos(n) {
+    n = Math.max(0, Math.round(Number(n) || 0));
+    const h = Math.floor(n / 60), m = n % 60;
+    return h > 0 ? h + ' h ' + m + ' min' : m + ' min';
+}
+
 function dibujarPlanRuta(plan) {
     detenerSimulacion(false);
     const fuentes = { osrm: 'km reales por carretera', mixta: 'km por carretera (algunos estimados)', estimada: 'km estimados' };
@@ -630,6 +626,22 @@ function dibujarPlanRuta(plan) {
         '<br><small style="color:#666;">' +
         (fuentes[plan.fuente_distancia] || 'km calculados') + ' · ' +
         (ultima ? 'última ubicación ' + textoHace(ultima.minutos) : 'sin ubicación enviada') + '</small>';
+    // Tiempo estimado (con ajuste por horas pico) y comparación contra el orden de captura
+    if (plan.tiempo) {
+        const t = plan.tiempo;
+        html += '<br><i class="fa-solid fa-clock"></i> Tiempo estimado <strong>' + formatoMinutos(t.total_min) + '</strong>' +
+            ' <small style="color:#666;">(manejo ' + formatoMinutos(t.traslado_min) +
+            (t.transito_min > 0 ? ', incluye +' + formatoMinutos(t.transito_min) + ' por hora pico' : '') +
+            ' + entregas ' + formatoMinutos(t.paradas_min) + ' · regreso ~' + escaparHtml(t.regreso) + ')</small>';
+    }
+    const comp = plan.comparativo;
+    if (comp && comp.ahorro && plan.paradas.length > 1) {
+        const a = comp.ahorro;
+        html += comp.hay_ahorro
+            ? '<br><i class="fa-solid fa-route" style="color:#2d6a3b;"></i> Ruta optimizada: ahorra <strong>' + Number(a.km).toFixed(1) + ' km (' + Number(a.pct_km).toFixed(1) + '%)</strong>, ' +
+              formatoMinutos(a.min) + ' (' + Number(a.pct_min).toFixed(1) + '%) y $' + Number(a.costo).toFixed(2) + ' de gasolina contra el orden de captura'
+            : '<br><small style="color:#666;"><i class="fa-solid fa-route"></i> ' + escaparHtml(comp.nota || 'Sin diferencia contra el orden de captura.') + '</small>';
+    }
     (plan.advertencias || []).forEach(aviso => {
         html += '<br><span style="color:#8a5a00;"><i class="fa-solid fa-triangle-exclamation"></i> ' + escaparHtml(aviso) + '</span>';
     });
@@ -648,7 +660,7 @@ function dibujarPlanRuta(plan) {
             '<span><strong>' + (p.es_nuevo ? 'Esta venta' : 'Pedido #' + p.id_pedido) + '</strong>' +
             (p.prioritario ? ' <span style="background:#dc2626;color:#fff;font-size:.65rem;font-weight:700;padding:1px 7px;border-radius:50px;">URGENTE</span>' : '') +
             '<br><small>' + escaparHtml(lugar) + '</small></span>' +
-            '<span class="km">+' + Number(p.km_desde_anterior).toFixed(1) + ' km</span></li>';
+            '<span class="km">+' + Number(p.km_desde_anterior).toFixed(1) + ' km' + (p.llegada ? ' · ~' + escaparHtml(p.llegada) : '') + '</span></li>';
     });
     if (plan.paradas.length) {
         items += '<li class="fijo"><span class="num"><i class="fa-solid fa-flag-checkered"></i></span><span>Regreso al local</span>' +
@@ -1157,6 +1169,11 @@ async function enviarPedido() {
         <i class="fab fa-whatsapp"></i> Enviar texto
     </a>` : ''}
 
+    <button type="button" onclick="imprimirTicketTermico(${d.id_pedido})"
+       style="background:#111827; color:white; padding:11px 16px; border:0; border-radius:8px; font-weight:bold; margin:4px; cursor:pointer;">
+        <i class="fas fa-print"></i> Imprimir ticket
+    </button>
+
     <a href="<?= base_url('ticket/pdf') ?>/${d.id_pedido}" target="_blank"
        style="display:inline-block; background:#f16b1a; color:white; padding:11px 16px; border-radius:8px; text-decoration:none; font-weight:bold; margin:4px;">
         <i class="fas fa-file-pdf"></i> Ticket PDF
@@ -1175,6 +1192,9 @@ async function enviarPedido() {
     }).then((result) => {
         if (result.isConfirmed) location.reload();
     });
+
+    // Al levantar la venta se imprime el ticket térmico (el botón "Imprimir ticket" sirve para reimprimir)
+    imprimirTicketTermico(d.id_pedido);
 }
     else {
             Swal.fire({
@@ -1429,6 +1449,26 @@ async function cargarDatosConfiguracion(idConfig) {
 // ==========================================
 // COMPARTIR TICKET PDF
 // ==========================================
+// Imprime el ticket de 58 mm en la impresora térmica usando un marco oculto (no abre otra pestaña)
+function imprimirTicketTermico(idPedido) {
+    const anterior = document.getElementById('marcoTicketTermico');
+    if (anterior) anterior.remove();
+
+    const marco = document.createElement('iframe');
+    marco.id = 'marcoTicketTermico';
+    // Fuera de la pantalla pero con tamaño real: un marco de 0x0 o oculto puede imprimir en blanco
+    marco.style.cssText = 'position:fixed; left:-9999px; top:0; width:320px; height:700px; border:0;';
+    // Se imprime el contenido DEL MARCO (solo el ticket), nunca la pantalla de ventas
+    marco.onload = function () {
+        setTimeout(function () {
+            marco.contentWindow.focus();
+            marco.contentWindow.print();
+        }, 300);
+    };
+    marco.src = '<?= base_url("ticket/termico") ?>/' + idPedido + '?marco=1';
+    document.body.appendChild(marco);
+}
+
 async function compartirTicketPDF(idPedido) {
     const url = '<?= base_url("ticket/pdf") ?>/' + idPedido;
 

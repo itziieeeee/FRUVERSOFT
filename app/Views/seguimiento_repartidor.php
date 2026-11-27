@@ -72,18 +72,10 @@
 
 <header class="barra-superior">
     <img src="<?= base_url('img/LOGO1.png') ?>" alt="FRUVER">
-    <a href="<?= site_url('menusolo') ?>" class="btn-user"><i class="fas fa-arrow-left"></i> Regresar</a>
+    <a href="<?= site_url('pantalla_pedidos') ?>" class="btn-user"><i class="fas fa-arrow-left"></i> Regresar a pedidos</a>
 </header>
 
-<nav class="menu-navegacion">
-    <div class="nav-links">
-        <a href="<?= base_url('pantalla_ventas') ?>" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
-        <a href="<?= base_url('pantalla_pedidos') ?>" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
-        <a href="<?= base_url('salidas') ?>" class="nav-link"><i class="fas fa-route"></i> Salidas</a>
-        <a href="<?= base_url('seguimiento') ?>" class="nav-link activo"><i class="fas fa-location-dot"></i> Seguimiento</a>
-        <a href="<?= base_url('pantalla_repartidores') ?>" class="nav-link"><i class="fa-solid fa-dolly"></i> Repartidores</a>
-    </div>
-</nav>
+<?= view('partials/nav_admin') ?>
 
 <div class="contenedor">
     <div class="titulo">

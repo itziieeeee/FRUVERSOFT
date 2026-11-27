@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Services\AuditoriaService;
+use App\Services\RutaRepartidorService;
 use App\Services\SalidasRepartoService;
 
 /**
@@ -14,10 +16,55 @@ class SalidasController extends BaseController
     {
         $servicio = new SalidasRepartoService();
         return [
-            'salidas'    => $servicio->listarAdmin(),
-            'pendientes' => $servicio->pendientesPorRepartidor(),
-            'generado'   => date('H:i:s'),
+            'salidas'      => $servicio->listarAdmin(),
+            'pendientes'   => $servicio->pendientesPorRepartidor(),
+            'optimizacion' => $servicio->resumenOptimizacion(30),
+            'generado'     => date('H:i:s'),
         ];
+    }
+
+    /** Parámetros con los que se calculan tiempos, tráfico y gasolina, y los horarios de tráfico pesado */
+    public function parametros()
+    {
+        return $this->response->setJSON([
+            'success'    => true,
+            'parametros' => RutaRepartidorService::parametros(),
+            'limites'    => array_map(static fn (array $p): array => ['min' => $p[0], 'max' => $p[1], 'nombre' => $p[2]], RutaRepartidorService::PARAMETROS),
+            'horarios'   => RutaRepartidorService::horariosTransito(),
+        ]);
+    }
+
+    public function guardarParametros()
+    {
+        $campos = array_keys(RutaRepartidorService::PARAMETROS);
+        $nuevos = [];
+        foreach ($campos as $campo) {
+            $valor = $this->request->getPost($campo);
+            if ($valor !== null) {
+                $nuevos[$campo] = $valor;
+            }
+        }
+
+        try {
+            $r = RutaRepartidorService::guardarParametros($nuevos);
+        } catch (\InvalidArgumentException $e) {
+            return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Parámetros de ruta: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'No se pudieron guardar los parámetros.']);
+        }
+
+        $cambios = [];
+        foreach ($r['despues'] as $clave => $valor) {
+            if (abs((float) $valor - (float) ($r['antes'][$clave] ?? 0)) > 0.0001) {
+                $cambios[] = RutaRepartidorService::PARAMETROS[$clave][2] . ' ' . $r['antes'][$clave] . ' → ' . $valor;
+            }
+        }
+        if ($cambios) {
+            AuditoriaService::registrar('config.rutas', 'config', 'rutas', 'Parámetros de ruta: ' . implode(', ', $cambios), $r);
+        }
+
+        return $this->response->setJSON(['success' => true, 'parametros' => $r['despues'], 'message' => $cambios ? 'Parámetros guardados.' : 'No había cambios.']);
     }
 
     public function index()

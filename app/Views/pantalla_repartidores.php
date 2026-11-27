@@ -24,14 +24,7 @@
             <a href="menusolo" class="btn-user"><i class="fas fa-arrow-right-from-bracket"></i> Regresar</a>
         </div>
     </div>
-    <nav class="menu-navegacion">
-        <a href="pantalla_ventas" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
-        <a href="pantalla_pedidos" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
-        <a href="inventario" class="nav-link"><i class="fas fa-boxes"></i> Inventario</a>
-        <a href="pantalla_clientes" class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
-        <a href="pantalla_repartidores" class="nav-link activo"><i class="fa-solid fa-dolly"></i> Repartidores</a>
-        <a href="pantalla_productos" class="nav-link"><i class="fa-solid fa-apple-whole"></i> Productos</a>
-    </nav>
+    <?= view('partials/nav_admin') ?>
 </header>
 
 <div class="main-container">

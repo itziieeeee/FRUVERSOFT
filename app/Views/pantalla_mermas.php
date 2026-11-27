@@ -529,17 +529,7 @@
     </div>
 </header>
 
-<nav class="menu-navegacion">
-    <div class="nav-links">
-        <a href="<?= base_url('pantalla_ventas') ?>" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
-        <a href="<?= base_url('pantalla_pedidos') ?>" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
-        <a href="<?= base_url('inventario') ?>" class="nav-link"><i class="fas fa-boxes"></i> Inventario</a>
-        <a href="<?= base_url('mermas') ?>" class="nav-link activo"><i class="fas fa-trash-can"></i> Mermas</a>
-        <a href="<?= base_url('pantalla_clientes') ?>" class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
-        <a href="<?= base_url('pantalla_repartidores') ?>" class="nav-link"><i class="fa-solid fa-dolly"></i> Repartidores</a>
-        <a href="<?= base_url('pantalla_productos') ?>" class="nav-link"><i class="fa-solid fa-apple-whole"></i> Productos</a>
-    </div>
-</nav>
+<?= view('partials/nav_admin') ?>
 
 <div class="main-container">
     <div class="titulo-seccion">

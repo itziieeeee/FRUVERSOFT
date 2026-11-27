@@ -15,6 +15,7 @@ class Auditoria extends BaseController
             'desde'   => $this->fechaValida($this->request->getGet('desde')),
             'hasta'   => $this->fechaValida($this->request->getGet('hasta')),
             'accion'  => (string) $this->request->getGet('accion'),
+            'rol'     => isset(AuditoriaService::ROLES[(string) $this->request->getGet('rol')]) ? (string) $this->request->getGet('rol') : '',
             'usuario' => (string) $this->request->getGet('usuario'),
             'q'       => trim((string) $this->request->getGet('q')),
         ];
@@ -31,6 +32,7 @@ class Auditoria extends BaseController
         return view('auditoria', $datos + [
             'filtros'  => $filtros,
             'acciones' => AuditoriaService::ACCIONES,
+            'roles'    => AuditoriaService::ROLES,
             'usuarios' => $servicio->usuarios(),
         ]);
     }

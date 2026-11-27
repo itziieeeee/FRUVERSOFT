@@ -92,18 +92,10 @@ $textoDias = static function (int $d): string {
 
 <header class="barra-superior">
     <img src="<?= base_url('img/LOGO1.png') ?>" alt="FRUVER">
-    <a href="<?= site_url('menusolo') ?>" class="btn-user"><i class="fas fa-arrow-left"></i> Regresar</a>
+    <a href="<?= site_url('pantalla_pedidos') ?>" class="btn-user"><i class="fas fa-arrow-left"></i> Regresar a pedidos</a>
 </header>
 
-<nav class="menu-navegacion">
-    <div class="nav-links">
-        <a href="<?= base_url('pantalla_ventas') ?>" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
-        <a href="<?= base_url('pantalla_pedidos') ?>" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
-        <a href="<?= base_url('pantalla_clientes') ?>" class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
-        <a href="<?= base_url('cobranza') ?>" class="nav-link activo"><i class="fas fa-hand-holding-dollar"></i> Cobranza</a>
-        <a href="<?= base_url('costos') ?>" class="nav-link"><i class="fas fa-chart-line"></i> Costos</a>
-    </div>
-</nav>
+<?= view('partials/nav_admin') ?>
 
 <div class="contenedor">
     <div class="titulo">
@@ -113,8 +105,9 @@ $textoDias = static function (int $d): string {
             <a class="btn sec" href="<?= base_url('exportar/cobranza/xlsx') ?>" title="Descargar la cobranza en Excel"><i class="fas fa-file-excel"></i> Excel</a>
         </div>
         <form class="config" id="formConfig" onsubmit="return false;">
-            Plazo del crédito <input type="number" id="cfgPlazo" min="1" max="365" value="<?= (int) $config['plazo'] ?>"> días
-            · Avisar <input type="number" id="cfgAviso" min="0" max="60" value="<?= (int) $config['aviso'] ?>"> días antes
+            <!-- El plazo ya no se edita aquí; se manda el valor guardado para no cambiarlo al guardar el aviso -->
+            <input type="hidden" id="cfgPlazo" value="<?= (int) $config['plazo'] ?>">
+            Avisar <input type="number" id="cfgAviso" min="0" max="60" value="<?= (int) $config['aviso'] ?>"> días antes del vencimiento
             <button class="btn peq" type="submit" id="btnConfig">Guardar</button>
         </form>
     </div>

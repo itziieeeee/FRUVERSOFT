@@ -20,12 +20,95 @@ class RutaRepartidorService
     private array $matrizKm = [];
     /** De dónde salieron las distancias: osrm, mixta o estimada. */
     private string $fuenteDistancia = 'estimada';
+    /** Minutos de traslado SIN tráfico entre puntos, indexados por clavePunto(). */
+    private array $matrizMin = [];
+    /** De dónde salieron los tiempos: osrm, mixta o estimada (km entre la velocidad promedio). */
+    private string $fuenteTiempo = 'estimada';
+    /** Horarios con tráfico pesado (tabla ruta_transito): cada uno alarga el traslado por un factor. */
+    private array $ventanasTransito = [];
+
+    private const ZONA_LOCAL = 'America/Mexico_City';
 
     public function __construct()
     {
         $this->db = \Config\Database::connect();
         $this->cargarConfiguracion();
+        $this->cargarTransito();
         $this->cargarGrafo();
+    }
+
+    /* ============================ parámetros editables ============================ */
+
+    /** Parámetros que se pueden ajustar y sus límites (clave => [mínimo, máximo, nombre]). */
+    public const PARAMETROS = [
+        'rendimiento_km_l'       => [1, 60,  'Rendimiento (km por litro)'],
+        'precio_litro'           => [1, 200, 'Precio de la gasolina (por litro)'],
+        'velocidad_promedio_kmh' => [10, 120, 'Velocidad promedio (km/h)'],
+        'minutos_por_entrega'    => [0, 60,  'Minutos por entrega'],
+        'usar_transito'          => [0, 1,   'Considerar tráfico de hora pico'],
+    ];
+
+    /** Valores actuales de los parámetros, con los de fábrica si todavía no existen en la base. */
+    public static function parametros(): array
+    {
+        $actual = [
+            'rendimiento_km_l' => 10.0, 'precio_litro' => 24.0, 'velocidad_promedio_kmh' => 40.0,
+            'minutos_por_entrega' => 5.0, 'usar_transito' => 1.0,
+        ];
+        try {
+            $filas = \Config\Database::connect()->table('ruta_configuracion')
+                ->whereIn('clave', array_keys(self::PARAMETROS))->get()->getResultArray();
+            foreach ($filas as $f) {
+                if (is_numeric($f['valor'])) { $actual[$f['clave']] = (float) $f['valor']; }
+            }
+        } catch (\Throwable $e) {
+            // sin la tabla: se quedan los valores de fábrica
+        }
+        return $actual;
+    }
+
+    /**
+     * Guarda los parámetros que lleguen (los demás no se tocan).
+     *
+     * @param array<string, mixed> $nuevos
+     * @return array{antes: array, despues: array}
+     * @throws \InvalidArgumentException si algún valor está fuera de rango
+     */
+    public static function guardarParametros(array $nuevos): array
+    {
+        $limpios = [];
+        foreach (self::PARAMETROS as $clave => [$min, $max, $nombre]) {
+            if (!array_key_exists($clave, $nuevos)) { continue; }
+            $valor = $nuevos[$clave];
+            if (!is_numeric($valor) || (float) $valor < $min || (float) $valor > $max) {
+                throw new \InvalidArgumentException($nombre . ': escribe un número entre ' . $min . ' y ' . $max . '.');
+            }
+            $limpios[$clave] = $clave === 'usar_transito' ? ((float) $valor >= 1 ? 1 : 0) : round((float) $valor, 2);
+        }
+
+        $antes = self::parametros();
+        $db = \Config\Database::connect();
+        foreach ($limpios as $clave => $valor) {
+            $existe = $db->table('ruta_configuracion')->where('clave', $clave)->countAllResults() > 0;
+            $texto  = rtrim(rtrim(number_format((float) $valor, 2, '.', ''), '0'), '.');
+            if ($existe) {
+                $db->table('ruta_configuracion')->where('clave', $clave)->update(['valor' => $texto === '' ? '0' : $texto]);
+            } else {
+                $db->table('ruta_configuracion')->insert(['clave' => $clave, 'valor' => $texto === '' ? '0' : $texto, 'descripcion' => self::PARAMETROS[$clave][2]]);
+            }
+        }
+
+        return ['antes' => $antes, 'despues' => self::parametros()];
+    }
+
+    /** Horarios con tráfico pesado, para mostrarlos en la pantalla de parámetros. */
+    public static function horariosTransito(): array
+    {
+        try {
+            return \Config\Database::connect()->table('ruta_transito')->orderBy('hora_inicio', 'ASC')->get()->getResultArray();
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /**
@@ -317,23 +400,31 @@ class RutaRepartidorService
         $lista  = array_values($unicos);
 
         $this->matrizKm        = [];
+        $this->matrizMin       = [];
         $this->fuenteDistancia = 'estimada';
+        $this->fuenteTiempo    = 'estimada';
         if (count($lista) < 2) {
             return;
         }
 
         $osrm = $this->consultarOsrm($lista);
+        $distancias = $osrm['distancias'] ?? null;
+        $duraciones = $osrm['duraciones'] ?? null;
         $deOsrm = 0;
         $estimados = 0;
+        $tiempoOsrm = 0;
+        $tiempoEstimado = 0;
 
+        $this->matrizMin = [];
         foreach ($lista as $i => $a) {
             foreach ($lista as $j => $b) {
                 if ($i === $j) {
                     $this->matrizKm[$claves[$i]][$claves[$j]] = 0.0;
+                    $this->matrizMin[$claves[$i]][$claves[$j]] = 0.0;
                     continue;
                 }
 
-                $metros = $osrm[$i][$j] ?? null;
+                $metros = $distancias[$i][$j] ?? null;
                 if ($metros !== null && is_numeric($metros)) {
                     $this->matrizKm[$claves[$i]][$claves[$j]] = (float) $metros / 1000;
                     $deOsrm++;
@@ -341,14 +432,26 @@ class RutaRepartidorService
                     $this->matrizKm[$claves[$i]][$claves[$j]] = $this->estimarKm($a, $b);
                     $estimados++;
                 }
+
+                // Tiempo de manejo por carretera (sin tráfico). Si el servicio no lo trae, se estima con los km
+                $segundos = $duraciones[$i][$j] ?? null;
+                if ($segundos !== null && is_numeric($segundos)) {
+                    $this->matrizMin[$claves[$i]][$claves[$j]] = (float) $segundos / 60;
+                    $tiempoOsrm++;
+                } else {
+                    $this->matrizMin[$claves[$i]][$claves[$j]] = $this->minutosPorKm($this->matrizKm[$claves[$i]][$claves[$j]]);
+                    $tiempoEstimado++;
+                }
             }
         }
 
         $this->fuenteDistancia = $estimados === 0 ? 'osrm' : ($deOsrm === 0 ? 'estimada' : 'mixta');
+        $this->fuenteTiempo    = $tiempoEstimado === 0 ? 'osrm' : ($tiempoOsrm === 0 ? 'estimada' : 'mixta');
     }
 
     /**
-     * Pide a OSRM la matriz de distancias (en metros) por carretera. Devuelve null si falla.
+     * Pide a OSRM la matriz de distancias (metros) y de duraciones (segundos) por carretera.
+     * Devuelve ['distancias' => ..., 'duraciones' => ...] o null si falla.
      */
     private function consultarOsrm(array $lista): ?array
     {
@@ -360,12 +463,13 @@ class RutaRepartidorService
             return null;
         }
 
-        $datos = $this->pedirOsrm('table', $lista, 'annotations=distance');
+        // Se piden juntos los metros y los segundos de manejo (en una sola consulta)
+        $datos = $this->pedirOsrm('table', $lista, 'annotations=distance,duration');
         if ($datos === null || !isset($datos['distances'])) {
             return null;
         }
 
-        return $datos['distances'];
+        return ['distancias' => $datos['distances'], 'duraciones' => $datos['durations'] ?? null];
     }
 
     /**
@@ -532,7 +636,7 @@ class RutaRepartidorService
      * - Si se manda $idClienteNuevo, su entrega entra como una parada más (la venta que se captura).
      * - La última ubicación del repartidor solo se devuelve para mostrarla; no entra al cálculo.
      */
-    public function planSalida(int $idRepartidor, ?int $idClienteNuevo = null, ?array $idsPedidos = null, bool $nuevoPrioritario = false): array
+    public function planSalida(int $idRepartidor, ?int $idClienteNuevo = null, ?array $idsPedidos = null, bool $nuevoPrioritario = false, ?string $horaSalida = null): array
     {
         $coordLocal = $this->coordenadasLocal();
         if ($coordLocal === null) {
@@ -584,13 +688,23 @@ class RutaRepartidorService
         // Una sola consulta a OSRM trae todas las distancias entre el local y las paradas.
         $this->prepararDistancias(array_merge([$coordLocal], $paradas));
 
-        $orden   = $this->ordenarConPrioridad($coordLocal, $paradas);
+        // $paradas está en el orden en que se capturaron los pedidos (por número de pedido); es el recorrido "original"
+        $orden = $this->ordenarConPrioridad($coordLocal, $paradas);
+
+        // Hora de salida (hora de México): ahora, o la que se pida para simular otro horario
+        $zona = new \DateTimeZone(self::ZONA_LOCAL);
+        try {
+            $salida = $horaSalida !== null && $horaSalida !== '' ? new \DateTimeImmutable($horaSalida, $zona) : new \DateTimeImmutable('now', $zona);
+        } catch (\Throwable $e) {
+            $salida = new \DateTimeImmutable('now', $zona);
+        }
+
+        $optimo   = $this->evaluarOrden($coordLocal, $orden, $salida);
+        $original = $this->evaluarOrden($coordLocal, $paradas, $salida);
+
         $detalle = [];
-        $anterior = $coordLocal;
-        $total = 0.0;
         foreach ($orden as $indice => $parada) {
-            $km = $this->distanciaCoordenadas($anterior, $parada);
-            $total += $km;
+            $tramo = $optimo['tramos'][$indice];
             $detalle[] = [
                 'orden'             => $indice + 1,
                 'id_pedido'         => $parada['id_pedido'],
@@ -600,12 +714,14 @@ class RutaRepartidorService
                 'lat'               => $parada['lat'],
                 'lng'               => $parada['lng'],
                 'aproximada'        => $parada['aproximada'],
-                'km_desde_anterior' => round($km, 2),
+                'km_desde_anterior' => round($tramo['km'], 2),
+                'min_desde_anterior' => round($tramo['min'], 1),
+                'factor_transito'   => $tramo['factor'],
+                'llegada'           => $tramo['llegada'],
             ];
-            $anterior = $parada;
         }
-        $regreso = $orden ? $this->distanciaCoordenadas($anterior, $coordLocal) : 0.0;
-        $total  += $regreso;
+        $regreso = $optimo['regreso']['km'];
+        $total   = $optimo['km'];
 
         // Trazo por carretera del recorrido completo (ida y regreso al local).
         $geometria = null;
@@ -632,9 +748,24 @@ class RutaRepartidorService
             'local'            => $coordLocal,
             'paradas'          => $detalle,
             'regreso_km'       => round($regreso, 2),
+            'regreso_min'      => round($optimo['regreso']['min'], 1),
             'km_total'         => round($total, 2),
             'combustible'      => $this->estimarCombustible($total),
             'fuente_distancia' => $this->fuenteDistancia,
+            'tiempo'           => [
+                'salida'            => $salida->format('H:i'),
+                'regreso'           => $optimo['fin'],
+                'traslado_min'      => (int) round($optimo['min_traslado']),
+                'sin_transito_min'  => (int) round($optimo['min_base']),
+                'transito_min'      => (int) round($optimo['min_transito']),
+                'paradas_min'       => (int) round($optimo['min_paradas']),
+                'total_min'         => (int) round($optimo['min_total']),
+                'fuente'            => $this->fuenteTiempo,
+                'transito_activo'   => (bool) $this->ventanasTransito,
+                'ventanas'          => $optimo['ventanas'],
+                'minutos_por_entrega' => $this->minutosPorEntrega(),
+            ],
+            'comparativo'      => $this->comparar($original, $optimo),
             'geometria'        => $geometria,
             'arbol_minimo'     => ['km_total' => round($arbol['km_total'], 2), 'aristas' => $arbol['aristas']],
             'grupos'           => $grupos,
@@ -828,6 +959,174 @@ class RutaRepartidorService
             $grupos[$buscar($i)][] = $i + 1;
         }
         return array_values($grupos);
+    }
+
+    /* ============================ tiempos y tráfico ============================ */
+
+    /** Minutos para recorrer $km a la velocidad promedio configurada (solo cuando el servicio de mapas no da el tiempo). */
+    private function minutosPorKm(float $km): float
+    {
+        $velocidad = max(5.0, (float) ($this->config['velocidad_promedio_kmh'] ?? 40));
+        return $km / $velocidad * 60;
+    }
+
+    /** Minutos de manejo entre dos puntos, sin tráfico: los de OSRM y, si no están, los estimados con los km. */
+    private function minutosBase(array $a, array $b): float
+    {
+        $min = $this->matrizMin[$this->clavePunto($a)][$this->clavePunto($b)] ?? null;
+        return $min !== null ? (float) $min : $this->minutosPorKm($this->distanciaCoordenadas($a, $b));
+    }
+
+    private function minutosPorEntrega(): float
+    {
+        return max(0.0, (float) ($this->config['minutos_por_entrega'] ?? 5));
+    }
+
+    private function cargarTransito(): void
+    {
+        $this->ventanasTransito = [];
+        if (($this->config['usar_transito'] ?? '1') !== '1') {
+            return;
+        }
+        try {
+            $this->ventanasTransito = $this->db->table('ruta_transito')->where('activo', 1)->get()->getResultArray();
+        } catch (\Throwable $e) {
+            // sin la tabla (migración pendiente): el tiempo se calcula sin ajuste por tráfico
+        }
+    }
+
+    /**
+     * Cuánto se alarga el traslado en ese momento (1.00 = sin tráfico). Sale de los horarios de ruta_transito:
+     * es un ajuste por hora del día, NO tráfico en vivo. Si varios horarios coinciden, se usa el más pesado.
+     *
+     * @return array{factor: float, nombre: ?string}
+     */
+    private function factorTransito(\DateTimeInterface $momento): array
+    {
+        $dia  = (int) $momento->format('N');
+        $hora = $momento->format('H:i:s');
+        $mejor = ['factor' => 1.0, 'nombre' => null];
+
+        foreach ($this->ventanasTransito as $v) {
+            $dias = array_map('intval', explode(',', (string) $v['dias']));
+            if (in_array($dia, $dias, true) && $hora >= $v['hora_inicio'] && $hora < $v['hora_fin']) {
+                $factor = max(1.0, (float) $v['factor']);
+                if ($factor > $mejor['factor']) {
+                    $mejor = ['factor' => $factor, 'nombre' => (string) $v['nombre']];
+                }
+            }
+        }
+        return $mejor;
+    }
+
+    /**
+     * Recorre las paradas en el orden dado, con un reloj que avanza tramo a tramo:
+     * cada tramo dura lo que dice el mapa por el factor de tráfico de la hora en que empieza,
+     * y en cada parada se suman los minutos de entrega. Termina regresando al local.
+     *
+     * @param \DateTimeImmutable $salida hora de salida del local (hora de México)
+     * @return array{km: float, min_base: float, min_traslado: float, min_transito: float, min_paradas: float,
+     *               min_total: float, tramos: array, regreso: array, fin: string, ventanas: array}
+     */
+    private function evaluarOrden(array $local, array $orden, \DateTimeImmutable $salida): array
+    {
+        $reloj     = $salida;
+        $anterior  = $local;
+        $km        = 0.0;
+        $minBase   = 0.0;
+        $minTraslado = 0.0;
+        $minParadas  = 0.0;
+        $tramos    = [];
+        $ventanas  = [];
+        $porEntrega = $this->minutosPorEntrega();
+
+        $recorrer = function (array $desde, array $hasta) use (&$reloj, &$km, &$minBase, &$minTraslado, &$ventanas): array {
+            $tramoKm   = $this->distanciaCoordenadas($desde, $hasta);
+            $base      = $this->minutosBase($desde, $hasta);
+            $trafico   = $this->factorTransito($reloj);
+            $conTransito = $base * $trafico['factor'];
+
+            $km          += $tramoKm;
+            $minBase     += $base;
+            $minTraslado += $conTransito;
+            if ($trafico['nombre'] !== null && $conTransito - $base > 0.01) {
+                $ventanas[$trafico['nombre']] = true;
+            }
+            $reloj = $reloj->modify('+' . (int) round($conTransito * 60) . ' seconds');
+
+            return ['km' => $tramoKm, 'min_base' => $base, 'min' => $conTransito, 'factor' => $trafico['factor'], 'llegada' => $reloj->format('H:i')];
+        };
+
+        foreach ($orden as $parada) {
+            $tramo = $recorrer($anterior, $parada);
+            $tramos[] = $tramo;
+            // En la parada se descarga, se cobra y se toma la evidencia
+            $reloj = $reloj->modify('+' . (int) round($porEntrega * 60) . ' seconds');
+            $minParadas += $porEntrega;
+            $anterior = $parada;
+        }
+
+        $regreso = $orden ? $recorrer($anterior, $local) : ['km' => 0.0, 'min_base' => 0.0, 'min' => 0.0, 'factor' => 1.0, 'llegada' => $reloj->format('H:i')];
+
+        return [
+            'km'           => $km,
+            'min_base'     => $minBase,
+            'min_traslado' => $minTraslado,
+            'min_transito' => $minTraslado - $minBase,
+            'min_paradas'  => $minParadas,
+            'min_total'    => $minTraslado + $minParadas,
+            'tramos'       => $tramos,
+            'regreso'      => $regreso,
+            'fin'          => $reloj->format('H:i'),
+            'ventanas'     => array_keys($ventanas),
+        ];
+    }
+
+    /**
+     * Compara el recorrido "original" (el orden en que se capturaron los pedidos) con el optimizado.
+     * El ahorro es original menos optimizado; el porcentaje es sobre el original.
+     * Si hay pedidos urgentes, se atienden primero aunque el recorrido salga más largo: el ahorro puede ser negativo.
+     */
+    private function comparar(array $original, array $optimo): array
+    {
+        $item = function (array $r): array {
+            $c = $this->estimarCombustible($r['km']);
+            return [
+                'km'     => round($r['km'], 2),
+                'min'    => round($r['min_traslado'], 1),
+                'litros' => $c['litros'],
+                'costo'  => $c['costo'],
+            ];
+        };
+        $o = $item($original);
+        $p = $item($optimo);
+
+        $pct = static fn (float $ahorro, float $base): float => $base > 0 ? round($ahorro / $base * 100, 1) : 0.0;
+        $ahorro = [
+            'km'     => round($o['km'] - $p['km'], 2),
+            'min'    => round($o['min'] - $p['min'], 1),
+            'litros' => round($o['litros'] - $p['litros'], 2),
+            'costo'  => round($o['costo'] - $p['costo'], 2),
+        ];
+        $ahorro['pct_km']     = $pct($ahorro['km'], $o['km']);
+        $ahorro['pct_min']    = $pct($ahorro['min'], $o['min']);
+        $ahorro['pct_litros'] = $pct($ahorro['litros'], $o['litros']);
+
+        $nota = null;
+        if ($ahorro['km'] < -0.05) {
+            $nota = 'Los pedidos urgentes se entregan primero, por eso esta ruta agrega ' . number_format(abs($ahorro['km']), 1) . ' km frente al orden de captura.';
+        } elseif ($ahorro['km'] <= 0.05) {
+            $nota = 'El orden de captura ya era el más corto: no hay diferencia.';
+        }
+
+        return [
+            'criterio'   => 'Recorrido original = orden en que se registraron los pedidos. Optimizado = el orden con menos kilómetros.',
+            'original'   => $o,
+            'optimizado' => $p,
+            'ahorro'     => $ahorro,
+            'hay_ahorro' => $ahorro['km'] > 0.05,
+            'nota'       => $nota,
+        ];
     }
 
     /**

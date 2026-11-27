@@ -108,7 +108,7 @@ class StatusModel extends Model
                 pedido.tipo_pago,
                 pedido.monto_pagado,
                 pedido.tipo_entrega,
-                CONCAT(clientes.nombre, " ", clientes.apellido_paterno, " ", clientes.apellido_materno) AS nombre_cliente,
+                TRIM(CONCAT_WS(" ", clientes.nombre, NULLIF(clientes.apellido_paterno, ""), NULLIF(clientes.apellido_materno, ""))) AS nombre_cliente,
                 CONCAT(repartidor.nombre, " ", repartidor.ap_p) AS nombre_repartidor
             ')
             ->join('clientes', 'clientes.id_cliente = pedido.id_cliente', 'left')
@@ -238,7 +238,7 @@ public function getProductosDePedido($id)
             : '';
 
         return $this->db->table('pedido')
-            ->select('pedido.*, CONCAT(clientes.nombre, " ", clientes.apellido_paterno, " ", clientes.apellido_materno) AS nombre_cliente' . $evidencia, false)
+            ->select('pedido.*, TRIM(CONCAT_WS(" ", clientes.nombre, NULLIF(clientes.apellido_paterno, ""), NULLIF(clientes.apellido_materno, ""))) AS nombre_cliente' . $evidencia, false)
             ->join('clientes', 'clientes.id_cliente = pedido.id_cliente', 'left')
             ->get()
             ->getResultArray();

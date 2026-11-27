@@ -5,7 +5,6 @@
     $enlaces = [
         ['ruta' => 'cliente/menu',      'icono' => 'fas fa-house',            'texto' => 'Inicio'],
         ['ruta' => 'pedidos',           'icono' => 'fas fa-box',              'texto' => 'Mis pedidos'],
-        ['ruta' => 'cliente/historial', 'icono' => 'fas fa-receipt',          'texto' => 'Historial'],
         ['ruta' => 'cliente/creditos',  'icono' => 'fas fa-credit-card',      'texto' => 'Créditos y pagos'],
         ['ruta' => 'cliente/estado',    'icono' => 'fas fa-truck',            'texto' => 'Estado'],
         ['ruta' => 'catalogo',          'icono' => 'fa-solid fa-apple-whole', 'texto' => 'Catálogo'],

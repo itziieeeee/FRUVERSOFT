@@ -177,10 +177,6 @@ $textoAgota = function ($p) {
             <div class="n"><?= $resumen['critico'] ?></div>
             <div class="t"><i class="fas fa-triangle-exclamation"></i> Comprar pronto</div>
         </button>
-        <button class="chip atencion" data-f="atencion">
-            <div class="n"><?= $resumen['atencion'] ?></div>
-            <div class="t"><i class="fas fa-circle-exclamation"></i> Revisar pronto</div>
-        </button>
         <button class="chip ok" data-f="ok">
             <div class="n"><?= $resumen['ok'] ?></div>
             <div class="t"><i class="fas fa-circle-check"></i> Stock suficiente</div>
@@ -307,54 +303,12 @@ $textoAgota = function ($p) {
         </div>
     </details>
 
-    <!-- ACORDEÓN: PARÁMETROS -->
-    <details class="acordeon">
-        <summary>
-            <i class="fas fa-sliders"></i> Parámetros del cálculo
-            <i class="fas fa-chevron-down chevron"></i>
-        </summary>
-        <div class="acordeon-body">
-            <form class="params" id="formConfig">
-                <label>Días que se analizan
-                    <input type="number" name="ventana_dias" min="7" max="90" value="<?= (int) $cfg['ventana_dias'] ?>">
-                </label>
-                <label>Colchón de seguridad (días)
-                    <input type="number" name="colchon_dias" min="0" max="30" step="0.5" value="<?= $num($cfg['colchon_dias']) ?>">
-                </label>
-                <label>Surtir para (días)
-                    <input type="number" name="dias_objetivo" min="1" max="60" step="1" value="<?= $num($cfg['dias_objetivo']) ?>">
-                </label>
-                <button class="btn" type="submit"><i class="fas fa-floppy-disk"></i> Guardar</button>
-            </form>
-        </div>
-    </details>
-
-    <!-- ACORDEÓN: AYUDA -->
-    <details class="acordeon">
-        <summary>
-            <i class="fas fa-circle-question"></i> ¿Cómo se calcula?
-            <i class="fas fa-chevron-down chevron"></i>
-        </summary>
-        <div class="acordeon-body">
-            <details class="ayuda" open>
-                <ul>
-                    <li><strong>Consumo por día</strong> = ventas + merma por día. Pesa 60 % lo de los últimos 7 días y 40 % el resto.</li>
-                    <li><strong>Cobertura</strong> = stock disponible ÷ consumo por día.</li>
-                    <li><strong>Crítico</strong>: cobertura menor al tiempo de reposición (se acaba antes de que llegue la mercancía).</li>
-                    <li><strong>En atención</strong>: cobertura no rebasa el tiempo de reposición + colchón.</li>
-                    <li><strong>Pedir</strong> = consumo × (días reposición + días a surtir) − stock actual.</li>
-                    <li>La rayita negra de la barra marca el tiempo de reposición.</li>
-                </ul>
-            </details>
-        </div>
-    </details>
 </div>
 
 <div id="toast"></div>
 
 <script>
 const URL_REPOSICION = '<?= base_url('alertas/reposicion') ?>';
-const URL_CONFIG     = '<?= base_url('alertas/config') ?>';
 
 function aviso(texto) {
     const t = document.getElementById('toast');
@@ -391,16 +345,6 @@ document.querySelectorAll('input.dias').forEach(inp => inp.addEventListener('cha
         else { aviso(d.message); inp.value = inp.dataset.orig; }
     } catch (e) { aviso('Error de conexión'); inp.value = inp.dataset.orig; }
 }));
-
-// Guardar parámetros
-document.getElementById('formConfig').addEventListener('submit', async e => {
-    e.preventDefault();
-    try {
-        const d = await enviar(URL_CONFIG, Object.fromEntries(new FormData(e.target)));
-        aviso(d.message);
-        if (d.success) setTimeout(() => location.reload(), 700);
-    } catch (err) { aviso('Error de conexión'); }
-});
 
 // Se actualiza sola, salvo que estés escribiendo
 setInterval(() => {

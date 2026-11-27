@@ -27,7 +27,7 @@
                 <i class="fas fa-shopping-cart"></i> Carrito
                 <span class="badge-carrito"><?= (int) $totalItems ?></span>
             </a>
-            <a href="<?= esc($urlRegresar) ?>" class="btn-user"><i class="fas fa-sign-out-alt"></i> Regresar</a>
+            <a href="<?= esc($urlRegresar) ?>" class="btn-user"><i class="fas fa-arrow-left"></i> Regresar</a>
         </div>
     </div>
 </header>

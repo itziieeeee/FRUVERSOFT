@@ -354,6 +354,15 @@
             background: var(--rojo); color: #fff;
         }
 
+        .tabla-compara { overflow-x: auto; margin-top: 14px; }
+        .rec-compara { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 0.8rem; }
+        .rec-compara th, .rec-compara td { padding: 8px 10px; border-bottom: 1px solid var(--borde-suave); text-align: left; white-space: nowrap; }
+        .rec-compara thead th { background: var(--bg-suave); color: var(--texto-suave); font-weight: 600; font-size: 0.72rem; }
+        .rec-compara tbody th { font-weight: 600; color: var(--texto-suave); }
+        .rec-compara td.ahorro { color: var(--ok-tx); font-weight: 700; }
+        .rec-compara td.ahorro small { font-weight: 600; }
+        .nota-compara { margin-top: 8px; font-size: 0.72rem; color: var(--texto-tenue); line-height: 1.5; }
+
         .rec-aviso {
             margin-top: 12px; padding: 10px 14px; border-radius: 14px;
             background: rgba(241,107,26,0.12); color: var(--naranja);
@@ -731,6 +740,7 @@
                             <th>Cliente</th>
                             <th>Teléfono</th>
                             <th>Dirección</th>
+                            <th class="centro">Llegada est.</th>
                             <th class="num">Total</th>
                             <th class="num">Por cobrar</th>
                             <th>Pago</th>
@@ -1036,19 +1046,20 @@ function filasTabla() {
             total: num(p.pedido_total), pagado: num(p.pedido_pagado), tipo_pago: p.tipo_pago,
             estado: p.estado === 'entregado' ? 'Entregado' : (p.estado === 'fallido' ? 'No entregado' : (p.estado === 'en_ruta' ? 'En ruta' : 'Pendiente')),
             cierre: p.estado === 'entregado' ? 'entregado' : (p.estado === 'fallido' ? 'fallido' : null),
-            tieneFoto: !!p.foto_entrega, nota: p.nota || '',
+            tieneFoto: !!p.foto_entrega, nota: p.nota || '', llegada: p.llegada_est || null,
             prioritario: Number(p.prioritario) === 1,
             puedeEvidencia: p.estado === 'pendiente' || p.estado === 'en_ruta'
         }));
     } else {
         const orden = new Map(((previa && previa.paradas) || []).map(x => [Number(x.id_pedido), Number(x.orden)]));
+        const llegadas = new Map(((previa && previa.paradas) || []).map(x => [Number(x.id_pedido), x.llegada]));
         filas = asignados.map(p => ({
             orden: orden.has(Number(p.id)) ? orden.get(Number(p.id)) : null, id: p.id,
             cliente: p.cliente || 'Cliente', tel: p.tel,
             direccion: p.calle ? `${p.calle} #${p.numero}, ${p.colonia}, ${p.municipio || ''} ${p.estado_dir || ''}`.trim() : 'Sin dirección registrada',
             lat: p.lat, lng: p.lng,
             total: num(p.total), pagado: num(p.monto_pagado), tipo_pago: p.tipo_pago,
-            estado: p.estado_actual, cierre: null, tieneFoto: false, nota: '',
+            estado: p.estado_actual, cierre: null, tieneFoto: false, nota: '', llegada: llegadas.get(Number(p.id)) || null,
             prioritario: Number(p.prioritario) === 1, puedeEvidencia: false
         })).sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999) || Number(b.prioritario) - Number(a.prioritario) || a.id - b.id);
     }
@@ -1131,6 +1142,7 @@ function pintarTope() {
             <div class="rec-head"><i class="fas fa-truck-fast"></i> Recorrido en curso</div>
             <div class="rec-linea"><i class="fas fa-list-check"></i><span><b>${hechas} de ${lista.length}</b> entregas completadas${fallidas ? ` · ${fallidas} no entregada${fallidas === 1 ? '' : 's'}` : ''}</span></div>
             <div class="rec-linea"><i class="fas fa-road"></i><span>${km(salidaActual.km_total)} km con regreso al local</span></div>
+            ${bloqueRuta(salidaActual.optimizacion && salidaActual.optimizacion.tiempo, salidaActual.optimizacion && salidaActual.optimizacion.comparativo)}
             ${salidaActual.google_maps_url ? `<div class="rec-row"><a class="rec-btn btn-azul" target="_blank" rel="noopener" href="${esc(salidaActual.google_maps_url)}"><i class="fas fa-map"></i> Mapa del recorrido completo</a></div>` : ''}
         </div>`;
         return;
@@ -1167,12 +1179,47 @@ function pintarTope() {
         <div class="rec-linea"><i class="fas fa-box"></i><span><b>${p.en_este_recorrido}</b> entrega(s) en este recorrido</span></div>
         <div class="rec-linea"><i class="fas fa-road"></i><span>${km(p.km_total)} km ida y vuelta (incluye el regreso al local)</span></div>
         ${p.combustible ? `<div class="rec-linea"><i class="fas fa-gas-pump"></i><span>Gasolina aprox.: ${Number(p.combustible.litros).toFixed(1)} L · ${dinero(p.combustible.costo)}</span></div>` : ''}
+        ${bloqueRuta(p.tiempo, p.comparativo)}
         ${extra}
         <div class="rec-row">
             <button type="button" id="btnIniciar" class="rec-btn btn-naranja" ${(bloqueado || iniciando) ? 'disabled' : ''} onclick="iniciarRecorrido()"><i class="fas fa-play"></i> Iniciar recorrido</button>
             ${p.google_maps_url ? `<a class="rec-btn btn-azul" target="_blank" rel="noopener" href="${esc(p.google_maps_url)}"><i class="fas fa-map"></i> Mapa del recorrido completo</a>` : ''}
         </div>
     </div>`;
+}
+
+/* 2 h 35 min / 45 min */
+const fmtMin = n => {
+    n = Math.max(0, Math.round(Number(n) || 0));
+    const h = Math.floor(n / 60), m = n % 60;
+    return h > 0 ? `${h} h ${m} min` : `${m} min`;
+};
+
+/* Tiempo estimado del recorrido y comparación contra el orden de captura (se usa en "listo para salir" y "en curso") */
+function bloqueRuta(t, c) {
+    let h = '';
+
+    if (t) {
+        const trafico = t.transito_min > 0
+            ? ` (incluye <b>+${fmtMin(t.transito_min)}</b> por tráfico de hora pico${(t.ventanas || []).length ? ': ' + esc(t.ventanas.join(', ')) : ''})`
+            : '';
+        h += `<div class="rec-linea"><i class="fas fa-clock"></i><span>Tiempo estimado: <b>${fmtMin(t.total_min)}</b> · sales a las ${esc(t.salida)} y regresas al local ~${esc(t.regreso)}</span></div>`;
+        h += `<div class="rec-linea"><i class="fas fa-car-side"></i><span>Manejo ${fmtMin(t.traslado_min)}${trafico} + entregas ${fmtMin(t.paradas_min)}</span></div>`;
+    }
+
+    if (c && c.original && c.optimizado && c.ahorro) {
+        const a = c.ahorro;
+        const dif = (v, texto, pct) => v > 0.049 ? `${texto} <small>(${Number(pct).toFixed(1)}%)</small>` : (v < -0.049 ? `+${texto.replace('-', '')}` : 'Sin diferencia');
+        h += `<div class="tabla-compara"><table class="rec-compara">
+            <thead><tr><th></th><th>Orden de captura</th><th>Ruta optimizada</th><th>Ahorro</th></tr></thead>
+            <tbody>
+                <tr><th>Distancia</th><td>${km(c.original.km)} km</td><td>${km(c.optimizado.km)} km</td><td class="ahorro">${dif(a.km, km(Math.abs(a.km)) + ' km', a.pct_km)}</td></tr>
+                <tr><th>Tiempo de manejo</th><td>${fmtMin(c.original.min)}</td><td>${fmtMin(c.optimizado.min)}</td><td class="ahorro">${dif(a.min, fmtMin(Math.abs(a.min)), a.pct_min)}</td></tr>
+                <tr><th>Gasolina</th><td>${Number(c.original.litros).toFixed(1)} L · ${dinero(c.original.costo)}</td><td>${Number(c.optimizado.litros).toFixed(1)} L · ${dinero(c.optimizado.costo)}</td><td class="ahorro">${dif(a.litros, Number(Math.abs(a.litros)).toFixed(1) + ' L · ' + dinero(Math.abs(a.costo)), a.pct_litros)}</td></tr>
+            </tbody></table></div>`;
+        h += `<p class="nota-compara">${c.nota ? esc(c.nota) + ' ' : ''}Orden de captura = el orden en que se registraron los pedidos. El tiempo usa el tiempo de manejo del mapa y lo alarga en horas pico; no es tráfico en vivo.</p>`;
+    }
+    return h;
 }
 
 /* Tabla de pedidos asignados */
@@ -1182,7 +1229,7 @@ function pintarTabla() {
     document.getElementById('pedidosContador').textContent = filas.length + (filas.length === 1 ? ' pedido' : ' pedidos');
 
     if (!filas.length) {
-        cuerpo.innerHTML = `<tr><td colspan="10"><div class="tabla-vacia"><i class="fas fa-clipboard-check"></i>No tienes pedidos asignados por ahora.</div></td></tr>`;
+        cuerpo.innerHTML = `<tr><td colspan="11"><div class="tabla-vacia"><i class="fas fa-clipboard-check"></i>No tienes pedidos asignados por ahora.</div></td></tr>`;
         return;
     }
 
@@ -1221,6 +1268,7 @@ function pintarTabla() {
             <td class="cliente">${esc(f.cliente)}</td>
             <td>${f.tel ? `<a href="tel:${esc(f.tel)}"><i class="fas fa-phone"></i> ${esc(f.tel)}</a>` : '<span class="rec-tag">Sin teléfono</span>'}${wa ? `<a class="btn-wa" target="_blank" rel="noopener" href="${wa}" title="Avisar por WhatsApp que voy en camino"><i class="fa-brands fa-whatsapp"></i></a>` : ''}</td>
             <td class="dir">${esc(f.direccion)}<small><a target="_blank" rel="noopener" href="${destino}"><i class="fas fa-location-arrow"></i> Ver destino</a></small></td>
+            <td class="centro">${f.llegada && !f.cierre ? '~' + esc(f.llegada) : '—'}</td>
             <td class="num">${dinero(f.total)}</td>
             <td class="num ${porCobrar > 0.009 ? 'por-cobrar' : ''}">${dinero(porCobrar)}</td>
             <td><span class="rec-tag">${f.tipo_pago === 'credito' ? 'Crédito' : 'Contado'}</span></td>

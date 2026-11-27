@@ -106,7 +106,56 @@ class Ticket extends BaseController
         return view('ticket', $datos + [
             'esPdf'       => false,
             'urlPdf'      => base_url('ticket/pdf/' . $id),
-            'urlWhatsApp' => $urlWhatsApp
+            'urlWhatsApp' => $urlWhatsApp,
+            'urlVolver'   => $this->urlVolver(),
+        ]);
+    }
+
+    /**
+     * A dónde lleva el botón "Regresar" del ticket si no hay página anterior a la cual volver:
+     * la pantalla de donde suele abrirse según el rol, o la portada sin sesión.
+     */
+    private function urlVolver(): string
+    {
+        $sesion = session();
+        if (!$sesion->get('isLoggedIn')) {
+            return base_url('/');
+        }
+
+        $destinos = [
+            'admin'      => 'pantalla_clientes',
+            'vendedor'   => 'vendedor/pedidos',
+            'repartidor' => 'repartidor/panel',
+            'cliente'    => 'pedidos',
+        ];
+
+        return base_url($destinos[$sesion->get('rol')] ?? '/');
+    }
+
+    /**
+     * Ticket para impresora térmica de 58 mm.
+     * ?ancho=NN cambia el ancho imprimible en mm (por defecto 48). ?imprimir=1 abre el diálogo de impresión solo.
+     */
+    public function termico($id)
+    {
+        $id = (int) $id;
+
+        $datos = $this->datos($id);
+
+        if (!$datos) {
+            return $this->response
+                ->setStatusCode(404)
+                ->setBody('Pedido no encontrado');
+        }
+
+        $ancho = (int) $this->request->getGet('ancho');
+        if ($ancho < 28 || $ancho > 58) {
+            $ancho = 48;
+        }
+
+        return view('ticket_termico', $datos + [
+            'ancho'    => $ancho,
+            'imprimir' => $this->request->getGet('imprimir') === '1',
         ]);
     }
 

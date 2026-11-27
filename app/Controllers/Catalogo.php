@@ -7,6 +7,7 @@ use App\Models\ProductoModel;
 use App\Models\ProductoPedidoModel;
 use App\Models\StatusModel;
 use App\Services\AuditoriaService;
+use App\Services\RutaRepartidorService;
 
 class Catalogo extends BaseController
 {
@@ -134,7 +135,77 @@ class Catalogo extends BaseController
         return view('carrito_cliente', [
             'carrito' => $carrito,
             'total'   => $total,
+            'entrega' => $this->datosEntrega(),
         ]);
+    }
+
+    /**
+     * Datos para llenar el formulario de entrega: lo que el cliente escribió si hubo un error,
+     * o si no su dirección y teléfono guardados. También trae el centro del mapa (el local).
+     */
+    private function datosEntrega(): array
+    {
+        $datos = [
+            'logueado' => false, 'tipo' => 'tienda',
+            'tel' => '', 'calle' => '', 'numero' => '', 'colonia' => '', 'municipio' => '', 'estado' => '',
+            'lat' => '', 'lng' => '',
+            'centro' => [19.0414, -98.2063],
+        ];
+
+        try {
+            $db = \Config\Database::connect();
+
+            if ($db->tableExists('ruta_configuracion')) {
+                $cfg = array_column(
+                    $db->table('ruta_configuracion')->whereIn('clave', ['local_lat', 'local_lng'])->get()->getResultArray(),
+                    'valor', 'clave'
+                );
+                if (isset($cfg['local_lat'], $cfg['local_lng']) && is_numeric($cfg['local_lat']) && is_numeric($cfg['local_lng'])) {
+                    $datos['centro'] = [(float) $cfg['local_lat'], (float) $cfg['local_lng']];
+                }
+            }
+
+            if ($this->session->get('isLoggedIn') && $this->session->get('rol') === 'cliente') {
+                $datos['logueado'] = true;
+
+                $u = $db->table('usuarios')->select('id_cliente')->where('id', (int) $this->session->get('id_usuario'))->get()->getRowArray();
+                $idCliente = (int) ($u['id_cliente'] ?? 0);
+                if ($idCliente > 0) {
+                    $c = $db->table('clientes')->select('tel')->where('id_cliente', $idCliente)->get()->getRowArray();
+                    $d = $db->table('direccion')->where('id_cliente', $idCliente)->orderBy('id', 'DESC')->get()->getRowArray();
+                    $datos['tel'] = (string) ($c['tel'] ?? '');
+                    if ($d) {
+                        foreach (['calle', 'numero', 'colonia', 'municipio', 'estado'] as $campo) {
+                            $datos[$campo] = (string) ($d[$campo] ?? '');
+                        }
+                        $datos['lat'] = $d['lat'] !== null ? (string) $d['lat'] : '';
+                        $datos['lng'] = $d['lng'] !== null ? (string) $d['lng'] : '';
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Carrito: no se pudo leer la dirección guardada: ' . $e->getMessage());
+        }
+
+        // Tras un intento fallido el punto del mapa va con lo que el cliente acababa de escribir: si no lo marcó,
+        // no se reutiliza el de su dirección anterior (podría haber cambiado de calle y recibirlo en otro lugar)
+        if ($this->request->getOldInput('tipo_entrega') !== null) {
+            $datos['lat'] = (string) ($this->request->getOldInput('lat') ?? '');
+            $datos['lng'] = (string) ($this->request->getOldInput('lng') ?? '');
+        }
+
+        // Lo que se escribió antes de un error pesa más que lo guardado
+        foreach (['tel', 'calle', 'numero', 'colonia', 'municipio', 'estado', 'lat', 'lng'] as $campo) {
+            $anterior = $this->request->getOldInput($campo);
+            if ($anterior !== null && $anterior !== '') {
+                $datos[$campo] = (string) $anterior;
+            }
+        }
+        if ($this->request->getOldInput('tipo_entrega') === 'domicilio') {
+            $datos['tipo'] = 'domicilio';
+        }
+
+        return $datos;
     }
 
     /** Cambia la cantidad de un renglón */
@@ -179,9 +250,9 @@ class Catalogo extends BaseController
     }
 
     /**
-     * Convierte el carrito en un pedido de contado para recoger en tienda.
-     * El precio y las existencias se leen otra vez de la base de datos: lo que quedó en la
-     * sesión pudo cambiar desde que el cliente agregó el producto.
+     * Convierte el carrito en un pedido de contado, para recoger en tienda o para entregar a domicilio
+     * (el pago se hace al recoger o al recibir). El precio y las existencias se leen otra vez de la
+     * base de datos: lo que quedó en la sesión pudo cambiar desde que el cliente agregó el producto.
      */
     public function confirmar()
     {
@@ -223,17 +294,24 @@ class Catalogo extends BaseController
             $total += $cantidad * $precio;
         }
 
-        $total = round($total, 2);
+        $total      = round($total, 2);
+        $entrega    = (string) $this->request->getPost('tipo_entrega') === 'domicilio' ? 'domicilio' : 'tienda';
+        $repartidor = null;
 
         try {
             $idCliente   = $this->clienteDelUsuario();
             $pedidoModel = new PedidoModel();
 
+            // A domicilio: se valida y guarda la dirección y se elige al repartidor con la lógica de rutas
+            if ($entrega === 'domicilio') {
+                $repartidor = $this->prepararDomicilio($idCliente);
+            }
+
             $resultado = $pedidoModel->crearPedidoCompleto([
                 'fecha'         => date('Y-m-d H:i:s'),
                 'id_cliente'    => $idCliente,
-                'id_repartidor' => null,
-                'tipo_entrega'  => 'tienda',
+                'id_repartidor' => $repartidor['id'] ?? null,
+                'tipo_entrega'  => $entrega,
                 'total'         => $total,
                 'estado_actual' => 'Pedido',
                 'tipo_pago'     => 'contado',
@@ -250,26 +328,148 @@ class Catalogo extends BaseController
 
             AuditoriaService::registrar(
                 'pedido.crear', 'pedido', $idPedido,
-                AuditoriaService::folio($idPedido) . ' para ' . $pedidoModel->getNombreCliente($idCliente)
-                    . ': $' . number_format($total, 2) . ' (contado, recoger en tienda, desde el carrito)',
-                ['total' => $total, 'pagado' => 0, 'productos' => count($productos), 'origen' => 'carrito']
+                AuditoriaService::folio($idPedido) . ' para ' . (trim((string) $this->session->get('nombre')) ?: 'cliente')
+                    . ': $' . number_format($total, 2)
+                    . ($entrega === 'domicilio'
+                        ? ' (contado, a domicilio con ' . $repartidor['nombre'] . ', desde el carrito)'
+                        : ' (contado, recoger en tienda, desde el carrito)'),
+                ['total' => $total, 'pagado' => 0, 'productos' => count($productos), 'origen' => 'carrito', 'entrega' => $entrega, 'repartidor' => $repartidor['id'] ?? null]
             );
 
             // Mismo mecanismo que en la venta del administrador: si hay existencias, se descuentan y el pedido queda confirmado
             $confirmacion = (new StatusModel())->validarYConfirmar($idPedido);
+        } catch (\InvalidArgumentException $e) {
+            // Problema con lo que escribió el cliente (dirección, teléfono, mapa): se muestra tal cual y se conserva lo capturado
+            return redirect()->to(base_url('carrito'))->withInput()->with('error', $e->getMessage());
         } catch (\Throwable $e) {
             log_message('error', 'Carrito: ' . $e->getMessage());
-            return redirect()->to(base_url('carrito'))->with('error', 'No se pudo registrar tu pedido. Intenta de nuevo.');
+            return redirect()->to(base_url('carrito'))->withInput()->with('error', 'No se pudo registrar tu pedido. Intenta de nuevo.');
         }
 
         $this->session->remove(self::CLAVE);
 
-        $folio   = AuditoriaService::folio($idPedido);
-        $mensaje = !empty($confirmacion['success'])
+        $folio      = AuditoriaService::folio($idPedido);
+        $confirmado = !empty($confirmacion['success']);
+
+        // A domicilio: directo al seguimiento, para que el cliente vea cómo avanza su pedido
+        if ($entrega === 'domicilio') {
+            $mensaje = $confirmado
+                ? "Pedido {$folio} confirmado. {$repartidor['nombre']} te lo llevará a domicilio"
+                    . ($repartidor['programado'] ? ' en la siguiente ruta de reparto.' : '.')
+                    . ' Pagas al recibirlo.'
+                : "Pedido {$folio} recibido. Estamos verificando las existencias.";
+
+            return redirect()->to(base_url('cliente/seguimiento/' . $idPedido))->with('mensaje', $mensaje);
+        }
+
+        $mensaje = $confirmado
             ? "Pedido {$folio} confirmado. Pasa a recogerlo y pagarlo en tienda."
             : "Pedido {$folio} recibido. Estamos verificando las existencias.";
 
         return redirect()->to(base_url('ticket/ver/' . $idPedido))->with('mensaje', $mensaje);
+    }
+
+    /**
+     * Prepara una entrega a domicilio: valida la dirección y el teléfono, guarda la dirección en la ficha
+     * del cliente y elige al repartidor con la misma lógica de rutas que usa el administrador.
+     *
+     * Los mensajes de InvalidArgumentException se muestran tal cual al cliente.
+     *
+     * @return array{id: int, nombre: string, programado: bool}  programado = sin ruta cercana, sale en la siguiente salida
+     */
+    private function prepararDomicilio(int $idCliente): array
+    {
+        $texto = fn (string $campo, int $max): string => mb_substr(trim((string) $this->request->getPost($campo)), 0, $max);
+
+        $calle     = $texto('calle', 200);
+        $numero    = $texto('numero', 10);
+        $colonia   = $texto('colonia', 100);
+        $municipio = $texto('municipio', 100);
+        $estado    = $texto('estado', 100);
+
+        if ($calle === '' || $numero === '' || $colonia === '' || $estado === '') {
+            throw new \InvalidArgumentException('Completa tu dirección: calle, número, colonia y estado.');
+        }
+
+        // El repartidor y el aviso de "ya llegué" necesitan un teléfono al que llamar
+        $tel = preg_replace('/\D+/', '', (string) $this->request->getPost('tel')) ?? '';
+        if (strlen($tel) === 12 && str_starts_with($tel, '52')) {
+            $tel = substr($tel, 2);
+        }
+        if (strlen($tel) !== 10) {
+            throw new \InvalidArgumentException('Escribe un teléfono de 10 dígitos para que el repartidor pueda comunicarse contigo.');
+        }
+
+        // Sin el punto exacto no se puede calcular la ruta: el repartidor no podría salir con este pedido
+        $lat = $this->request->getPost('lat');
+        $lng = $this->request->getPost('lng');
+        if (!is_numeric($lat) || !is_numeric($lng) || abs((float) $lat) > 90 || abs((float) $lng) > 180
+            || ((float) $lat === 0.0 && (float) $lng === 0.0)) {
+            throw new \InvalidArgumentException('Marca en el mapa el punto exacto donde quieres recibir tu pedido.');
+        }
+        $lat = round((float) $lat, 7);
+        $lng = round((float) $lng, 7);
+
+        // Se guarda la dirección solo si es distinta de la última, para no llenar la ficha de copias
+        $db     = \Config\Database::connect();
+        $ultima = $db->table('direccion')->where('id_cliente', $idCliente)->orderBy('id', 'DESC')->get()->getRowArray();
+        $igual  = $ultima
+            && (string) $ultima['calle'] === $calle && (string) $ultima['numero'] === $numero
+            && (string) $ultima['colonia'] === $colonia && (string) ($ultima['municipio'] ?? '') === $municipio
+            && (string) $ultima['estado'] === $estado
+            && round((float) $ultima['lat'], 6) === round($lat, 6) && round((float) $ultima['lng'], 6) === round($lng, 6);
+
+        if (!$igual) {
+            $db->table('direccion')->insert([
+                'id_cliente' => $idCliente,
+                'calle'      => $calle,
+                'numero'     => $numero,
+                'colonia'    => $colonia,
+                'municipio'  => $municipio !== '' ? $municipio : null,
+                'estado'     => $estado,
+                'lat'        => $lat,
+                'lng'        => $lng,
+            ]);
+        }
+        $db->table('clientes')->where('id_cliente', $idCliente)->update(['tel' => $tel]);
+
+        // Repartidor: el que menos kilómetros agrega a su ruta (con preferencia por quien cubre la zona)
+        $ruta = new RutaRepartidorService();
+        try {
+            $sugerencia = $ruta->sugerir($idCliente);
+        } catch (\Throwable $e) {
+            log_message('error', 'Carrito: no se pudo calcular la ruta del cliente ' . $idCliente . ': ' . $e->getMessage());
+            throw new \InvalidArgumentException('No pudimos calcular la ruta a esa dirección. Revisa el punto del mapa o elige recoger en tienda.');
+        }
+
+        $elegido    = $sugerencia['recomendado'] ?? null;
+        $programado = false;
+        if ($elegido === null) {
+            // Ninguno queda dentro del rango ideal: el pedido sale en la siguiente ruta del repartidor que menos desvío tenga
+            foreach ($sugerencia['candidatos'] as $candidato) {
+                if ($candidato['distancia_extra'] !== null) {
+                    $elegido    = $candidato;
+                    $programado = true;
+                    break;
+                }
+            }
+        }
+
+        $sinRepartidor = 'Por ahora no hay repartidores disponibles para tu dirección. Puedes elegir recoger tu pedido en tienda.';
+        if ($elegido === null) {
+            throw new \InvalidArgumentException($sinRepartidor);
+        }
+
+        $validacion = $ruta->validarAsignacion((int) $elegido['id']);
+        if (empty($validacion['ok'])) {
+            throw new \InvalidArgumentException($sinRepartidor);
+        }
+
+        return [
+            'id'         => (int) $elegido['id'],
+            'nombre'     => trim(explode(' ', trim((string) $elegido['nombre']))[0]) ?: 'Tu repartidor',
+            'programado' => $programado,
+        ];
     }
 
     /**
@@ -295,8 +495,9 @@ class Catalogo extends BaseController
 
         // "Gabriel Ramirez Coyotecatl" -> nombre, apellido paterno y materno
         $partes = preg_split('/\s+/', trim((string) $usuario['nombre'])) ?: [];
+        // Vacíos (no NULL): varias pantallas arman el nombre con CONCAT y un NULL lo dejaría en blanco
         $materno = '';
-        $paterno = null;
+        $paterno = '';
         if (count($partes) >= 3) {
             $materno = (string) array_pop($partes);
             $paterno = (string) array_pop($partes);
@@ -307,7 +508,7 @@ class Catalogo extends BaseController
 
         $db->table('clientes')->insert([
             'nombre'           => mb_substr($nombre !== '' ? $nombre : 'Cliente', 0, 50),
-            'apellido_paterno' => $paterno !== null ? mb_substr($paterno, 0, 50) : null,
+            'apellido_paterno' => mb_substr($paterno, 0, 50),
             'apellido_materno' => mb_substr($materno, 0, 50),
             'tipo_cliente'     => 'menudeo',
         ]);
@@ -319,10 +520,22 @@ class Catalogo extends BaseController
     }
 
     /**
-     * Botón "Regresar": ajusta la condición a como guardes la sesión del vendedor.
+     * Botón "Regresar": lleva al panel principal de quien tiene la sesión (no la cierra).
+     * Sin sesión, a la portada.
      */
     private function urlRegresar(): string
     {
-        return $this->session->get('usuario') ? base_url('menusolo') : base_url('/');
+        if (!$this->session->get('isLoggedIn')) {
+            return base_url('/');
+        }
+
+        $paneles = [
+            'admin'      => 'menusolo',
+            'vendedor'   => 'vendedor/panel',
+            'repartidor' => 'repartidor/panel',
+            'cliente'    => 'cliente/menu',
+        ];
+
+        return base_url($paneles[$this->session->get('rol')] ?? 'cliente/menu');
     }
 }

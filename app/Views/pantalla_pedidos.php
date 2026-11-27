@@ -24,16 +24,7 @@
     </div>
 </div>
 
-<nav class="menu-navegacion">
-    <div class="nav-links">
-        <a href="<?= base_url('pantalla_ventas') ?>" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
-        <a href="<?= base_url('pantalla_pedidos') ?>" class="nav-link activo"><i class="fas fa-truck"></i> Pedidos</a>
-        <a href="<?= base_url('pantalla_inventario') ?>" class="nav-link"><i class="fas fa-boxes"></i> Inventario</a>
-        <a href="<?= base_url('pantalla_clientes') ?>" class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
-        <a href="<?= base_url('pantalla_repartidores') ?>" class="nav-link"><i class="fa-solid fa-dolly"></i> Repartidores</a>
-        <a href="<?= base_url('pantalla_productos') ?>" class="nav-link"><i class="fa-solid fa-apple-whole"></i> Productos</a>
-    </div>
-</nav>
+<?= view('partials/nav_admin') ?>
 
 <div class="pedido-header-card">
 
@@ -71,7 +62,45 @@
         <div class="chip-filtro" data-filter="Pedido en tránsito">En tránsito</div>
         <div class="chip-filtro" data-filter="Venta confirmada">Entregado</div>
         <div class="chip-filtro" data-filter="Pedido cancelado">Cancelado</div>
+        <div class="chip-filtro chip-sin-pagar" data-filter="sin_pagar">
+            <i class="fas fa-hand-holding-dollar"></i> Entregados sin pagar
+            <span class="chip-cuenta" id="cuentaSinPagar">0</span>
+        </div>
     </div>
+
+    <!-- Aparece con el filtro "Entregados sin pagar": cuánto se debe y acceso a Cobranza de créditos -->
+    <div class="aviso-sin-pagar" id="avisoSinPagar" hidden>
+        <div class="aviso-sin-pagar-texto">
+            <i class="fas fa-circle-exclamation"></i>
+            <span><strong id="avisoSinPagarN">0 pedidos</strong> entregados con saldo pendiente:
+                <strong id="avisoSinPagarMonto">$0.00</strong> por cobrar</span>
+        </div>
+        <a class="btn-cobranza" href="<?= base_url('cobranza') ?>">
+            <i class="fas fa-hand-holding-dollar"></i> Cobranza de créditos <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+    <style>
+        .chip-sin-pagar { display: inline-flex; align-items: center; gap: 6px; }
+        .chip-cuenta {
+            min-width: 20px; padding: 0 6px; border-radius: 40px;
+            background: #f16b1a; color: #fff; font-size: .72rem; font-weight: 700; text-align: center;
+        }
+        .chip-cuenta.cero { background: #d1d5db; }
+        .aviso-sin-pagar {
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+            margin: 0 0 14px; padding: 12px 16px; border-radius: 12px;
+            background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; font-size: .9rem;
+        }
+        .aviso-sin-pagar[hidden] { display: none; }
+        .aviso-sin-pagar-texto { display: flex; align-items: center; gap: 8px; }
+        .btn-cobranza {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 9px 16px; border-radius: 40px;
+            background: #1d4a27; color: #fff !important; font-weight: 700; font-size: .85rem;
+            text-decoration: none !important;
+        }
+        .btn-cobranza:hover { background: #2a5e35; }
+    </style>
 
     <div class="controles-row">
         <button class="btn-orden az" onclick="ordenarAZ()"><i class="fas fa-sort-alpha-down"></i> A–Z</button>
@@ -972,8 +1001,11 @@ function guardarPago() {
                 badgeDiv.innerHTML   = `🟡 Crédito ($${nuevoPagado.toFixed(2)} pagados)`;
                 badgeDiv.className   = 'pago-badge credito';
             }
+            // La fila guarda lo pagado para que el filtro "Entregados sin pagar" esté al día
+            document.getElementById(`fila-${currentPedidoId}`)?.setAttribute('data-pagado', nuevoPagado);
             toast('Pago actualizado correctamente', 'success');
             cerrarModal();
+            aplicarFiltroActual();
         } else {
             toast('Error al guardar el pago', 'error');
         }
@@ -998,6 +1030,7 @@ function actualizarEstadisticas() {
     document.getElementById('totalPedidosCount').textContent = filas.length;
     document.getElementById('transitoCount').textContent     = enTransito;
     document.getElementById('entregadosCount').textContent   = entregados;
+    actualizarSinPagar();
 }
 
 // ============================================================
@@ -1005,11 +1038,47 @@ function actualizarEstadisticas() {
 // ============================================================
 let filtroActual = 'todos';
 
-function aplicarFiltroActual() {
+/* Lo que falta por pagar de un pedido (total - pagado), nunca negativo */
+function saldoDeFila(fila) {
+    const total  = parseFloat(fila.getAttribute('data-total'))  || 0;
+    const pagado = parseFloat(fila.getAttribute('data-pagado')) || 0;
+    return Math.max(0, Math.round((total - pagado) * 100) / 100);
+}
+
+/* Entregado (venta confirmada) pero con saldo pendiente */
+function esEntregadoSinPagar(fila) {
+    return (fila.getAttribute('data-estado') || '') === 'Venta confirmada' && saldoDeFila(fila) > 0.009;
+}
+
+/* ¿La fila pasa el filtro elegido? */
+function pasaFiltro(fila) {
+    if (filtroActual === 'todos') return true;
+    if (filtroActual === 'sin_pagar') return esEntregadoSinPagar(fila);
+    return (fila.getAttribute('data-estado') || '') === filtroActual;
+}
+
+/* Contador del chip y aviso con el total por cobrar */
+function actualizarSinPagar() {
+    let n = 0, monto = 0;
     document.querySelectorAll('#tablaPedidosBody tr[id^="fila-"]').forEach(fila => {
-        const estado    = fila.getAttribute('data-estado') || '';
+        if (esEntregadoSinPagar(fila)) { n++; monto += saldoDeFila(fila); }
+    });
+    const cuenta = document.getElementById('cuentaSinPagar');
+    cuenta.textContent = n;
+    cuenta.classList.toggle('cero', n === 0);
+
+    const aviso = document.getElementById('avisoSinPagar');
+    aviso.hidden = filtroActual !== 'sin_pagar';
+    document.getElementById('avisoSinPagarN').textContent = n + (n === 1 ? ' pedido' : ' pedidos');
+    document.getElementById('avisoSinPagarMonto').textContent =
+        '$' + monto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function aplicarFiltroActual() {
+    actualizarSinPagar();
+    document.querySelectorAll('#tablaPedidosBody tr[id^="fila-"]').forEach(fila => {
         const detailRow = document.getElementById(fila.id.replace('fila-', 'progress-row-'));
-        const visible   = filtroActual === 'todos' || estado === filtroActual;
+        const visible   = pasaFiltro(fila);
 
         fila.style.display = visible ? '' : 'none';
         if (detailRow) {
@@ -1038,9 +1107,7 @@ document.getElementById('inputBuscarPedidoHeader').addEventListener('keyup', fun
     document.querySelectorAll('#tablaPedidosBody tr[id^="fila-"]').forEach(fila => {
         const folio   = fila.querySelector('td:nth-child(2)')?.innerText?.toLowerCase() || '';
         const cliente = fila.querySelector('.clase-nombre')?.innerText?.toLowerCase()   || '';
-        const estado  = fila.getAttribute('data-estado') || '';
-        const coincide = (folio.includes(busqueda) || cliente.includes(busqueda))
-                      && (filtroActual === 'todos' || estado === filtroActual);
+        const coincide = (folio.includes(busqueda) || cliente.includes(busqueda)) && pasaFiltro(fila);
 
         const detailRow = document.getElementById(fila.id.replace('fila-', 'progress-row-'));
         fila.style.display = coincide ? '' : 'none';

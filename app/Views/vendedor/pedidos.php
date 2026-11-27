@@ -241,6 +241,27 @@ window.URL_GUARDAR_PEDIDO = "<?= site_url('vendedor/guardar-pedido') ?>";
 const URL_ESCANER = "<?= site_url('vendedor/escaner') ?>";
 const URL_TICKET_PDF = "<?= site_url('ticket/pdf') ?>";
 
+/* Imprime el ticket de 58 mm en la impresora térmica con un marco oculto (no abre otra pestaña) */
+const URL_TICKET_TERMICO = "<?= site_url('ticket/termico') ?>";
+function imprimirTicketTermico(idPedido) {
+    const anterior = document.getElementById('marcoTicketTermico');
+    if (anterior) anterior.remove();
+
+    const marco = document.createElement('iframe');
+    marco.id = 'marcoTicketTermico';
+    // Fuera de la pantalla pero con tamaño real: un marco de 0x0 o oculto puede imprimir en blanco
+    marco.style.cssText = 'position:fixed; left:-9999px; top:0; width:320px; height:700px; border:0;';
+    // Se imprime el contenido DEL MARCO (solo el ticket), nunca la página del vendedor
+    marco.onload = function () {
+        setTimeout(function () {
+            marco.contentWindow.focus();
+            marco.contentWindow.print();
+        }, 300);
+    };
+    marco.src = URL_TICKET_TERMICO + '/' + idPedido + '?marco=1';
+    document.body.appendChild(marco);
+}
+
 /* Comparte el PDF del ticket como archivo (celular: WhatsApp, correo...). En PC abre el PDF. */
 async function compartirTicketPDF(idPedido) {
     const url = URL_TICKET_PDF + '/' + idPedido;
@@ -501,6 +522,9 @@ async function enviarPedido() {
                 <br>Cambio: ${formato(pedido.cambio)}
                 <br>Saldo: ${formato(pedido.saldo)}
                 <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button type="button" class="btn btn-dark" onclick="imprimirTicketTermico(${Number(pedido.id_pedido)})">
+                        <i class="fas fa-print"></i> Imprimir ticket
+                    </button>
                     <a href="${escapar(urlPdf)}" target="_blank" rel="noopener" class="btn btn-danger">
                         <i class="fas fa-file-pdf"></i> Ticket PDF
                     </a>
@@ -513,6 +537,9 @@ async function enviarPedido() {
                 </div>
             </div>
         `;
+
+        // Al levantar la venta se imprime el ticket térmico (el botón "Imprimir ticket" sirve para reimprimir)
+        imprimirTicketTermico(pedido.id_pedido);
 
         carrito = [];
         dibujarProductos();

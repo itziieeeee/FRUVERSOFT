@@ -42,6 +42,7 @@ class AuditoriaService
         'vendedor.crear'      => 'Vendedor creado',
         'corte.guardar'       => 'Corte de caja guardado',
         'config.cobranza'     => 'Configuración de cobranza',
+        'config.rutas'        => 'Parámetros de ruta y gasolina',
     ];
 
     /**
@@ -116,6 +117,10 @@ class AuditoriaService
         if (!empty($f['accion'])) {
             $b->where('accion', $f['accion']);
         }
+        if (!empty($f['rol']) && isset(self::ROLES[$f['rol']])) {
+            // "Sistema" son los cambios hechos sin sesión (tareas automáticas, comandos)
+            $f['rol'] === 'sistema' ? $b->where('rol', null) : $b->where('rol', $f['rol']);
+        }
         if (!empty($f['usuario'])) {
             $b->where('usuario', $f['usuario']);
         }
@@ -139,16 +144,35 @@ class AuditoriaService
         return ['filas' => $filas, 'total' => $total, 'paginas' => $paginas, 'pagina' => $pagina];
     }
 
-    /** Usuarios que han hecho cambios (para el filtro) */
+    /** Roles para el filtro (clave guardada en auditoria.rol => texto en pantalla) */
+    public const ROLES = [
+        'admin'      => 'Administrador',
+        'vendedor'   => 'Vendedor',
+        'repartidor' => 'Repartidor',
+        'cliente'    => 'Cliente',
+        'sistema'    => 'Sistema (automático)',
+    ];
+
+    /**
+     * Usuarios que han hecho cambios, con los roles con que los hicieron (para el filtro).
+     * @return array<string, string[]> nombre => ['admin', ...]
+     */
     public function usuarios(): array
     {
         $db = \Config\Database::connect();
         if (!$db->tableExists('auditoria')) {
             return [];
         }
-        return array_column(
-            $db->query('SELECT DISTINCT usuario FROM auditoria WHERE usuario IS NOT NULL ORDER BY usuario')->getResultArray(),
-            'usuario'
-        );
+        $lista = [];
+        $filas = $db->query(
+            "SELECT DISTINCT usuario, COALESCE(rol, 'sistema') AS rol
+               FROM auditoria
+              WHERE usuario IS NOT NULL
+              ORDER BY usuario"
+        )->getResultArray();
+        foreach ($filas as $f) {
+            $lista[$f['usuario']][] = $f['rol'];
+        }
+        return $lista;
     }
 }

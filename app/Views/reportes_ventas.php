@@ -107,19 +107,10 @@ $datosGraficas = [
 
 <header class="barra-superior">
     <img src="<?= base_url('img/LOGO1.png') ?>" alt="FRUVER">
-    <a href="<?= site_url('menusolo') ?>" class="btn-user"><i class="fas fa-arrow-left"></i> Regresar</a>
+    <a href="<?= site_url('pantalla_ventas') ?>" class="btn-user"><i class="fas fa-arrow-left"></i> Regresar a ventas</a>
 </header>
 
-<nav class="menu-navegacion">
-    <div class="nav-links">
-        <a href="<?= base_url('pantalla_ventas') ?>" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
-        <a href="<?= base_url('pantalla_pedidos') ?>" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
-        <a href="<?= base_url('reportes') ?>" class="nav-link activo"><i class="fas fa-chart-column"></i> Reportes</a>
-        <a href="<?= base_url('costos') ?>" class="nav-link"><i class="fas fa-chart-line"></i> Costos</a>
-        <a href="<?= base_url('corte') ?>" class="nav-link"><i class="fas fa-cash-register"></i> Corte de caja</a>
-        <a href="<?= base_url('cobranza') ?>" class="nav-link"><i class="fas fa-hand-holding-dollar"></i> Cobranza</a>
-    </div>
-</nav>
+<?= view('partials/nav_admin') ?>
 
 <div class="contenedor">
     <?php if (session()->getFlashdata('error')): ?>

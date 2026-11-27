@@ -46,17 +46,9 @@ $totalReem = array_sum(array_column($devoluciones, 'reembolso'));
 <body>
 <header class="barra-superior">
     <img src="<?= base_url('img/LOGO1.png') ?>" alt="FRUVER">
-    <a href="<?= site_url('menusolo') ?>" class="btn-user"><i class="fas fa-arrow-left"></i> Regresar</a>
+    <a href="<?= site_url('pantalla_pedidos') ?>" class="btn-user"><i class="fas fa-arrow-left"></i> Regresar a pedidos</a>
 </header>
-<nav class="menu-navegacion">
-    <div class="nav-links">
-        <a href="<?= base_url('pantalla_ventas') ?>" class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
-        <a href="<?= base_url('pantalla_pedidos') ?>" class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
-        <a href="<?= base_url('corte') ?>" class="nav-link"><i class="fas fa-cash-register"></i> Corte de caja</a>
-        <a href="<?= base_url('devoluciones') ?>" class="nav-link activo"><i class="fas fa-rotate-left"></i> Devoluciones</a>
-        <a href="<?= base_url('auditoria') ?>" class="nav-link"><i class="fas fa-clock-rotate-left"></i> Historial de cambios</a>
-    </div>
-</nav>
+<?= view('partials/nav_admin') ?>
 
 <div class="contenedor">
     <h2><i class="fas fa-rotate-left" style="color:var(--naranja)"></i> Devoluciones de clientes</h2>

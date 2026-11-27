@@ -36,9 +36,10 @@ class ClientePedidoController extends BaseController
         return view('Cliente/menu', $data);
     }
 
+    /** El historial ahora vive en "Mis pedidos"; se conserva el enlace anterior para quien lo tenga guardado */
     public function historial()
     {
-        return view('Cliente/vista_historial', ['pedidos' => $this->pedidosDelCliente()]);
+        return redirect()->to(base_url('pedidos'));
     }
 
     public function creditos()

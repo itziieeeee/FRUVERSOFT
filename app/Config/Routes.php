@@ -123,6 +123,8 @@ $routes->group('', ['filter' => 'authFilter:admin'], function($routes) {
     $routes->get('salidas', 'SalidasController::index');
     $routes->get('salidas/lista', 'SalidasController::lista');
     $routes->get('salidas/detalle/(:num)', 'SalidasController::detalle/$1');
+    $routes->get('salidas/parametros', 'SalidasController::parametros');
+    $routes->post('salidas/parametros', 'SalidasController::guardarParametros');
 
     // Escáner de códigos (cámara o lector USB) y etiquetas imprimibles de productos
     $routes->get('escaner', 'Escaner::buscar');
@@ -262,6 +264,7 @@ $routes->group('admin_api', ['filter' => 'authFilter:admin'], function($routes) 
     $routes->get('pedido/obtener_detalle_configuracion/(:num)', 'PedidoController::obtener_detalle_configuracion/$1');
 $routes->get('ticket/ver/(:num)',     'Ticket::ver/$1');
 $routes->get('ticket/pdf/(:num)',     'Ticket::pdf/$1');
+$routes->get('ticket/termico/(:num)', 'Ticket::termico/$1');
 $routes->get('ticket/ultimo/(:num)',  'Ticket::ultimo/$1');
 
 // Gestión de Avisos (Admin)

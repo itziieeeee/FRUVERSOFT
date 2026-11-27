@@ -56,6 +56,8 @@ class SalidasRepartoService
             'regreso_km'        => $plan['regreso_km'],
             'combustible'       => $plan['combustible'],
             'fuente_distancia'  => $plan['fuente_distancia'],
+            'tiempo'            => $plan['tiempo'],
+            'comparativo'       => $plan['comparativo'],
             'paradas'           => $plan['paradas'],
             'sin_ubicacion'     => $plan['sin_ubicacion'],
             'advertencias'      => $plan['advertencias'],
@@ -377,7 +379,7 @@ class SalidasRepartoService
     public function listarAdmin(): array
     {
         $salidas = $this->db->table('salida s')
-            ->select("s.id, s.id_repartidor, s.estado, s.km_total, s.fuente_distancia, s.iniciada_at, s.finalizada_at, s.local_lat, s.local_lng, CONCAT_WS(' ', r.nombre, r.ap_p, r.ap_m) AS repartidor, r.ultima_lat, r.ultima_lng, r.ultima_actualizacion", false)
+            ->select("s.id, s.id_repartidor, s.estado, s.km_total, s.fuente_distancia, s.iniciada_at, s.finalizada_at, s.local_lat, s.local_lng, " . ($this->db->fieldExists('optimizacion', 'salida') ? 's.optimizacion, ' : '') . "CONCAT_WS(' ', r.nombre, r.ap_p, r.ap_m) AS repartidor, r.ultima_lat, r.ultima_lng, r.ultima_actualizacion", false)
             ->join('repartidor r', 'r.id = s.id_repartidor', 'left')
             ->whereIn('s.estado', ['iniciada', 'finalizada'])
             ->orderBy('s.id', 'DESC')
@@ -415,7 +417,12 @@ class SalidasRepartoService
             }
             $s['ultima_minutos']  = $minutos;
             $s['google_maps_url'] = $this->googleMapsUrl($s);
-            unset($s['ultima_actualizacion']);
+
+            // De la optimización solo viaja lo que muestra el monitor (no la lista completa de tramos)
+            $opt = !empty($s['optimizacion']) ? json_decode((string) $s['optimizacion'], true) : null;
+            $s['comparativo'] = $opt['comparativo'] ?? null;
+            $s['tiempo']      = isset($opt['tiempo']) ? array_intersect_key($opt['tiempo'], array_flip(['salida', 'regreso', 'total_min', 'traslado_min', 'transito_min'])) : null;
+            unset($s['optimizacion'], $s['ultima_actualizacion']);
         }
         unset($s);
 
@@ -560,7 +567,60 @@ class SalidasRepartoService
         $salida['paradas']         = $this->paradas($idSalida);
         $salida['geometria']       = $salida['geometria'] ? json_decode($salida['geometria'], true) : null;
         $salida['google_maps_url'] = $this->googleMapsUrl($salida);
+        $salida['optimizacion']    = !empty($salida['optimizacion']) ? json_decode((string) $salida['optimizacion'], true) : null;
         return $salida;
+    }
+
+    /**
+     * Ahorro acumulado de las rutas optimizadas contra el orden de captura, sumando los recorridos
+     * iniciados en los últimos $dias días. Solo cuenta los recorridos que guardaron su comparación.
+     *
+     * Los porcentajes salen de las sumas (no de promediar porcentajes), así un recorrido largo pesa más que uno corto.
+     */
+    public function resumenOptimizacion(int $dias = 30): array
+    {
+        $vacio = [
+            'dias' => $dias, 'salidas' => 0,
+            'km_original' => 0.0, 'km_optimizado' => 0.0, 'km_ahorro' => 0.0, 'pct_km' => 0.0,
+            'min_original' => 0.0, 'min_optimizado' => 0.0, 'min_ahorro' => 0.0, 'pct_min' => 0.0,
+            'litros_original' => 0.0, 'litros_optimizado' => 0.0, 'litros_ahorro' => 0.0, 'pct_litros' => 0.0,
+            'costo_original' => 0.0, 'costo_optimizado' => 0.0, 'costo_ahorro' => 0.0, 'pct_costo' => 0.0,
+        ];
+        if (!$this->db->fieldExists('optimizacion', 'salida')) {
+            return $vacio;
+        }
+
+        $desde = date('Y-m-d H:i:s', strtotime('-' . max(1, $dias) . ' days'));
+        $filas = $this->db->table('salida')
+            ->select('optimizacion')
+            ->whereIn('estado', ['iniciada', 'finalizada'])
+            ->where('optimizacion IS NOT NULL', null, false)
+            ->where('iniciada_at >=', $desde)
+            ->get()->getResultArray();
+
+        $r = $vacio;
+        foreach ($filas as $fila) {
+            $c = json_decode((string) $fila['optimizacion'], true)['comparativo'] ?? null;
+            if (!$c) { continue; }
+            $r['salidas']++;
+            $r['km_original']       += (float) $c['original']['km'];
+            $r['km_optimizado']     += (float) $c['optimizado']['km'];
+            $r['min_original']      += (float) $c['original']['min'];
+            $r['min_optimizado']    += (float) $c['optimizado']['min'];
+            $r['litros_original']   += (float) $c['original']['litros'];
+            $r['litros_optimizado'] += (float) $c['optimizado']['litros'];
+            $r['costo_original']    += (float) $c['original']['costo'];
+            $r['costo_optimizado']  += (float) $c['optimizado']['costo'];
+        }
+
+        foreach (['km', 'min', 'litros', 'costo'] as $k) {
+            $r[$k . '_ahorro'] = $r[$k . '_original'] - $r[$k . '_optimizado'];
+            $r['pct_' . $k]    = $r[$k . '_original'] > 0 ? round($r[$k . '_ahorro'] / $r[$k . '_original'] * 100, 1) : 0.0;
+        }
+        foreach ($r as $clave => $valor) {
+            if (is_float($valor) && !str_starts_with($clave, 'pct_')) { $r[$clave] = round($valor, 2); }
+        }
+        return $r;
     }
 
     /* ===================== creación interna ===================== */
@@ -596,7 +656,7 @@ class SalidasRepartoService
         $ahora = date('Y-m-d H:i:s');
         $this->db->transBegin();
         try {
-            $this->db->table('salida')->insert([
+            $datosSalida = [
                 'id_repartidor'    => $idRepartidor,
                 'estado'           => 'borrador',
                 'max_pedidos'      => self::MAX_PEDIDOS_SALIDA,
@@ -606,11 +666,21 @@ class SalidasRepartoService
                 'local_lat'        => $plan['local']['lat'],
                 'local_lng'        => $plan['local']['lng'],
                 'created_at'       => $ahora,
-            ]);
+            ];
+            // Tiempo, tráfico y comparación contra el orden de captura: se guardan para medir el ahorro después
+            if ($this->db->fieldExists('optimizacion', 'salida')) {
+                $datosSalida['optimizacion'] = json_encode([
+                    'tiempo'      => $plan['tiempo'],
+                    'comparativo' => $plan['comparativo'],
+                    'combustible' => $plan['combustible'],
+                ], JSON_UNESCAPED_UNICODE);
+            }
+            $this->db->table('salida')->insert($datosSalida);
             $idSalida = (int) $this->db->insertID();
 
+            $conLlegada = $this->db->fieldExists('llegada_est', 'salida_pedido');
             foreach ($plan['paradas'] as $parada) {
-                $this->db->table('salida_pedido')->insert([
+                $datosParada = [
                     'id_salida'         => $idSalida,
                     'id_pedido'         => (int) $parada['id_pedido'],
                     'orden'             => (int) $parada['orden'],
@@ -620,7 +690,11 @@ class SalidasRepartoService
                     'lng'               => $parada['lng'],
                     'km_desde_anterior' => $parada['km_desde_anterior'],
                     'asignado_at'       => $ahora,
-                ]);
+                ];
+                if ($conLlegada) {
+                    $datosParada['llegada_est'] = $parada['llegada'] ?? null;
+                }
+                $this->db->table('salida_pedido')->insert($datosParada);
             }
             $this->db->transCommit();
         } catch (\Throwable $e) {

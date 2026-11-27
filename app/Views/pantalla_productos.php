@@ -36,16 +36,7 @@
 </header>
 
 <!-- NAVEGACIÓN -->
-<nav class="menu-navegacion">
-    <div class="nav-links">
-        <a href="pantalla_ventas"      class="nav-link"><i class="fas fa-tag"></i> Ventas</a>
-        <a href="pantalla_pedidos"     class="nav-link"><i class="fas fa-truck"></i> Pedidos</a>
-        <a href="<?= base_url('pantalla_inventario') ?>" class="nav-link"><i class="fas fa-boxes"></i> Inventario</a>
-        <a href="pantalla_clientes"    class="nav-link"><i class="fa-solid fa-users"></i> Clientes</a>
-        <a href="pantalla_repartidores" class="nav-link"><i class="fa-solid fa-dolly"></i> Repartidores</a>
-        <a href="pantalla_productos"   class="nav-link activo"><i class="fa-solid fa-apple-whole"></i> Productos</a>
-    </div>
-</nav>
+<?= view('partials/nav_admin') ?>
 
 <!-- BOTÓN FLOTANTE -->
 <a href="<?= base_url('alta_producto') ?>" class="btn-nuevo-producto">

@@ -358,6 +358,16 @@ $domicilio = $tipoEntrega === 'domicilio'
             background: #168b4b;
         }
 
+        .b-volver {
+            background: #fff;
+            color: #1d4a27;
+            border: 1.5px solid #1d4a27;
+        }
+
+        .b-volver:hover {
+            background: #e8f3e6;
+        }
+
         /* =================================
            CELULARES PEQUEÑOS
            iPhone 13 mini y similares
@@ -915,6 +925,14 @@ $domicilio = $tipoEntrega === 'domicilio'
                 Descargar PDF
             </a>
 
+            <a
+                href="<?= esc(base_url('ticket/termico/' . (int) $idPedido), 'attr') ?>"
+                class="btn b-print"
+            >
+                <i class="fa-solid fa-receipt"></i>
+                Ticket térmico 58 mm
+            </a>
+
             <button
                 type="button"
                 class="btn b-print"
@@ -938,7 +956,38 @@ $domicilio = $tipoEntrega === 'domicilio'
 
             <?php endif; ?>
 
+            <a
+                href="<?= esc($urlVolver ?? base_url('/'), 'attr') ?>"
+                class="btn b-volver"
+                id="btnVolverTicket"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Regresar
+            </a>
+
         </div>
+
+        <script>
+        // Regresar a la pantalla anterior. El ticket casi siempre se abre en una pestaña nueva
+        // (por ejemplo desde Clientes > Historial de compras): en ese caso se cierra la pestaña
+        // y queda a la vista la pantalla de donde se abrió. Si no se puede, va al enlace del botón.
+        document.getElementById('btnVolverTicket').addEventListener('click', function (e) {
+            var mismoSitio = document.referrer && document.referrer.indexOf(location.origin) === 0;
+
+            if (history.length > 1 && mismoSitio) {
+                e.preventDefault();
+                history.back();
+                return;
+            }
+            if (history.length <= 1) {
+                e.preventDefault();
+                var destino = this.href;
+                window.close();
+                // Si el navegador no dejó cerrar la pestaña, se navega al destino
+                setTimeout(function () { location.href = destino; }, 250);
+            }
+        });
+        </script>
 
     <?php endif; ?>
 

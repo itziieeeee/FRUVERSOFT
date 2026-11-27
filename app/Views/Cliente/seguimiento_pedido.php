@@ -74,6 +74,10 @@ $estadoPago = $datos['saldo'] <= 0.009
             <p>Hecho el <?= esc($local($pedido['fecha'])) ?> · <?= $domicilio ? 'Entrega a domicilio' : 'Para recoger en tienda' ?></p>
         </section>
 
+        <?php if (session()->getFlashdata('mensaje')): ?>
+            <div class="alert alert-success"><i class="fas fa-circle-check"></i> <?= esc(session()->getFlashdata('mensaje')) ?></div>
+        <?php endif; ?>
+
         <?php if ($datos['cancelado']): ?>
             <div class="estado-texto mal mb-3" id="estadoGeneral"><i class="fas fa-ban"></i><span>Este pedido fue cancelado. Si tienes dudas, comunícate con la tienda.</span></div>
         <?php endif; ?>

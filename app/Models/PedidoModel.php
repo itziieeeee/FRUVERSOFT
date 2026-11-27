@@ -33,7 +33,7 @@ class PedidoModel extends Model {
     public function getPedidosConCliente()
     {
         return $this
-            ->select("pedido.*, CONCAT(clientes.nombre, ' ', clientes.apellido_paterno) as nombre_cliente")
+            ->select("pedido.*, TRIM(CONCAT_WS(' ', clientes.nombre, NULLIF(clientes.apellido_paterno, ''))) as nombre_cliente")
             ->join('clientes', 'clientes.id_cliente = pedido.id_cliente')
             ->findAll();
     }
@@ -41,7 +41,7 @@ class PedidoModel extends Model {
     public function getPedidosDeCliente(int $idCliente): array
     {
         return $this
-            ->select("pedido.*, CONCAT(clientes.nombre, ' ', clientes.apellido_paterno) as nombre_cliente")
+            ->select("pedido.*, TRIM(CONCAT_WS(' ', clientes.nombre, NULLIF(clientes.apellido_paterno, ''))) as nombre_cliente")
             ->join('clientes', 'clientes.id_cliente = pedido.id_cliente')
             ->where('pedido.id_cliente', $idCliente)
             ->orderBy('pedido.id', 'DESC')
@@ -53,7 +53,7 @@ class PedidoModel extends Model {
     return $this->select("
             pedido.*,
             COALESCE(
-                CONCAT(clientes.nombre, ' ', clientes.apellido_paterno),
+                TRIM(CONCAT_WS(' ', clientes.nombre, NULLIF(clientes.apellido_paterno, ''))),
                 'Público general'
             ) AS nombre_cliente,
             COALESCE(

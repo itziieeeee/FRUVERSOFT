@@ -92,12 +92,12 @@
 
     <div class="row g-4">
 
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-6 col-lg-4">
             <div class="fruver-card">
                 <div class="fs-1 mb-3">📦</div>
                 <h4>Mis pedidos</h4>
                 <p class="text-muted">
-                    Consulta tus pedidos y sus detalles.
+                    Consulta tus pedidos, tus compras anteriores y el ticket de cada una.
                 </p>
                 <a href="<?= base_url('pedidos') ?>"
                    class="btn btn-fruver w-100 mt-2">
@@ -106,7 +106,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-6 col-lg-4">
             <div class="fruver-card">
                 <div class="fs-1 mb-3">💳</div>
                 <h4>Créditos y pagos</h4>
@@ -120,21 +120,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
-            <div class="fruver-card">
-                <div class="fs-1 mb-3">🧾</div>
-                <h4>Historial</h4>
-                <p class="text-muted">
-                    Consulta tus compras anteriores.
-                </p>
-                <a href="<?= base_url('cliente/historial') ?>"
-                   class="btn btn-fruver w-100 mt-2">
-                    Ver historial
-                </a>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-6 col-lg-4">
             <div class="fruver-card">
                 <div class="fs-1 mb-3">🚚</div>
                 <h4>Estado de pedidos</h4>
